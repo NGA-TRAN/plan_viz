@@ -1,0 +1,4 @@
+ProjectionExec: expr=[user_id, name, email]
+  FilterExec: predicate=active = true
+    TableScan: table=users, partitions=1
+

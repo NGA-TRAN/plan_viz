@@ -1,0 +1,15 @@
+GlobalLimitExec: skip=0, fetch=100
+  SortExec: expr=[order_date DESC, total_amount DESC]
+    ProjectionExec: expr=[order_id, customer_name, order_date, total_amount]
+      HashJoinExec: mode=Partitioned, join_type=Inner, on=[customer_id]
+        ProjectionExec: expr=[order_id, customer_id, order_date, total_amount]
+          FilterExec: predicate=order_date >= 2024-01-01
+            CoalesceBatchesExec: target_batch_size=8192
+              RepartitionExec: partitioning=Hash([customer_id], 4)
+                TableScan: table=orders, partitions=4
+        ProjectionExec: expr=[customer_id, customer_name, status]
+          FilterExec: predicate=status = 'active'
+            CoalesceBatchesExec: target_batch_size=8192
+              RepartitionExec: partitioning=Hash([customer_id], 4)
+                TableScan: table=customers, partitions=4
+
