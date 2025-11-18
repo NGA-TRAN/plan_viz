@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Setting up datafusion-plan-viz..."
+echo "🚀 Setting up plan-viz..."
 echo ""
 
 # Check Node.js version

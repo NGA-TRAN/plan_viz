@@ -133,11 +133,54 @@ export class ExecutionPlanParser {
    */
   private extractKeyValuePairs(text: string): Array<[string, string]> {
     const pairs: Array<[string, string]> = [];
-    const regex = /(\w+)\s*=\s*([^,]+)/g;
-    let match;
+    let pos = 0;
 
-    while ((match = regex.exec(text)) !== null) {
-      pairs.push([match[1].trim(), match[2].trim()]);
+    while (pos < text.length) {
+      // Skip whitespace
+      while (pos < text.length && /\s/.test(text[pos])) {
+        pos++;
+      }
+
+      if (pos >= text.length) break;
+
+      // Extract key
+      const keyMatch = text.substring(pos).match(/^(\w+)\s*=/);
+      if (!keyMatch) break;
+
+      const key = keyMatch[1];
+      pos += keyMatch[0].length;
+
+      // Skip whitespace after =
+      while (pos < text.length && /\s/.test(text[pos])) {
+        pos++;
+      }
+
+      // Extract value (handle square brackets and other delimiters)
+      let value = '';
+      let bracketDepth = 0;
+
+      while (pos < text.length) {
+        const char = text[pos];
+
+        if (char === '[') {
+          bracketDepth++;
+          value += char;
+          pos++;
+        } else if (char === ']') {
+          bracketDepth--;
+          value += char;
+          pos++;
+        } else if (char === ',' && bracketDepth === 0) {
+          // Comma outside brackets means end of this property
+          pos++; // Skip the comma
+          break;
+        } else {
+          value += char;
+          pos++;
+        }
+      }
+
+      pairs.push([key.trim(), value.trim()]);
     }
 
     return pairs;

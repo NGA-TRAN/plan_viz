@@ -2,7 +2,7 @@
 
 ## System Overview
 
-This document describes the architecture of the `datafusion-plan-viz` package, which converts Apache Data Fusion Physical Execution Plans into Excalidraw JSON format.
+This document describes the architecture of the `plan-viz` package, which converts Apache Data Fusion Physical Execution Plans into Excalidraw JSON format.
 
 ## High-Level Architecture
 

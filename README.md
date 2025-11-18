@@ -1,4 +1,4 @@
-# datafusion-plan-viz
+# plan-viz
 
 Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON format for beautiful visualization.
 
@@ -36,7 +36,7 @@ npm run build
 ### As a Package (once published)
 
 ```bash
-npm install datafusion-plan-viz
+npm install plan-viz
 ```
 
 ## Usage
@@ -44,7 +44,7 @@ npm install datafusion-plan-viz
 ### As a Library
 
 ```typescript
-import { convertPlanToExcalidraw } from 'datafusion-plan-viz';
+import { convertPlanToExcalidraw } from 'plan-viz';
 
 const executionPlan = `
 PhysicalPlan
@@ -61,10 +61,10 @@ console.log(JSON.stringify(excalidrawJson, null, 2));
 
 ```bash
 # From file
-datafusion-plan-viz -i plan.txt -o diagram.json
+plan-viz -i plan.txt -o diagram.json
 
 # From stdin
-echo "PhysicalPlan..." | datafusion-plan-viz > diagram.json
+echo "PhysicalPlan..." | plan-viz > diagram.json
 ```
 
 ## API

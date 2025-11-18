@@ -1,4 +1,4 @@
-import { convertPlanToExcalidraw } from 'datafusion-plan-viz';
+import { convertPlanToExcalidraw } from 'plan-viz';
 import * as fs from 'fs';
 
 // Example 1: Simple conversion

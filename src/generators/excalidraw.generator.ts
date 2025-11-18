@@ -43,7 +43,7 @@ export class ExcalidrawGenerator {
     return {
       type: 'excalidraw',
       version: 2,
-      source: 'datafusion-plan-viz',
+      source: 'plan-viz',
       elements,
       appState: {
         gridSize: null,

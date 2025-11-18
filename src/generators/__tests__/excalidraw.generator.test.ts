@@ -24,7 +24,7 @@ describe('ExcalidrawGenerator', () => {
 
       expect(result.type).toBe('excalidraw');
       expect(result.version).toBe(2);
-      expect(result.source).toBe('datafusion-plan-viz');
+      expect(result.source).toBe('plan-viz');
       expect(result.elements).toBeDefined();
       expect(result.appState).toBeDefined();
       expect(result.files).toBeDefined();

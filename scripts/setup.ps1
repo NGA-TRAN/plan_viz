@@ -1,6 +1,6 @@
 # PowerShell setup script for Windows
 
-Write-Host "🚀 Setting up datafusion-plan-viz..." -ForegroundColor Cyan
+Write-Host "🚀 Setting up plan-viz..." -ForegroundColor Cyan
 Write-Host ""
 
 # Check Node.js version

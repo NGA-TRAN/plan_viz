@@ -1,4 +1,4 @@
-# Project Overview: datafusion-plan-viz
+# Project Overview: plan-viz
 
 ## 📋 Summary
 
@@ -124,7 +124,7 @@ plan_viz/
 
 **Windows:**
 ```powershell
-cd F:\Users\DTRAN\SDD\plan_viz
+cd path\to\plan_viz
 npm install
 npm run build
 ```
@@ -223,7 +223,7 @@ All files                    |   >80   |   >80    |   >80   |   >80   |
 
 ## 📦 Package Information
 
-**Package Name:** `datafusion-plan-viz`  
+**Package Name:** `plan-viz`  
 **Version:** 0.1.0  
 **License:** MIT  
 **Node Version:** >=20.0.0 (LTS)  

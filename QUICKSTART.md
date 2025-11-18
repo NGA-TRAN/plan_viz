@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with datafusion-plan-viz in minutes!
+Get up and running with plan-viz in minutes!
 
 ## Installation
 

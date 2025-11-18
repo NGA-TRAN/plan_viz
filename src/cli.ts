@@ -18,7 +18,7 @@ interface CliOptions {
 const program = new Command();
 
 program
-  .name('datafusion-plan-viz')
+  .name('plan-viz')
   .description('Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON')
   .version('0.1.0');
 

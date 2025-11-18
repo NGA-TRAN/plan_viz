@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-11-17
 
 ### Added
-- First release of datafusion-plan-viz
+- First release of plan-viz
 - Convert Apache Data Fusion execution plans to Excalidraw format
 - Support for nested execution plan structures
 - Configurable node dimensions and spacing

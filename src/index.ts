@@ -1,5 +1,5 @@
 /**
- * Main entry point for the datafusion-plan-viz library
+ * Main entry point for the plan-viz library
  */
 
 import { ConverterService, ConverterConfig } from './services/converter.service';
