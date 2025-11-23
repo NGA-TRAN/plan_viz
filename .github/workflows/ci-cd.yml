@@ -136,7 +136,7 @@ jobs:
           echo "Version match confirmed: $PACKAGE_VERSION"
 
       - name: Publish to npm
-        run: npm publish
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
