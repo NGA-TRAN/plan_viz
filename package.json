@@ -1,6 +1,6 @@
 {
   "name": "plan-viz",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON format",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -76,7 +76,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/NGA-TRAN/plan_viz.git"
+    "url": "git+https://github.com/NGA-TRAN/plan_viz.git"
   },
   "bugs": {
     "url": "https://github.com/NGA-TRAN/plan_viz/issues"
