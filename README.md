@@ -1,15 +1,17 @@
 # plan-viz
 
-Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON format for beautiful visualization.
+Convert Apache DataFusion Physical Execution Plans to Excalidraw JSON format for beautiful visualization.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-google-blueviolet)](https://google.github.io/styleguide/tsguide.html)
 
+> **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues)
+
 ## Features
 
-- 📊 Parse Apache Data Fusion Physical Execution Plans
+- 📊 Parse Apache DataFusion Physical Execution Plans
 - 🎨 Generate Excalidraw-compatible JSON diagrams
 - 🔧 Use as a library or CLI tool
 - ✅ TypeScript support with full type definitions
@@ -27,7 +29,7 @@ Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON format fo
 ### For Development
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/NGA-TRAN/plan_viz.git
 cd plan_viz
 npm install
 npm run build
@@ -47,37 +49,174 @@ npm install plan-viz
 import { convertPlanToExcalidraw } from 'plan-viz';
 
 const executionPlan = `
-PhysicalPlan
-  ProjectionExec
-    FilterExec
-      TableScan
+DataSourceExec: file_groups={1 groups: [[data.parquet]]}, projection=[id, name], file_type=parquet
+  FilterExec: predicate=age > 18
+    ProjectionExec: expr=[id, name, age]
 `;
 
 const excalidrawJson = convertPlanToExcalidraw(executionPlan);
 console.log(JSON.stringify(excalidrawJson, null, 2));
 ```
 
+**With Custom Configuration:**
+
+```typescript
+import { convertPlanToExcalidraw } from 'plan-viz';
+
+const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
+  generator: {
+    nodeWidth: 250,
+    nodeHeight: 100,
+    verticalSpacing: 120,
+    horizontalSpacing: 60,
+    fontSize: 18,
+    nodeColor: '#64748b',
+    arrowColor: '#64748b',
+  },
+});
+```
+
 ### As a CLI
 
+**After installation (when published):**
 ```bash
-# From file
-plan-viz -i plan.txt -o diagram.json
+# Basic usage: from file
+plan-viz -i examples/join.sql -o output.excalidraw
 
 # From stdin
-echo "PhysicalPlan..." | plan-viz > diagram.json
+cat examples/join.sql | plan-viz > output.excalidraw
+
+# With custom dimensions and spacing
+plan-viz -i examples/join.sql -o output.excalidraw \
+  --node-width 250 \
+  --node-height 100 \
+  --vertical-spacing 120 \
+  --horizontal-spacing 60 \
+  --font-size 18
 ```
+
+**For development (before publishing):**
+```bash
+# After building the project
+npm run build
+
+# Basic usage: from file
+node dist/cli.js -i examples/join.sql -o output.excalidraw
+
+# From stdin
+cat examples/join.sql | node dist/cli.js > output.excalidraw
+
+# With custom dimensions and spacing
+node dist/cli.js -i examples/join.sql -o output.excalidraw \
+  --node-width 250 \
+  --node-height 100 \
+  --vertical-spacing 120 \
+  --horizontal-spacing 60 \
+  --font-size 18
+```
+
+**CLI Options:**
+- `-i, --input <file>` - Input file containing the execution plan
+- `-o, --output <file>` - Output file for Excalidraw JSON
+- `--node-width <number>` - Width of each node box (default: 200)
+- `--node-height <number>` - Height of each node box (default: 80)
+- `--vertical-spacing <number>` - Vertical spacing between nodes (default: 100)
+- `--horizontal-spacing <number>` - Horizontal spacing between sibling nodes (default: 50)
+- `--font-size <number>` - Font size for node text (default: 16, deprecated - use operatorFontSize/detailsFontSize in library API)
+
+### Viewing the Output
+
+1. Go to [Excalidraw](https://excalidraw.com/)
+2. Click "Open" in the top menu
+3. Upload your generated `.excalidraw` file
+4. View your execution plan diagram!
+
+See the [`examples/`](examples/) directory for sample execution plans and their visualizations.
 
 ## API
 
-### `convertPlanToExcalidraw(plan: string): ExcalidrawData`
+### `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
 
-Converts an Apache Data Fusion Physical Execution Plan to Excalidraw JSON format.
+Converts an Apache DataFusion Physical Execution Plan to Excalidraw JSON format.
 
 **Parameters:**
 - `plan` - The physical execution plan as a string
+- `config` - Optional configuration object (see below)
 
 **Returns:**
 - `ExcalidrawData` - Excalidraw-compatible JSON object
+
+**Throws:**
+- `Error` - If the plan text is invalid or empty
+
+**Configuration Options:**
+
+```typescript
+interface ConverterConfig {
+  parser?: {
+    indentationSize?: number;      // Default: 2
+    extractProperties?: boolean;    // Default: true
+  };
+  generator?: {
+    nodeWidth?: number;               // Default: 200
+    nodeHeight?: number;              // Default: 80
+    verticalSpacing?: number;         // Default: 100
+    horizontalSpacing?: number;       // Default: 50
+    operatorFontSize?: number;       // Default: 18 (for operator name)
+    detailsFontSize?: number;         // Default: 14 (for properties/details)
+    fontSize?: number;                // Default: 16 (deprecated, use operatorFontSize/detailsFontSize)
+    nodeColor?: string;               // Default: '#1971c2'
+    arrowColor?: string;              // Default: '#495057'
+  };
+}
+```
+
+**Example:**
+
+```typescript
+import { convertPlanToExcalidraw } from 'plan-viz';
+
+const plan = `
+ProjectionExec: expr=[a, b]
+  FilterExec: predicate=a > 10
+    TableScan: table=my_table
+`;
+
+const result = convertPlanToExcalidraw(plan, {
+  generator: {
+    nodeWidth: 250,
+    nodeHeight: 100,
+    nodeColor: '#64748b',
+  },
+});
+```
+
+## Examples
+
+The project includes numerous example execution plans in the [`examples/`](examples/) directory, including:
+
+- Data source plans (`dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`, `dataSource_read_seq_3.sql`, `dataSource_read_seq_4.sql`)
+- Filter operations (`fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`, `filter_coalesceBatch_read_seq_many.sql`)
+- Repartitioning (`repartition.sql`, `coalescePartition.sql`)
+- Aggregation examples (`aggregate_single.sql`, `aggregate_single_sorted.sql`, `aggregate_partial_final.sql`)
+- Join operations (`join.sql`, `join_hash_collectLeft.sql`, `join_aggregates.sql`)
+- Sorting (`sort.sql`, `sortPreservingMerge.sql`)
+- And many more!
+
+Each example includes:
+- A `.sql` file with the execution plan
+- A `.excalidraw` file showing the generated visualization
+
+Try them out:
+
+```bash
+# Convert an example (after building)
+npm run build
+node dist/cli.js -i examples/join.sql -o output.excalidraw
+
+# Or use the usage example script
+npx ts-node examples/usage-example.ts
+```
 
 ## Development
 
@@ -179,15 +318,18 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 - [ ] Support for more DataFusion operators
 - [ ] Interactive web interface
-- [ ] Custom styling options
-- [ ] Export to other diagram formats
+- [ ] Enhanced custom styling options
+- [ ] Export to other diagram formats (SVG, PNG, PDF)
 - [ ] Performance optimizations for large plans
+- [ ] Plan comparison and diff visualization
 
 ## Resources
 
 - [Apache DataFusion](https://arrow.apache.org/datafusion/)
 - [Excalidraw API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api)
 - [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
+- [Quick Start Guide](QUICKSTART.md) - Get started quickly
+- [Project Overview](PROJECT_OVERVIEW.md) - Detailed architecture and design
 
 ## License
 

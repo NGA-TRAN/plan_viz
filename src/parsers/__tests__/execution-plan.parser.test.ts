@@ -165,5 +165,25 @@ describe('ExecutionPlanParser', () => {
       expect(result.root?.operator).toBe('ProjectionExec: expr=[a, b, c]');
       expect(result.root?.properties).toBeUndefined();
     });
+
+    it('should extract physical plan from SQL EXPLAIN table format', () => {
+      const sqlExplainText = `EXPLAIN SELECT * FROM dim2_parquet;
++---------------+------------------------------------------------------------------------------------------------------------------------------------+
+| plan_type     | plan                                                                                                                               |
++---------------+------------------------------------------------------------------------------------------------------------------------------------+
+| logical_plan  | TableScan: dim2_parquet projection=[d_dkey, env, service, host]                                                                    |
+| physical_plan | DataSourceExec: file_groups={2 groups: [[d_1.parquet], [d_2.parquet]]}, projection=[d_dkey, env, service, host], file_type=parquet |
+|               |                                                                                                                                    |
++---------------+------------------------------------------------------------------------------------------------------------------------------------+`;
+
+      const result = parser.parse(sqlExplainText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('DataSourceExec');
+      expect(result.root?.properties).toBeDefined();
+      expect(result.root?.properties?.file_groups).toBeDefined();
+      expect(result.root?.properties?.projection).toBe('[d_dkey, env, service, host]');
+      expect(result.root?.properties?.file_type).toBe('parquet');
+    });
   });
 });

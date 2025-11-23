@@ -1,7 +1,7 @@
 /**
  * Excalidraw element types
  */
-export type ExcalidrawElementType = 'rectangle' | 'arrow' | 'text';
+export type ExcalidrawElementType = 'rectangle' | 'arrow' | 'text' | 'ellipse';
 
 /**
  * Base properties for all Excalidraw elements
@@ -22,6 +22,8 @@ export interface ExcalidrawElementBase {
   roughness: number;
   opacity: number;
   groupIds: string[];
+  frameId: string | null;
+  index?: string;
   roundness: { type: number } | null;
   seed: number;
   version: number;
@@ -51,6 +53,7 @@ export interface ExcalidrawArrow extends ExcalidrawElementBase {
   endBinding: { elementId: string; focus: number; gap: number } | null;
   startArrowhead: string | null;
   endArrowhead: string | null;
+  elbowed?: boolean;
 }
 
 /**
@@ -66,13 +69,25 @@ export interface ExcalidrawText extends ExcalidrawElementBase {
   baseline: number;
   containerId: string | null;
   originalText: string;
+  autoResize?: boolean;
   lineHeight: number;
+}
+
+/**
+ * Ellipse element in Excalidraw
+ */
+export interface ExcalidrawEllipse extends ExcalidrawElementBase {
+  type: 'ellipse';
 }
 
 /**
  * Union type for all Excalidraw elements
  */
-export type ExcalidrawElement = ExcalidrawRectangle | ExcalidrawArrow | ExcalidrawText;
+export type ExcalidrawElement =
+  | ExcalidrawRectangle
+  | ExcalidrawArrow
+  | ExcalidrawText
+  | ExcalidrawEllipse;
 
 /**
  * Complete Excalidraw data structure
@@ -101,7 +116,11 @@ export interface ExcalidrawConfig {
   verticalSpacing?: number;
   /** Horizontal spacing between sibling nodes */
   horizontalSpacing?: number;
-  /** Font size for node text */
+  /** Font size for operator name (bold, larger) */
+  operatorFontSize?: number;
+  /** Font size for node details/properties (smaller) */
+  detailsFontSize?: number;
+  /** Font size for node text (deprecated, use operatorFontSize and detailsFontSize) */
   fontSize?: number;
   /** Default node color */
   nodeColor?: string;
