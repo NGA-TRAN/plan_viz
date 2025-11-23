@@ -2,7 +2,7 @@
 
 ## 📋 Summary
 
-A professional Node.js/npm package for converting Apache Data Fusion Physical Execution Plans to Excalidraw JSON format. Built with TypeScript following Clean Code principles and SOLID design patterns.
+A professional Node.js/npm package for converting Apache DataFusion Physical Execution Plans to Excalidraw JSON format. Built with TypeScript following Clean Code principles and SOLID design patterns.
 
 ## 🏗️ Complete Project Structure
 
@@ -56,8 +56,8 @@ plan_viz/
 │   └── cli.ts                    # CLI entry point
 │
 ├── 📝 Examples
-│   ├── simple-plan.txt           # Simple execution plan example
-│   ├── complex-plan.txt          # Complex execution plan example
+│   ├── *.sql                     # Execution plan examples (dataSource, join, aggregate, etc.)
+│   ├── *.excalidraw              # Generated Excalidraw visualizations
 │   └── usage-example.ts          # TypeScript usage examples
 │
 └── 🔧 Scripts
@@ -149,16 +149,26 @@ Expected: >80% coverage across all metrics
 
 ```bash
 # Convert a simple plan
-node dist/cli.js -i examples/simple-plan.txt -o output.json
+node dist/cli.js -i examples/dataSource.sql -o output.excalidraw
 
 # Convert a complex plan
-node dist/cli.js -i examples/complex-plan.txt -o complex-output.json
+node dist/cli.js -i examples/join.sql -o output.excalidraw
 
 # With custom dimensions
-node dist/cli.js -i examples/simple-plan.txt -o custom.json --node-width 300 --node-height 120
+node dist/cli.js -i examples/join.sql -o custom.excalidraw \
+  --node-width 300 \
+  --node-height 120 \
+  --vertical-spacing 120
 ```
 
 ### 4. Use as Library
+
+**Option A: Use the provided example**
+```bash
+npx ts-node examples/usage-example.ts
+```
+
+**Option B: Create your own file**
 
 Create `test.ts`:
 ```typescript
@@ -166,7 +176,8 @@ import { convertPlanToExcalidraw } from './src/index';
 
 const plan = `
 ProjectionExec: expr=[id, name]
-  TableScan: table=users
+  FilterExec: predicate=age > 18
+    DataSourceExec: file_groups={1 groups: [[users.parquet]]}, projection=[id, name, age], file_type=parquet
 `;
 
 const result = convertPlanToExcalidraw(plan);
@@ -178,16 +189,30 @@ Run:
 npx ts-node test.ts
 ```
 
+### 5. Available Examples
+
+The `examples/` directory contains many sample execution plans:
+
+- **Data sources**: `dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`, `dataSource_read_seq_3.sql`, `dataSource_read_seq_4.sql`
+- **Filters**: `fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`, `filter_coalesceBatch_read_seq_many.sql`
+- **Repartitioning**: `repartition.sql`, `coalescePartition.sql`
+- **Aggregations**: `aggregate_single.sql`, `aggregate_single_sorted.sql`, `aggregate_partial_final.sql`
+- **Joins**: `join.sql`, `join_hash_collectLeft.sql`, `join_aggregates.sql`
+- **Sorting**: `sort.sql`, `sortPreservingMerge.sql`
+
+Each example includes both the `.sql` file (execution plan) and `.excalidraw` file (visualization).
+
 ## 📊 Features Implemented
 
 ### Core Features
-- ✅ Parse Apache Data Fusion execution plans
+- ✅ Parse Apache DataFusion execution plans
 - ✅ Extract operator properties (key=value pairs)
 - ✅ Handle nested tree structures
 - ✅ Generate Excalidraw-compatible JSON
 - ✅ Support for multiple children per node
 - ✅ Configurable dimensions and spacing
 - ✅ Configurable colors and styling
+- ✅ Separate font sizes for operator names and details
 
 ### Development Features
 - ✅ TypeScript with strict type checking
@@ -312,17 +337,19 @@ convertPlanToExcalidraw(
 ```typescript
 interface ConverterConfig {
   parser?: {
-    indentationSize?: number;      // Default: 2
-    extractProperties?: boolean;    // Default: true
+    indentationSize?: number;        // Default: 2
+    extractProperties?: boolean;      // Default: true
   };
   generator?: {
-    nodeWidth?: number;             // Default: 200
-    nodeHeight?: number;            // Default: 80
-    verticalSpacing?: number;       // Default: 100
-    horizontalSpacing?: number;     // Default: 50
-    fontSize?: number;              // Default: 16
-    nodeColor?: string;             // Default: '#1971c2'
-    arrowColor?: string;            // Default: '#495057'
+    nodeWidth?: number;               // Default: 200
+    nodeHeight?: number;              // Default: 80
+    verticalSpacing?: number;         // Default: 100
+    horizontalSpacing?: number;       // Default: 50
+    operatorFontSize?: number;       // Default: 18 (for operator name)
+    detailsFontSize?: number;         // Default: 14 (for properties/details)
+    fontSize?: number;                // Default: 16 (deprecated, use operatorFontSize/detailsFontSize)
+    nodeColor?: string;               // Default: '#1971c2'
+    arrowColor?: string;              // Default: '#495057'
   };
 }
 ```
@@ -361,5 +388,5 @@ interface ConverterConfig {
 **Status:** ✅ Project Complete and Ready for Development
 
 **Created:** November 17, 2025  
-**Last Updated:** November 17, 2025
+**Last Updated:** November 22, 2025
 

@@ -1,4 +1,5 @@
 {
+  "ignorePatterns": ["examples/**/*"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2022,
@@ -21,7 +22,7 @@
       "argsIgnorePattern": "^_"
     }],
     "max-len": ["error", {
-      "code": 100,
+      "code": 200,
       "ignoreUrls": true,
       "ignoreStrings": true,
       "ignoreTemplateLiterals": true

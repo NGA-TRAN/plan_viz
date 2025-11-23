@@ -22,13 +22,19 @@
   "keywords": [
     "apache",
     "datafusion",
+    "data-fusion",
     "execution-plan",
     "excalidraw",
     "visualization",
     "query-plan",
-    "sql"
+    "sql",
+    "diagram",
+    "arrow",
+    "apache-arrow"
   ],
-  "author": "",
+  "author": {
+    "name": "NGA-TRAN"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
@@ -38,6 +44,13 @@
     "README.md",
     "LICENSE"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "dependencies": {
     "commander": "^12.1.0"
   },
@@ -63,10 +76,10 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/NGA-TRAN/plan_viz.git"
   },
   "bugs": {
-    "url": ""
+    "url": "https://github.com/NGA-TRAN/plan_viz/issues"
   },
-  "homepage": ""
+  "homepage": "https://github.com/NGA-TRAN/plan_viz#readme"
 }
