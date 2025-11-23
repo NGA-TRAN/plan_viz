@@ -107,6 +107,70 @@ All submissions require review. We aim to:
 - Respond within 48 hours
 - Maintain high code quality standards
 
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment. The pipeline automatically:
+
+1. **Lints** code on every push and pull request
+2. **Tests** on multiple Node.js versions (20, 22, latest)
+3. **Builds** the project to verify compilation
+4. **Publishes** to npm when a version tag is pushed (e.g., `v1.0.0`)
+
+### Pipeline Jobs
+
+- **Lint**: Runs ESLint to check code style
+- **Test**: Runs Jest tests with coverage on multiple Node versions
+- **Build**: Compiles TypeScript and verifies build artifacts
+- **Publish**: Publishes to npm when a version tag is pushed
+
+### Publishing a New Version
+
+To publish a new version to npm:
+
+1. **Update version in package.json**:
+   ```bash
+   npm version patch  # for 0.1.0 -> 0.1.1
+   npm version minor  # for 0.1.0 -> 0.2.0
+   npm version major  # for 0.1.0 -> 1.0.0
+   ```
+
+2. **Push the version tag**:
+   ```bash
+   git push origin main --tags
+   ```
+
+3. **The CI/CD pipeline will automatically**:
+   - Run all tests and linting
+   - Build the project
+   - Verify the package.json version matches the tag
+   - Publish to npm (if NPM_TOKEN is configured)
+
+### Setting Up NPM_TOKEN
+
+To enable automatic publishing, you need to configure an npm access token:
+
+1. **Create an npm access token**:
+   - Go to [npmjs.com](https://www.npmjs.com/)
+   - Log in and go to Access Tokens
+   - Create a new "Automation" token (for CI/CD)
+
+2. **Add the token to GitHub Secrets**:
+   - Go to your GitHub repository
+   - Navigate to Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `NPM_TOKEN`
+   - Value: Your npm access token
+   - Click "Add secret"
+
+The pipeline will use this token to authenticate with npm when publishing.
+
+### Version Tag Format
+
+Version tags must follow the format `v<version>` (e.g., `v0.1.0`, `v1.2.3`). The pipeline will:
+- Extract the version from the tag
+- Verify it matches `package.json`
+- Publish to npm with that version
+
 ## Questions?
 
 Feel free to open an issue for any questions or concerns.
