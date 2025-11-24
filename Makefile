@@ -16,7 +16,7 @@ help:
 	@echo "  make commit         - Commit changes using commitizen"
 	@echo "  make install        - Install dependencies"
 
-all: lint format clean build test test-coverage
+all: lint clean build test test-coverage
 
 build:
 	npm run build

@@ -2418,11 +2418,7 @@ export class ExcalidrawGenerator {
       height: nodeHeight,
       rectId,
       inputArrowCount: _isRoot ? 0 : outputArrowCount > 0 ? outputArrowCount : totalInputArrows,
-      inputArrowPositions: _isRoot
-        ? []
-        : outputArrowCount > 0
-          ? outputArrowPositions
-          : allInputArrowPositions,
+      inputArrowPositions: _isRoot ? [] : outputArrowCount > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -2460,7 +2456,7 @@ export class ExcalidrawGenerator {
     for (let i = 0; i < groupsArrayStr.length; i++) {
       const char = groupsArrayStr[i];
 
-      if (char === '"' || char === "'") {
+      if (char === '"' || char === '\'') {
         inQuotes = !inQuotes;
         continue;
       }
@@ -4714,9 +4710,9 @@ export class ExcalidrawGenerator {
     if (probeSideInfo.outputColumns.length > 0) {
       const arrowMidY = (probeSideTopY + hashTableCenterY) / 2;
       const rightmostArrowX =
-        probeSideTopArrowPositions.length > 0
-          ? probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1]
-          : probeSideX + probeSideInfo.width / 2;
+        probeSideTopArrowPositions.length > 0 ?
+          probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1] :
+          probeSideX + probeSideInfo.width / 2;
       const rightOffset = 5;
       const projectionTextX = rightmostArrowX + rightOffset;
 

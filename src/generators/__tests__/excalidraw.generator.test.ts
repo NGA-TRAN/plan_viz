@@ -583,7 +583,7 @@ describe('ExcalidrawGenerator', () => {
         operator: 'AggregateExec',
         properties: {
           mode: 'Single',
-          gby: "[date_bin(INTERVAL '1 hour', timestamp@0) as hour]",
+          gby: '[date_bin(INTERVAL \'1 hour\', timestamp@0) as hour]',
           aggr: '[count(Int64(1))]',
         },
         children: [],
@@ -1534,7 +1534,7 @@ describe('ExcalidrawGenerator', () => {
         operator: 'AggregateExec',
         properties: {
           mode: 'Single',
-          gby: "[date_bin(INTERVAL '1 hour', timestamp@0) as hour]",
+          gby: '[date_bin(INTERVAL \'1 hour\', timestamp@0) as hour]',
           aggr: '[count(Int64(1))]',
         },
         children: [],
@@ -1971,7 +1971,7 @@ describe('ExcalidrawGenerator', () => {
         operator: 'AggregateExec',
         properties: {
           mode: 'Single',
-          gby: "[date_bin(INTERVAL '1 hour', timestamp@0) as hour]",
+          gby: '[date_bin(INTERVAL \'1 hour\', timestamp@0) as hour]',
           aggr: '[count(Int64(1))]',
         },
         children: [
