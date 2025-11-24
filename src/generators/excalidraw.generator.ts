@@ -569,8 +569,8 @@ export class ExcalidrawGenerator {
       // Create text elements for each column, coloring ordered columns in blue
       const groupId = this.generateId();
       let currentX = projectionTextX;
-      const charWidth = 8;
       const textHeight = 17.5;
+      const fontSize = 14;
 
       let i = 0;
       while (i < columns.length) {
@@ -596,7 +596,7 @@ export class ExcalidrawGenerator {
         // Create text element for grouped columns
         const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
         const groupTextId = this.generateId();
-        const groupWidth = groupText.length * charWidth;
+        const groupWidth = this.measureText(groupText, fontSize);
         const groupTextElement: ExcalidrawText = {
           id: groupTextId,
           type: 'text',
@@ -625,11 +625,11 @@ export class ExcalidrawGenerator {
           link: null,
           locked: false,
           text: groupText,
-          fontSize: 14,
+          fontSize: fontSize,
           fontFamily: 6,
           textAlign: 'left',
           verticalAlign: 'top',
-          baseline: 14,
+          baseline: fontSize,
           containerId: null,
           originalText: groupText,
           autoResize: false,
@@ -641,6 +641,31 @@ export class ExcalidrawGenerator {
         i = j;
       }
     }
+  }
+
+  /**
+   * Estimates text width based on character types for better positioning
+   */
+  private measureText(text: string, fontSize: number): number {
+    let width = 0;
+    // Approximate widths for proportional font (tuned for Excalidraw "Normal" font)
+    const average = 0.55;
+    const narrow = 0.32; // i, l, t, f, r, space, comma, period
+    const wide = 0.8; // m, w, M, W, _
+    const capital = 0.7;
+
+    for (const char of text) {
+      if (/[iltr ,.]/.test(char)) {
+        width += fontSize * narrow;
+      } else if (/[mwMW_]/.test(char)) {
+        width += fontSize * wide;
+      } else if (/[A-Z]/.test(char)) {
+        width += fontSize * capital;
+      } else {
+        width += fontSize * average;
+      }
+    }
+    return width;
   }
 
   /**
@@ -901,7 +926,7 @@ export class ExcalidrawGenerator {
       if (hasDynamicFilter) {
         // Create orange-dashed-border ellipse (DynamicFilter) inside the rectangle
         // Position it below the details text area, but not too low
-        const dfEllipseWidth = 50;
+        const dfEllipseWidth = 120; // Increased width to fit "DynamicFilter"
         const dfEllipseHeight = 30;
         const dfEllipseX = x + nodeWidth / 2 - dfEllipseWidth / 2;
         const dfEllipseY = y + 50; // Position below details text, but within rectangle bounds
@@ -937,14 +962,14 @@ export class ExcalidrawGenerator {
         };
         elements.push(dfEllipse);
 
-        // Create "DF" text label inside the ellipse
+        // Create "DynamicFilter" text label inside the ellipse
         const dfTextId = this.generateId();
         const dfText: ExcalidrawText = {
           id: dfTextId,
           type: 'text',
-          x: dfEllipseX + dfEllipseWidth / 2 - 10, // Center the text
+          x: dfEllipseX + 10, // Align text to start with some padding
           y: dfEllipseY + dfEllipseHeight / 2 - 9, // Center vertically
-          width: 20,
+          width: 100, // Increased width for "DynamicFilter"
           height: 18,
           angle: 0,
           strokeColor: '#f08c00', // Orange color to match border
@@ -966,17 +991,22 @@ export class ExcalidrawGenerator {
           updated: Date.now(),
           link: null,
           locked: false,
-          text: 'DF',
+          text: 'DynamicFilter',
           fontSize: 14,
           fontFamily: 7, // Bold
           textAlign: 'center',
           verticalAlign: 'top',
           baseline: 14,
           containerId: dfEllipseId,
-          originalText: 'DF',
-          autoResize: false,
+          originalText: 'DynamicFilter',
+          autoResize: true, // Auto resize to fit text
           lineHeight: 1.25,
         };
+        // Adjust X position to center after text is created
+        // "DynamicFilter" is about 100px wide at 14px bold
+        // Center text in ellipse: ellipseX + (ellipseWidth - textWidth)/2
+        // But since we don't know exact text width, we can approximate or rely on centering relative to ellipse width
+        dfText.x = dfEllipseX + (dfEllipseWidth - 100) / 2;
         elements.push(dfText);
       }
     }
@@ -1006,7 +1036,8 @@ export class ExcalidrawGenerator {
       let currentGroupX = x + (nodeWidth - totalWidth) / 2;
 
       // Find the maximum height needed (for the group with most files)
-      const maxFilesInGroup = Math.max(...fileGroups.map((g) => g.length));
+      // Cap at 3 because we collapse groups larger than 2 files
+      const maxFilesInGroup = Math.max(...fileGroups.map((g) => (g.length > 2 ? 3 : g.length)));
       const maxGroupHeight = maxFilesInGroup * ellipseSize + (maxFilesInGroup - 1) * ellipseSpacing;
 
       // Create ellipses for each file group
@@ -1017,13 +1048,77 @@ export class ExcalidrawGenerator {
         let groupMaxY = baseEllipseY;
 
         // Center the group vertically if it has fewer files than the max
-        const groupHeight = group.length * ellipseSize + (group.length - 1) * ellipseSpacing;
+        // If group has more than 2 files, we'll display 3 elements (first, dots, last)
+        const displayCount = group.length > 2 ? 3 : group.length;
+        const groupHeight = displayCount * ellipseSize + (displayCount - 1) * ellipseSpacing;
         const groupStartY = baseEllipseY + (maxGroupHeight - groupHeight) / 2;
 
         // Create ellipses for files in this group (vertically stacked)
         for (let fileIndex = 0; fileIndex < group.length; fileIndex++) {
+          // If more than 2 files, only show first and last, with dots in between
+          if (group.length > 2) {
+            if (fileIndex > 0 && fileIndex < group.length - 1) {
+              // Skip middle files, but ensure we render the dots once
+              if (fileIndex === 1) {
+                // Render dots
+                const ellipseX = currentGroupX;
+                // Position dots in the middle slot (index 1)
+                const ellipseY = groupStartY + 1 * (ellipseSize + ellipseSpacing);
+                const dotsTextId = this.generateId();
+
+                const dotsText: ExcalidrawText = {
+                  id: dotsTextId,
+                  type: 'text',
+                  x: ellipseX + ellipseSize / 2 - 10,
+                  y: ellipseY + ellipseSize / 2 - 10,
+                  width: 20,
+                  height: 20,
+                  angle: 0,
+                  strokeColor: this.config.nodeColor,
+                  backgroundColor: 'transparent',
+                  fillStyle: 'solid',
+                  strokeWidth: 1,
+                  strokeStyle: 'solid',
+                  roughness: 0,
+                  opacity: 100,
+                  groupIds: [],
+                  frameId: null,
+                  index: this.generateIndex(),
+                  roundness: null,
+                  seed: this.generateSeed(),
+                  version: 43,
+                  versionNonce: this.generateSeed(),
+                  isDeleted: false,
+                  boundElements: [],
+                  updated: Date.now(),
+                  link: null,
+                  locked: false,
+                  text: '...',
+                  fontSize: 14,
+                  fontFamily: 6,
+                  textAlign: 'center',
+                  verticalAlign: 'middle',
+                  baseline: 14,
+                  containerId: null,
+                  originalText: '...',
+                  autoResize: true,
+                  lineHeight: 1.25,
+                };
+                elements.push(dotsText);
+              }
+              continue;
+            }
+          }
+
           const ellipseX = currentGroupX;
-          const ellipseY = groupStartY + fileIndex * (ellipseSize + ellipseSpacing);
+          // Calculate Y position based on visual index
+          let visualIndex = fileIndex;
+          if (group.length > 2 && fileIndex === group.length - 1) {
+            // Last file is visually at index 2
+            visualIndex = 2;
+          }
+
+          const ellipseY = groupStartY + visualIndex * (ellipseSize + ellipseSpacing);
           const ellipseId = this.generateId();
           const ellipseCenterX = ellipseX + ellipseSize / 2;
           const ellipseCenterY = ellipseY + ellipseSize / 2;
@@ -1113,11 +1208,19 @@ export class ExcalidrawGenerator {
             groupIndex,
           });
 
+          // Update min/max Y for group rectangle
           if (fileIndex === 0) {
             groupMinY = ellipseY;
           }
-          if (fileIndex === group.length - 1) {
-            groupMaxY = ellipseY + ellipseSize;
+          // For max Y, if we have > 2 files, the last rendered element is at visual index 2
+          if (group.length > 2) {
+            if (fileIndex === group.length - 1) {
+              groupMaxY = ellipseY + ellipseSize;
+            }
+          } else {
+            if (fileIndex === group.length - 1) {
+              groupMaxY = ellipseY + ellipseSize;
+            }
           }
         }
 
@@ -2315,11 +2418,11 @@ export class ExcalidrawGenerator {
       height: nodeHeight,
       rectId,
       inputArrowCount: _isRoot ? 0 : outputArrowCount > 0 ? outputArrowCount : totalInputArrows,
-      inputArrowPositions: _isRoot ?
-        [] :
-        outputArrowCount > 0 ?
-          outputArrowPositions :
-          allInputArrowPositions,
+      inputArrowPositions: _isRoot
+        ? []
+        : outputArrowCount > 0
+          ? outputArrowPositions
+          : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -2357,7 +2460,7 @@ export class ExcalidrawGenerator {
     for (let i = 0; i < groupsArrayStr.length; i++) {
       const char = groupsArrayStr[i];
 
-      if (char === '"' || char === '\'') {
+      if (char === '"' || char === "'") {
         inQuotes = !inQuotes;
         continue;
       }
@@ -2509,7 +2612,7 @@ export class ExcalidrawGenerator {
     elements.push(operatorText);
 
     // Extract properties and format as detail text
-    let detailText = '';
+    const lines: { text: string; color: string }[] = [];
     if (node.properties) {
       const parts: string[] = [];
       if (node.properties.mode) {
@@ -2608,64 +2711,81 @@ export class ExcalidrawGenerator {
       if (node.properties.aggr) {
         parts.push(`aggr=${node.properties.aggr}`);
       }
-      // Format: mode on first line, gby and aggr on second line
+      // Format: mode on first line (purple), gby and aggr on second line
       // Note: ordering_mode is displayed separately below
+
       if (parts.length > 0) {
-        if (parts.length === 1) {
-          detailText = parts[0];
-        } else if (parts.length === 2) {
-          detailText = `${parts[0]} \n${parts[1]}`;
+        // Check if first part is mode
+        const hasMode = parts[0].startsWith('mode=');
+
+        if (hasMode) {
+          // Line 1: mode (purple)
+          lines.push({ text: parts[0], color: '#9b59b6' });
+
+          // Remaining parts on Line 2
+          if (parts.length > 1) {
+            lines.push({ text: parts.slice(1).join(', '), color: this.config.nodeColor });
+          }
         } else {
-          detailText = `${parts[0]} \n${parts[1]}, ${parts[2]}`;
+          // No mode, just render everything in default color
+          lines.push({ text: parts[0], color: this.config.nodeColor });
+          if (parts.length > 1) {
+            lines.push({ text: parts.slice(1).join(', '), color: this.config.nodeColor });
+          }
         }
       }
     }
 
-    // Create detail text at bottom center
-    if (detailText) {
-      const detailTextId = this.generateId();
+    // Create detail text elements
+    if (lines.length > 0) {
       // Adjust Y position based on whether ordering_mode is present
       // When ordering_mode is present, we need more space, so position detail text higher
       const detailTextY = hasOrderingModeSorted ? y + nodeHeight - 55 : y + nodeHeight - 35;
-      const detailTextElement: ExcalidrawText = {
-        id: detailTextId,
-        type: 'text',
-        x: x + 10,
-        y: detailTextY, // Position near bottom (allowing for 2 lines)
-        width: nodeWidth - 20,
-        height: 35,
-        angle: 0,
-        strokeColor: this.config.nodeColor,
-        backgroundColor: 'transparent',
-        fillStyle: 'solid',
-        strokeWidth: 1,
-        strokeStyle: 'solid',
-        roughness: 0,
-        opacity: 100,
-        groupIds: [],
-        frameId: null,
-        index: this.generateIndex(),
-        roundness: null,
-        seed: this.generateSeed(),
-        version: 1,
-        versionNonce: this.generateSeed(),
-        isDeleted: false,
-        boundElements: [],
-        updated: Date.now(),
-        link: null,
-        locked: false,
-        text: detailText,
-        fontSize: 14,
-        fontFamily: 6, // Normal font
-        textAlign: 'center',
-        verticalAlign: 'top',
-        baseline: 14,
-        containerId: null,
-        originalText: detailText,
-        autoResize: false,
-        lineHeight: 1.25,
-      };
-      elements.push(detailTextElement);
+      const lineHeight = 17.5; // 14 * 1.25
+
+      lines.forEach((line, index) => {
+        const lineY = detailTextY + index * lineHeight;
+        const textId = this.generateId();
+        const textElement: ExcalidrawText = {
+          id: textId,
+          type: 'text',
+          x: x + 10,
+          y: lineY,
+          width: nodeWidth - 20,
+          height: 20, // Height for single line
+          angle: 0,
+          strokeColor: line.color,
+          backgroundColor: 'transparent',
+          fillStyle: 'solid',
+          strokeWidth: 1,
+          strokeStyle: 'solid',
+          roughness: 0,
+          opacity: 100,
+          groupIds: [],
+          frameId: null,
+          index: this.generateIndex(),
+          roundness: null,
+          seed: this.generateSeed(),
+          version: 1,
+          versionNonce: this.generateSeed(),
+          isDeleted: false,
+          boundElements: [],
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          text: line.text,
+          fontSize: 14,
+          fontFamily: 6, // Normal font
+          textAlign: 'center',
+          verticalAlign: 'top',
+          baseline: 14,
+          containerId: null,
+          originalText: line.text,
+          autoResize: false,
+          lineHeight: 1.25,
+        };
+        elements.push(textElement);
+      });
     }
 
     // If ordering_mode=Sorted is present, add it as a separate detail text below
@@ -2679,7 +2799,7 @@ export class ExcalidrawGenerator {
         width: nodeWidth - 20,
         height: 20,
         angle: 0,
-        strokeColor: this.config.nodeColor,
+        strokeColor: '#8b0000', // Dark red
         backgroundColor: 'transparent',
         fillStyle: 'solid',
         strokeWidth: 1,
@@ -4594,9 +4714,9 @@ export class ExcalidrawGenerator {
     if (probeSideInfo.outputColumns.length > 0) {
       const arrowMidY = (probeSideTopY + hashTableCenterY) / 2;
       const rightmostArrowX =
-        probeSideTopArrowPositions.length > 0 ?
-          probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1] :
-          probeSideX + probeSideInfo.width / 2;
+        probeSideTopArrowPositions.length > 0
+          ? probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1]
+          : probeSideX + probeSideInfo.width / 2;
       const rightOffset = 5;
       const projectionTextX = rightmostArrowX + rightOffset;
 

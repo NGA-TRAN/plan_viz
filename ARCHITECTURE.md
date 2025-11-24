@@ -129,11 +129,11 @@ class ExcalidrawGenerator {
 
 ```
 Input Text:
-┌─────────────────────────────┐
-│ ProjectionExec: expr=[a, b] │
-│   FilterExec: predicate=x>10│
-│     TableScan: table=users  │
-└─────────────────────────────┘
+┌───────────────────────────────────────┐
+│ ProjectionExec: expr=[a, b]           │
+│   FilterExec: predicate=x>10          │
+│     DataSourceExec: file_groups={...} │
+└───────────────────────────────────────┘
               │
               ▼
       [Preprocessing]
@@ -142,7 +142,7 @@ Input Text:
       Lines with levels:
       0: "ProjectionExec: expr=[a, b]"
       1: "FilterExec: predicate=x>10"
-      2: "TableScan: table=users"
+      2: "DataSourceExec: file_groups={...}"
               │
               ▼
       [Extract Operators]
@@ -160,7 +160,7 @@ Input Text:
 │ properties: {expr: "[a,b]"} │
 │   └─ FilterExec             │
 │      properties: {...}      │
-│        └─ TableScan         │
+│        └─ DataSourceExec    │
 │           properties: {...} │
 └─────────────────────────────┘
 ```
@@ -439,6 +439,6 @@ All configuration is optional with sensible defaults:
 
 ---
 
-**Last Updated**: November 17, 2025  
-**Version**: 0.1.0
+**Last Updated**: November 23, 2025  
+**Version**: 0.1.2
 
