@@ -86,7 +86,8 @@ cat examples/join.sql | node dist/cli.js > output.excalidraw
 node dist/cli.js -i examples/join.sql -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
-  --vertical-spacing 120
+  --vertical-spacing 120 \
+  --horizontal-spacing 60
 ```
 
 ## Viewing the Output

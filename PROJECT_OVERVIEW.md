@@ -347,7 +347,6 @@ interface ConverterConfig {
     horizontalSpacing?: number;       // Default: 50
     operatorFontSize?: number;       // Default: 18 (for operator name)
     detailsFontSize?: number;         // Default: 14 (for properties/details)
-    fontSize?: number;                // Default: 16 (deprecated, use operatorFontSize/detailsFontSize)
     nodeColor?: string;               // Default: '#1971c2'
     arrowColor?: string;              // Default: '#495057'
   };

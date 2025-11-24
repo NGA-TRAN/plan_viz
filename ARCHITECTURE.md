@@ -343,7 +343,8 @@ ConverterConfig
         ├─ nodeHeight
         ├─ verticalSpacing
         ├─ horizontalSpacing
-        ├─ fontSize
+        ├─ operatorFontSize
+        ├─ detailsFontSize
         ├─ nodeColor
         └─ arrowColor
 ```
@@ -351,7 +352,7 @@ ConverterConfig
 ### Default Values
 All configuration is optional with sensible defaults:
 - Parser: 2-space indentation, property extraction enabled
-- Generator: 200x80 nodes, 100/50 spacing, blue theme
+- Generator: 200x80 nodes, 100/50 spacing, operator font size 18, details font size 14, blue theme
 
 ## Extension Points
 

@@ -1,12 +1,14 @@
 # plan-viz
 
-Convert Apache DataFusion Physical Execution Plans to Excalidraw JSON format for beautiful visualization.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-google-blueviolet)](https://google.github.io/styleguide/tsguide.html)
 [![CI/CD](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml)
+
+Convert Apache DataFusion physical execution plans into Excalidraw JSON format for easier visualization and understanding. The diagrams highlight key properties using different colors and propagate them throughout the plan, making it clear how many streams or partitions are executed in parallel at each operator and whether the sort order is preserved and leveraged.
+
 
 <!-- > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues) -->
 
@@ -22,7 +24,7 @@ Convert Apache DataFusion Physical Execution Plans to Excalidraw JSON format for
 
 ## Example
 
-- **Input**: Full explain of a query or just its physical plan
+- **Input**: Full EXPLAIN output in indent format (including or excluding SQL query) or just the physical plan portion
 
   ```SQL
   | physical_plan | SortExec: expr=[env@0 ASC NULLS LAST, time_bin@1 ASC NULLS LAST], preserve_partitioning=[false]                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -104,7 +106,8 @@ const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
     nodeHeight: 100,
     verticalSpacing: 120,
     horizontalSpacing: 60,
-    fontSize: 18,
+    operatorFontSize: 20,
+    detailsFontSize: 16,
     nodeColor: '#64748b',
     arrowColor: '#64748b',
   },
@@ -127,8 +130,7 @@ plan-viz -i examples/join.sql -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
   --vertical-spacing 120 \
-  --horizontal-spacing 60 \
-  --font-size 18
+  --horizontal-spacing 60
 ```
 
 **Building from Source Code:**
@@ -147,8 +149,7 @@ node dist/cli.js -i examples/join.sql -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
   --vertical-spacing 120 \
-  --horizontal-spacing 60 \
-  --font-size 18
+  --horizontal-spacing 60
 ```
 
 **CLI Options:**
@@ -158,20 +159,29 @@ node dist/cli.js -i examples/join.sql -o output.excalidraw \
 - `--node-height <number>` - Height of each node box (default: 80)
 - `--vertical-spacing <number>` - Vertical spacing between nodes (default: 100)
 - `--horizontal-spacing <number>` - Horizontal spacing between sibling nodes (default: 50)
-- `--font-size <number>` - Font size for node text (default: 16, deprecated - use operatorFontSize/detailsFontSize in library API)
 
 ### Viewing the Output
+
+#### Option 1: Use Online [Excalidraw](https://excalidraw.com/)
 
 1. Go to [Excalidraw](https://excalidraw.com/)
 2. Click "Open" in the top menu
 3. Upload your generated `.excalidraw` file
 4. View your execution plan diagram!
 
+#### Option 2: Directly in your IDE
+
+If you use an IDE such as VSCode or Cursor, you can install the Excalidraw extension and view the diagram directly in your IDE:
+
+1. Install the Excalidraw extension from the marketplace (e.g., "Excalidraw" by pomdtr)
+2. Open your generated `.excalidraw` file in your IDE
+3. The diagram will render automatically in the editor
+
 See the [`examples/`](examples/) directory for sample execution plans and their visualizations.
 
 ## API
 
-### `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
+#### `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
 
 Converts an Apache DataFusion Physical Execution Plan to Excalidraw JSON format.
 
@@ -200,7 +210,6 @@ interface ConverterConfig {
     horizontalSpacing?: number;       // Default: 50
     operatorFontSize?: number;       // Default: 18 (for operator name)
     detailsFontSize?: number;         // Default: 14 (for properties/details)
-    fontSize?: number;                // Default: 16 (deprecated, use operatorFontSize/detailsFontSize)
     nodeColor?: string;               // Default: '#1971c2'
     arrowColor?: string;              // Default: '#495057'
   };
