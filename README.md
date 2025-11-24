@@ -8,9 +8,9 @@ Convert Apache DataFusion Physical Execution Plans to Excalidraw JSON format for
 [![Code Style](https://img.shields.io/badge/code%20style-google-blueviolet)](https://google.github.io/styleguide/tsguide.html)
 [![CI/CD](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml)
 
-> **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues)
+<!-- > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues) -->
 
-## Features
+<!-- ## Features
 
 - 📊 Parse Apache DataFusion Physical Execution Plans
 - 🎨 Generate Excalidraw-compatible JSON diagrams
@@ -18,7 +18,37 @@ Convert Apache DataFusion Physical Execution Plans to Excalidraw JSON format for
 - ✅ TypeScript support with full type definitions
 - 🧪 Comprehensive test coverage (>80%)
 - 🏗️ Built with Clean Code and SOLID principles
-- ⚡ Fast and lightweight
+- ⚡ Fast and lightweight -->
+
+## Example
+
+- **Input**: Full explain of a query or just its physical plan
+
+  ```SQL
+  | physical_plan | SortExec: expr=[env@0 ASC NULLS LAST, time_bin@1 ASC NULLS LAST], preserve_partitioning=[false]                                                                                                                                                                                                                                                                                                                                                                                            |
+  |               |   AggregateExec: mode=Single, gby=[env@1 as env, time_bin@0 as time_bin], aggr=[avg(a.max_bin_val)]                                                                                                                                                                                                                                                                                                                                                                                        |
+  |               |     ProjectionExec: expr=[date_bin(IntervalMonthDayNano("IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 30000000000 }"),j.timestamp)@1 as time_bin, max(j.env)@2 as env, max(j.value)@3 as max_bin_val]                                                                                                                                                                                                                                                                           |
+  |               |       AggregateExec: mode=Final, gby=[f_dkey@0 as f_dkey, date_bin(IntervalMonthDayNano("IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 30000000000 }"),j.timestamp)@1 as date_bin(IntervalMonthDayNano("IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 30000000000 }"),j.timestamp)], aggr=[max(j.env), max(j.value)], ordering_mode=Sorted                                                                                                                             |
+  |               |         SortPreservingMergeExec: [f_dkey@0 ASC NULLS LAST, date_bin(IntervalMonthDayNano("IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 30000000000 }"),j.timestamp)@1 ASC NULLS LAST]                                                                                                                                                                                                                                                                                           |
+  |               |           AggregateExec: mode=Partial, gby=[f_dkey@0 as f_dkey, date_bin(IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 30000000000 }, timestamp@1) as date_bin(IntervalMonthDayNano("IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 30000000000 }"),j.timestamp)], aggr=[max(j.env), max(j.value)], ordering_mode=Sorted                                                                                                                                                |
+  |               |             ProjectionExec: expr=[f_dkey@1 as f_dkey, timestamp@2 as timestamp, env@0 as env, value@3 as value]                                                                                                                                                                                                                                                                                                                                                                            |
+  |               |               CoalesceBatchesExec: target_batch_size=8192                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+  |               |                 HashJoinExec: mode=CollectLeft, join_type=Inner, on=[(d_dkey@0, f_dkey@0)], projection=[env@1, f_dkey@2, timestamp@3, value@4]                                                                                                                                                                                                                                                                                                                                             |
+  |               |                   AggregateExec: mode=Final, gby=[d_dkey@0 as d_dkey, env@1 as env], aggr=[]                                                                                                                                                                                                                                                                                                                                                                                               |
+  |               |                     CoalescePartitionsExec                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  |               |                       AggregateExec: mode=Partial, gby=[d_dkey@0 as d_dkey, env@1 as env], aggr=[]                                                                                                                                                                                                                                                                                                                                                                                         |
+  |               |                         CoalesceBatchesExec: target_batch_size=8192                                                                                                                                                                                                                                                                                                                                                                                                                        |
+  |               |                           FilterExec: service@2 = log, projection=[d_dkey@0, env@1]                                                                                                                                                                                                                                                                                                                                                                                                        |
+  |               |                             DataSourceExec: file_groups={2 groups: [[d1.parquet], [d2.parquet]]}, projection=[d_dkey, env, service], file_type=parquet, predicate=service@2 = log, pruning_predicate=service_null_count@2 != row_count@3 AND service_min@0 <= log AND log <= service_max@1, required_guarantees=[service in (log)] |
+  |               |                   DataSourceExec: file_groups={3 groups: [[f1.parquet, f4.parquet, f5.parquet, f6.parquet, f7.parquet, f8.parquet], [f2.parquet], [f3.parquet, f9.parquet, f10.parquet]]}, projection=[f_dkey, timestamp, value], output_ordering=[f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST], file_type=parquet, predicate=DynamicFilter [ empty ]             |
+  ```
+
+
+- **Output**: JSON format rendered in Excalidraw display
+
+  ![Execution Plan Visualization](docs/assets/join_aggregates.png)
+
+
 
 ## Prerequisites
 
@@ -36,7 +66,7 @@ npm install
 npm run build
 ```
 
-### As a Package (once published)
+### As a Package (published at https://www.npmjs.com/package/plan-viz)
 
 ```bash
 npm install plan-viz
@@ -50,9 +80,10 @@ npm install plan-viz
 import { convertPlanToExcalidraw } from 'plan-viz';
 
 const executionPlan = `
-DataSourceExec: file_groups={1 groups: [[data.parquet]]}, projection=[id, name], file_type=parquet
-  FilterExec: predicate=age > 18
-    ProjectionExec: expr=[id, name, age]
+ProjectionExec: expr=[id, name, age]
+  FilterExec: age > 18
+    DataSourceExec: file_groups={1 groups: [[data.parquet]]}
+      
 `;
 
 const excalidrawJson = convertPlanToExcalidraw(executionPlan);
@@ -79,7 +110,8 @@ const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
 
 ### As a CLI
 
-**After installation (when published):**
+**After package installation `npm install plan-viz`:**
+
 ```bash
 # Basic usage: from file
 plan-viz -i examples/join.sql -o output.excalidraw
@@ -96,7 +128,7 @@ plan-viz -i examples/join.sql -o output.excalidraw \
   --font-size 18
 ```
 
-**For development (before publishing):**
+**Building from Source Code:**
 ```bash
 # After building the project
 npm run build
@@ -178,9 +210,9 @@ interface ConverterConfig {
 import { convertPlanToExcalidraw } from 'plan-viz';
 
 const plan = `
-ProjectionExec: expr=[a, b]
-  FilterExec: predicate=a > 10
-    TableScan: table=my_table
+ProjectionExec: expr=[id, name, age]
+  FilterExec: age > 18
+    DataSourceExec: file_groups={1 groups: [[data.parquet]]}
 `;
 
 const result = convertPlanToExcalidraw(plan, {
@@ -196,12 +228,12 @@ const result = convertPlanToExcalidraw(plan, {
 
 The project includes numerous example execution plans in the [`examples/`](examples/) directory, including:
 
-- Data source plans (`dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`, `dataSource_read_seq_3.sql`, `dataSource_read_seq_4.sql`)
-- Filter operations (`fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`, `filter_coalesceBatch_read_seq_many.sql`)
-- Repartitioning (`repartition.sql`, `coalescePartition.sql`)
-- Aggregation examples (`aggregate_single.sql`, `aggregate_single_sorted.sql`, `aggregate_partial_final.sql`)
-- Join operations (`join.sql`, `join_hash_collectLeft.sql`, `join_aggregates.sql`)
-- Sorting (`sort.sql`, `sortPreservingMerge.sql`)
+- Data source plans (`dataSource*.sql`)
+- Filter operations (`filter*.sql`)
+- Repartitioning (`repartition*.sql`)
+- Aggregation examples (`*aggregate*.sql`)
+- Join operations (`join*.sql`)
+- Sorting (`sort*.sql`)
 - And many more!
 
 Each example includes:
@@ -254,7 +286,7 @@ plan_viz/
 │   └── index.ts           # Library entry point
 ├── examples/              # Example execution plans
 ├── dist/                  # Compiled output (gitignored)
-├── coverage/              # Test coverage reports
+├── coverage/              # Test coverage reports (gitignored)
 └── package.json           # Project configuration
 ```
 
