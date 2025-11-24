@@ -307,8 +307,8 @@ describe('ConverterService', () => {
 
       // Should have 1 DataSourceExec rectangle + 2 dotted rectangles for groups with >1 file
       expect(rectangles.length).toBe(3);
-      // Should have 6 ellipses (one per file: f_1, f_4, f_2, f_5, f_6, f_3)
-      expect(ellipses.length).toBe(6);
+      // Should have 5 ellipses (one per file: f_1, f_4, f_2, f_6, f_3). f_5 is replaced by ...
+      expect(ellipses.length).toBe(5);
       // Should have 3 arrows (one per group, starting from top of dotted rectangle or ellipse)
       expect(arrows.length).toBe(3);
       expect(textElements.length).toBeGreaterThan(3);
@@ -331,7 +331,7 @@ describe('ConverterService', () => {
 
       // Verify ellipse labels (file names without extension)
       // Group 1: f1.parquet, f4.parquet -> "f1", "f4"
-      // Group 2: f2.parquet, f5.parquet, f6.parquet -> "f2", "f5", "f6"
+      // Group 2: f2.parquet, f5.parquet, f6.parquet -> "f2", "...", "f6"
       // Group 3: f3.parquet -> "f3"
       const f1Text = textElements.find((t) => t.text === 'f1');
       const f4Text = textElements.find((t) => t.text === 'f4');
@@ -339,12 +339,15 @@ describe('ConverterService', () => {
       const f5Text = textElements.find((t) => t.text === 'f5');
       const f6Text = textElements.find((t) => t.text === 'f6');
       const f3Text = textElements.find((t) => t.text === 'f3');
+      const ellipsisText = textElements.find((t) => t.text === '...');
+
       expect(f1Text).toBeDefined();
       expect(f4Text).toBeDefined();
       expect(f2Text).toBeDefined();
-      expect(f5Text).toBeDefined();
+      expect(f5Text).toBeUndefined(); // f5 is hidden
       expect(f6Text).toBeDefined();
       expect(f3Text).toBeDefined();
+      expect(ellipsisText).toBeDefined(); // Check for ellipsis
 
       // Verify projection columns are colored correctly (f_dkey, timestamp in blue, value in black)
       const projectionTexts = textElements.filter(

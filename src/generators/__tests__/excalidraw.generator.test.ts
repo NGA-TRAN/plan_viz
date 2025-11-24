@@ -1279,7 +1279,7 @@ describe('ExcalidrawGenerator', () => {
       const result = generator.generate(node);
       const ellipses = result.elements.filter((el) => el.type === 'ellipse');
       const dfText = result.elements.find(
-        (el): el is ExcalidrawText => el.type === 'text' && el.text === 'DF'
+        (el): el is ExcalidrawText => el.type === 'text' && el.text === 'DynamicFilter'
       );
       expect(ellipses.length).toBeGreaterThan(0);
       expect(dfText).toBeDefined();

@@ -21,9 +21,9 @@ export * from './services';
  * @example
  * ```typescript
  * const plan = `
- *   ProjectionExec: expr=[a, b]
- *     FilterExec: predicate=a > 10
- *       TableScan: table=my_table
+ *   ProjectionExec: expr=[env@0 as env, count(Int64(1))@1 as count(*)]
+ *     AggregateExec: mode=Single, gby=[env@0 as env], aggr=[count(Int64(1))]
+ *       DataSourceExec: file_groups={1 group: [[d1.parquet]]}, projection=[env], file_type=parquet
  * `;
  * const excalidrawData = convertPlanToExcalidraw(plan);
  * ```
