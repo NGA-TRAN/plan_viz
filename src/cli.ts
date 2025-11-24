@@ -12,7 +12,6 @@ interface CliOptions {
   nodeHeight: number;
   verticalSpacing: number;
   horizontalSpacing: number;
-  fontSize: number;
 }
 
 const program = new Command();
@@ -49,12 +48,6 @@ program
     (value: string) => parseInt(value, 10),
     50
   )
-  .option(
-    '--font-size <number>',
-    'Font size for node text',
-    (value: string) => parseInt(value, 10),
-    16
-  )
   .action((options: CliOptions) => {
     try {
       let planText: string;
@@ -80,7 +73,6 @@ program
           nodeHeight: options.nodeHeight,
           verticalSpacing: options.verticalSpacing,
           horizontalSpacing: options.horizontalSpacing,
-          fontSize: options.fontSize,
         },
       };
 
