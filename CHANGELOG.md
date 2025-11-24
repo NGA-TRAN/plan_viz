@@ -7,11 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Support for `SortMergeJoin` and `SortMergeJoinExec` operators
+- Display of `preserve_order=true` property in RepartitionExec (shown in dark red)
+- Display of `sort_exprs` property in RepartitionExec (shows column names only)
+- Column name labels on arrows connecting inputs to HashJoinExec and SortMergeJoin
+
 ### Changed
 - Removed deprecated `fontSize` configuration option from CLI code
 - Removed deprecated `fontSize` configuration option from documentation
 - Updated all examples to use `operatorFontSize` and `detailsFontSize` instead
 - Updated CLI documentation to remove deprecated `--font-size` option
+- Improved UnionExec arrow positioning to correctly connect child rectangles to parent
+- Enhanced RepartitionExec sort order preservation logic for Hash and RoundRobinBatch partitioning
+
+### Fixed
+- Fixed arrow positioning in UnionExec when children have different widths
+- Fixed arrow connections within UnionExec child subtrees after element shifting
+- Fixed RepartitionExec sort order preservation for Hash and RoundRobinBatch partitioning modes
 
 ## [0.1.2] - 2025-11-23
 

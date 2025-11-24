@@ -149,7 +149,19 @@ export class ExecutionPlanParser {
 
         return processed;
       })
-      .filter((line) => line.trim().length > 0);
+      .filter((line) => {
+        const trimmed = line.trim();
+        // Filter out empty lines
+        if (trimmed.length === 0) {
+          return false;
+        }
+        // Filter out lines that are just a single special character (like backtick, pipe, etc.)
+        // Valid operators should be at least 3 characters (e.g., "Exec" suffix)
+        if (trimmed.length <= 2 && /^[^a-zA-Z0-9]+$/.test(trimmed)) {
+          return false;
+        }
+        return true;
+      });
   }
 
   /**
