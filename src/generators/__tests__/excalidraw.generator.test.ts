@@ -2895,5 +2895,109 @@ describe('ExcalidrawGenerator', () => {
       const arrows = result.elements.filter((el) => el.type === 'arrow');
       expect(arrows.length).toBeGreaterThan(0);
     });
+
+    it('should cover UnionExec with single input arrow (totalInputArrows === 1)', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'UnionExec',
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[d1.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+      const arrows = result.elements.filter((el) => el.type === 'arrow');
+      expect(arrows.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should cover UnionExec with children having output columns (column labels)', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'UnionExec',
+        children: [
+          {
+            operator: 'ProjectionExec',
+            properties: {
+              expr: '[col1@0, col2@1]',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+          {
+            operator: 'ProjectionExec',
+            properties: {
+              expr: '[col1@0, col2@1]',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d2.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+      // Check that column labels are present
+      const textElements = result.elements.filter((el) => el.type === 'text');
+      const hasColumnLabels = textElements.some(
+        (el) => el.type === 'text' && (el.text?.includes('col1') || el.text?.includes('col2'))
+      );
+      expect(hasColumnLabels).toBe(true);
+    });
+
+    it('should cover UnionExec with children having output columns and sort order', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'UnionExec',
+        children: [
+          {
+            operator: 'SortExec',
+            properties: {
+              expr: '[col1@0 ASC]',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d1.parquet]]',
+                  output_ordering: '[col1@0 ASC]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
   });
 });

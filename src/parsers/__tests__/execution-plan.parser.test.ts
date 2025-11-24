@@ -185,5 +185,41 @@ describe('ExecutionPlanParser', () => {
       expect(result.root?.properties?.projection).toBe('[d_dkey, env, service, host]');
       expect(result.root?.properties?.file_type).toBe('parquet');
     });
+
+    it('should handle continuation lines with non-empty trimmed text', () => {
+      const sqlExplainText = `EXPLAIN SELECT * FROM table;
++---------------+------------------------------------------------------------------------------------------------------------------------------------+
+| plan_type     | plan                                                                                                                               |
++---------------+------------------------------------------------------------------------------------------------------------------------------------+
+| physical_plan | DataSourceExec: file_groups={2 groups: [[d_1.parquet], [d_2.parquet]]}, projection=[col1, col2], file_type=parquet |
+|               |   SortExec: expr=[col1 ASC]                                                                                                         |
++---------------+------------------------------------------------------------------------------------------------------------------------------------+`;
+
+      const result = parser.parse(sqlExplainText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('DataSourceExec');
+      // Should parse continuation line with SortExec
+      const planText = result.originalText;
+      expect(planText).toContain('SortExec');
+    });
+
+    it('should handle properties with closing parentheses', () => {
+      const planText = 'FilterExec: predicate=func(col1, col2) > 10';
+      const result = parser.parse(planText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('FilterExec');
+      expect(result.root?.properties?.predicate).toBe('func(col1, col2) > 10');
+    });
+
+    it('should handle properties with nested parentheses', () => {
+      const planText = 'FilterExec: predicate=func(inner_func(a, b), c) > 10';
+      const result = parser.parse(planText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('FilterExec');
+      expect(result.root?.properties?.predicate).toBe('func(inner_func(a, b), c) > 10');
+    });
   });
 });

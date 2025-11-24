@@ -326,14 +326,18 @@ export class ExcalidrawGenerator {
       outputSortOrder.push(...firstChildInfo.outputSortOrder);
     }
 
+    // Recalculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, this.config.nodeWidth);
+
     return {
       x,
       y: maxChildY,
       width: this.config.nodeWidth,
       height: this.config.nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows,
-      inputArrowPositions: allInputArrowPositions,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -392,7 +396,8 @@ export class ExcalidrawGenerator {
   ): void {
     const ARROWS_BEFORE_ELLIPSIS = 2;
     const ARROWS_AFTER_ELLIPSIS = 2;
-    const showEllipsis = numArrows > ARROWS_BEFORE_ELLIPSIS + ARROWS_AFTER_ELLIPSIS;
+    const MAX_ARROWS_FOR_ELLIPSIS = 8; // Show ellipsis when more than 8 arrows
+    const showEllipsis = numArrows > MAX_ARROWS_FOR_ELLIPSIS;
     const firstArrowsCount = showEllipsis ? ARROWS_BEFORE_ELLIPSIS : numArrows;
     const lastArrowsCount = showEllipsis ? ARROWS_AFTER_ELLIPSIS : 0;
 
@@ -641,6 +646,79 @@ export class ExcalidrawGenerator {
         i = j;
       }
     }
+  }
+
+  /**
+   * Calculates output arrow positions with ellipsis support for many arrows
+   * Returns positions (may include ellipsis positions if totalCount > 8) and the full count
+   */
+  private calculateOutputArrowPositions(
+    totalCount: number,
+    x: number,
+    width: number
+  ): { positions: number[]; fullCount: number } {
+    const ARROWS_BEFORE_ELLIPSIS = 2;
+    const ARROWS_AFTER_ELLIPSIS = 2;
+    const MAX_ARROWS_FOR_ELLIPSIS = 8; // Show ellipsis when more than 8 arrows
+
+    const showEllipsis = totalCount > MAX_ARROWS_FOR_ELLIPSIS;
+    const positionsToCalculate = showEllipsis ? ARROWS_BEFORE_ELLIPSIS + ARROWS_AFTER_ELLIPSIS : totalCount;
+
+    const positions: number[] = [];
+
+    // For few arrows (<=4), use central region (60% of width, centered)
+    // For more arrows, use full width
+    const useCentralRegion = positionsToCalculate <= 4;
+    let regionLeft: number;
+    let regionRight: number;
+
+    if (useCentralRegion) {
+      // Use central 60% of width, centered
+      const centerRegionWidth = width * 0.6;
+      const centerRegionLeft = x + width / 2 - centerRegionWidth / 2;
+      regionLeft = centerRegionLeft;
+      regionRight = centerRegionLeft + centerRegionWidth;
+    } else {
+      // Use full width
+      regionLeft = x;
+      regionRight = x + width;
+    }
+
+    if (positionsToCalculate === 0) {
+      // No arrows
+      return { positions: [], fullCount: totalCount };
+    } else if (positionsToCalculate === 1) {
+      positions.push(x + width / 2);
+    } else if (showEllipsis) {
+      // Calculate positions for first arrows and last arrows separately
+      const firstRegionWidth = (regionRight - regionLeft) / 2;
+      const lastRegionWidth = (regionRight - regionLeft) / 2;
+      const firstRegionLeft = regionLeft;
+      const lastRegionLeft = regionLeft + firstRegionWidth;
+
+      // First arrows (ARROWS_BEFORE_ELLIPSIS is always 2)
+      const firstSpacing = firstRegionWidth / (ARROWS_BEFORE_ELLIPSIS - 1);
+      for (let j = 0; j < ARROWS_BEFORE_ELLIPSIS; j++) {
+        positions.push(firstRegionLeft + j * firstSpacing);
+      }
+
+      // Last arrows (ARROWS_AFTER_ELLIPSIS is always 2)
+      const lastSpacing = lastRegionWidth / (ARROWS_AFTER_ELLIPSIS - 1);
+      for (let j = 0; j < ARROWS_AFTER_ELLIPSIS; j++) {
+        positions.push(lastRegionLeft + j * lastSpacing);
+      }
+    } else if (positionsToCalculate === 2) {
+      positions.push(regionLeft);
+      positions.push(regionRight);
+    } else {
+      // More than two arrows: distribute evenly
+      const spacing = (regionRight - regionLeft) / (positionsToCalculate - 1);
+      for (let j = 0; j < positionsToCalculate; j++) {
+        positions.push(regionLeft + j * spacing);
+      }
+    }
+
+    return { positions, fullCount: totalCount };
   }
 
   /**
@@ -1842,14 +1920,19 @@ export class ExcalidrawGenerator {
       }
     }
 
+    // FilterExec: output arrows = input arrows
+    // Recalculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, nodeWidth);
+
     return {
       x,
       y: maxChildY,
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows,
-      inputArrowPositions: allInputArrowPositions,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -2093,14 +2176,18 @@ export class ExcalidrawGenerator {
     }
 
     // CoalesceBatchesExec: outputColumns and outputSortOrder from input
+    // Recalculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, nodeWidth);
+
     return {
       x,
       y: maxChildY,
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows,
-      inputArrowPositions: allInputArrowPositions,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -2389,24 +2476,12 @@ export class ExcalidrawGenerator {
     // The parent will use this node's inputArrowCount to determine how many arrows to create
     // But RepartitionExec's output should be based on partitioning number
 
-    // Calculate output arrow positions based on partitioning number
-    const outputArrowPositions: number[] = [];
-    if (outputArrowCount > 0) {
-      const rectangleLeft = x;
-      const rectangleRight = x + nodeWidth;
-      if (outputArrowCount === 1) {
-        outputArrowPositions.push(x + nodeWidth / 2);
-      } else if (outputArrowCount === 2) {
-        outputArrowPositions.push(rectangleLeft);
-        outputArrowPositions.push(rectangleRight);
-      } else {
-        // More than two arrows: distribute evenly
-        const spacing = (rectangleRight - rectangleLeft) / (outputArrowCount - 1);
-        for (let j = 0; j < outputArrowCount; j++) {
-          outputArrowPositions.push(rectangleLeft + j * spacing);
-        }
-      }
-    }
+    // Calculate output arrow positions based on partitioning number with ellipsis support
+    const countToUse = outputArrowCount > 0 ? outputArrowCount : totalInputArrows;
+    const { positions: outputArrowPositions, fullCount: outputArrowFullCount } =
+      _isRoot || countToUse === 0 ?
+        { positions: [], fullCount: 0 } :
+        this.calculateOutputArrowPositions(countToUse, x, nodeWidth);
 
     // Root nodes (first line of physical_plan) don't have output arrows
     // For RepartitionExec, return outputArrowCount as inputArrowCount so parent knows how many arrows to create
@@ -2417,8 +2492,8 @@ export class ExcalidrawGenerator {
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: _isRoot ? 0 : outputArrowCount > 0 ? outputArrowCount : totalInputArrows,
-      inputArrowPositions: _isRoot ? [] : outputArrowCount > 0 ? outputArrowPositions : allInputArrowPositions,
+      inputArrowCount: _isRoot ? 0 : outputArrowFullCount,
+      inputArrowPositions: _isRoot ? [] : outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -3089,14 +3164,18 @@ export class ExcalidrawGenerator {
     }
 
     // AggregateExec: outputColumns and outputSortOrder from input
+    // Recalculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, nodeWidth);
+
     return {
       x,
       y: maxChildY,
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows,
-      inputArrowPositions: allInputArrowPositions,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -3434,14 +3513,18 @@ export class ExcalidrawGenerator {
     }
 
     // ProjectionExec: outputColumns from expr, outputSortOrder from input
+    // Recalculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, nodeWidth);
+
     return {
       x,
       y: maxChildY,
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows,
-      inputArrowPositions: allInputArrowPositions,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -3717,14 +3800,19 @@ export class ExcalidrawGenerator {
     }
 
     // SortExec: outputColumns from input, outputSortOrder from expr
+    // SortExec: output arrows = input arrows
+    // Recalculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, nodeWidth);
+
     return {
       x,
       y: maxChildY,
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows,
-      inputArrowPositions: allInputArrowPositions,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : allInputArrowPositions,
       outputColumns,
       outputSortOrder,
     };
@@ -4810,20 +4898,8 @@ export class ExcalidrawGenerator {
     // Output sort order = probe side sort order
     const outputSortOrder = [...probeSideInfo.outputSortOrder];
     const outputArrowCount = probeSideArrows;
-    const outputArrowPositions: number[] = [];
-    if (probeSideArrows === 1) {
-      outputArrowPositions.push(x + nodeWidth / 2);
-    } else {
-      // Distribute arrows in the central region (60% of width) instead of full width
-      // This keeps them closer to the middle and avoids corners
-      const centerRegionWidth = nodeWidth * 0.6;
-      const centerRegionLeft = x + nodeWidth / 2 - centerRegionWidth / 2;
-      const centerRegionRight = x + nodeWidth / 2 + centerRegionWidth / 2;
-      const spacing = (centerRegionRight - centerRegionLeft) / (probeSideArrows - 1);
-      for (let j = 0; j < probeSideArrows; j++) {
-        outputArrowPositions.push(centerRegionLeft + j * spacing);
-      }
-    }
+    const { positions: outputArrowPositions, fullCount: outputArrowFullCount } =
+      this.calculateOutputArrowPositions(outputArrowCount, x, nodeWidth);
 
     // Calculate max child Y for positioning next node
     const maxChildY = Math.max(
@@ -4837,7 +4913,7 @@ export class ExcalidrawGenerator {
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: outputArrowCount,
+      inputArrowCount: outputArrowFullCount,
       inputArrowPositions: outputArrowPositions,
       outputColumns,
       outputSortOrder,
@@ -4953,8 +5029,35 @@ export class ExcalidrawGenerator {
     let outputSortOrder: string[] = [];
 
     if (node.children.length > 0) {
-      // Use the same X position as parent for all children (vertical alignment)
-      const childX = x;
+      // Position children horizontally centered around the parent
+      // Calculate total width of all children including spacing
+      const childWidth = 300; // Using 300 as a safer default since DataSourceExec uses 300
+      // Increase horizontal spacing to avoid overlap between children
+      // Use larger spacing for UnionExec children as they might have wider subtrees
+      const spacing = this.config.horizontalSpacing * 1.5;
+      const totalWidth = node.children.length * childWidth + (node.children.length - 1) * spacing;
+
+      // Start X position to center the group of children relative to parent center
+      // Parent center = x + nodeWidth/2
+      // Start X = Parent Center - TotalWidth/2
+      let currentChildX = x + nodeWidth / 2 - totalWidth / 2;
+
+      // First pass: collect all children info and calculate total input arrows
+      const childrenInfo: Array<{
+        childInfo: {
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          rectId: string;
+          inputArrowCount: number;
+          inputArrowPositions: number[];
+          outputColumns: string[];
+          outputSortOrder: string[];
+        };
+        numArrows: number;
+        childTopY: number; // Store the top Y position of the child (not the bottom of subtree)
+      }> = [];
 
       for (let i = 0; i < node.children.length; i++) {
         const child = node.children[i];
@@ -4962,9 +5065,8 @@ export class ExcalidrawGenerator {
         const adjustedVerticalSpacing = (this.config.verticalSpacing * 3) / 5;
         const childY = y + nodeHeight + adjustedVerticalSpacing;
 
-        // Generate child elements recursively (children are not root)
-        // All children at the same depth use the same X position
-        const childInfo = this.generateNodeElements(child, childX, childY, elements, false);
+        // Generate child elements recursively
+        const childInfo = this.generateNodeElements(child, currentChildX, childY, elements, false);
 
         // UnionExec: outputColumns and outputSortOrder from first child
         if (i === 0) {
@@ -4976,77 +5078,186 @@ export class ExcalidrawGenerator {
         const numArrows = Math.max(1, childInfo.inputArrowCount);
         totalInputArrows += numArrows;
 
-        // Use child's input arrow positions if available and count matches
-        // Otherwise, calculate balanced positions
-        let arrowPositions: number[];
-        if (childInfo.inputArrowPositions.length === numArrows && numArrows > 0) {
-          // Align with child's input arrows
-          arrowPositions = childInfo.inputArrowPositions;
+        childrenInfo.push({ childInfo, numArrows, childTopY: childY });
+
+        // Track the maximum Y position for next child
+        maxChildY = Math.max(maxChildY, childInfo.y + childInfo.height);
+
+        // Move to next child position
+        currentChildX += childWidth + spacing;
+      }
+
+      // Calculate arrow positions distributed across UnionExec's bottom edge
+      // For few arrows (4 or fewer), use a central region (60% of width, centered)
+      // For more arrows, use the full width
+      const unionBottomLeft = x;
+      const unionBottomRight = x + nodeWidth;
+      const useCentralRegion = totalInputArrows <= 4;
+
+      let arrowRegionLeft: number;
+      let arrowRegionRight: number;
+      if (useCentralRegion) {
+        // Use central 60% of width, centered
+        const centerRegionWidth = nodeWidth * 0.6;
+        const centerRegionLeft = x + nodeWidth / 2 - centerRegionWidth / 2;
+        arrowRegionLeft = centerRegionLeft;
+        arrowRegionRight = centerRegionLeft + centerRegionWidth;
+      } else {
+        // Use full width
+        arrowRegionLeft = unionBottomLeft;
+        arrowRegionRight = unionBottomRight;
+      }
+
+      let arrowIndex = 0;
+
+      // Second pass: create arrows connecting each child to UnionExec's bottom edge
+      for (let i = 0; i < childrenInfo.length; i++) {
+        const { childInfo, numArrows, childTopY } = childrenInfo[i];
+
+        // Calculate arrow end positions on UnionExec's bottom edge for this child's arrows
+        const arrowEndPositions: number[] = [];
+        if (totalInputArrows === 1) {
+          arrowEndPositions.push(x + nodeWidth / 2);
         } else {
-          // Balance arrows across parent width
-          const rectangleLeft = x;
-          const rectangleRight = x + nodeWidth;
-          arrowPositions = [];
-          if (numArrows === 1) {
-            arrowPositions.push(x + nodeWidth / 2);
-          } else if (numArrows === 2) {
-            arrowPositions.push(rectangleLeft);
-            arrowPositions.push(rectangleRight);
-          } else {
-            // More than two arrows: distribute evenly
-            const spacing = (rectangleRight - rectangleLeft) / (numArrows - 1);
-            for (let j = 0; j < numArrows; j++) {
-              arrowPositions.push(rectangleLeft + j * spacing);
-            }
+          // Distribute all arrows evenly across the arrow region
+          const arrowSpacing = (arrowRegionRight - arrowRegionLeft) / (totalInputArrows - 1);
+          for (let j = 0; j < numArrows; j++) {
+            arrowEndPositions.push(arrowRegionLeft + arrowIndex * arrowSpacing);
+            arrowIndex++;
           }
         }
 
         // Store input arrow positions for this node
-        allInputArrowPositions.push(...arrowPositions);
+        allInputArrowPositions.push(...arrowEndPositions);
 
-        // Calculate arrow positions - since nodes are vertically aligned, make arrows vertical
+        // Calculate arrow start positions on child's top edge
+        // Distribute arrows evenly across the child's width
+        const childLeft = childInfo.x;
+        const childRight = childInfo.x + childInfo.width;
+        const arrowStartPositions: number[] = [];
+        if (numArrows === 1) {
+          arrowStartPositions.push(childInfo.x + childInfo.width / 2);
+        } else {
+          const childArrowSpacing = (childRight - childLeft) / (numArrows - 1);
+          for (let j = 0; j < numArrows; j++) {
+            arrowStartPositions.push(childLeft + j * childArrowSpacing);
+          }
+        }
+
+        // Calculate arrow positions - arrows connect child top to parent bottom
+        // Use childTopY (the top Y position) instead of childInfo.y (which might be bottom of subtree)
         const rectangleBottom = y + nodeHeight;
-        const childTop = childY;
+        const childTop = childTopY;
 
-        // Create arrows - vertical lines connecting child top to parent bottom
-        // Use helper method to handle ellipsis for many arrows
-        // Pass child's columns and sort order to display on arrows
-        this.createArrowsWithEllipsis(
-          numArrows,
-          arrowPositions,
-          childInfo.inputArrowPositions,
-          childTop,
-          rectangleBottom,
-          childInfo.rectId,
-          rectId,
-          elements,
-          childInfo.outputColumns,
-          childInfo.outputSortOrder
-        );
+        // Create arrows - connect child top edge to UnionExec's bottom edge
+        // For UnionExec, arrows are diagonal (different X for start and end)
+        for (let j = 0; j < numArrows; j++) {
+          const arrowId = this.generateId();
+          const startX = arrowStartPositions[j];
+          const endX = arrowEndPositions[j];
+          const arrow = this.createArrowWithBinding(
+            arrowId,
+            startX,
+            childTop,
+            endX,
+            rectangleBottom,
+            childInfo.rectId,
+            rectId
+          );
+          elements.push(arrow);
+        }
 
-        // Track the maximum Y position for next child
-        maxChildY = Math.max(maxChildY, childInfo.y + childInfo.height);
+        // Add column labels if available (once per child, not per arrow)
+        if (childInfo.outputColumns && childInfo.outputColumns.length > 0 && numArrows > 0) {
+          const arrowMidY = (childTop + rectangleBottom) / 2;
+          const rightOffset = 5;
+          // Use the rightmost arrow position for label placement
+          const rightmostArrowX = Math.max(...arrowEndPositions);
+          const projectionTextX = rightmostArrowX + rightOffset;
+
+          // Create a set of ordered columns for color coding
+          const orderedColumns = new Set(childInfo.outputSortOrder || []);
+          const groupId = this.generateId();
+          let currentX = projectionTextX;
+          const fontSize = 14;
+
+          // Create text elements for each column
+          let colIndex = 0;
+          while (colIndex < childInfo.outputColumns.length) {
+            const column = childInfo.outputColumns[colIndex];
+            const isOrdered = orderedColumns.has(column);
+            const color = isOrdered ? '#1e90ff' : this.config.nodeColor;
+
+            // Group consecutive columns with the same color
+            const groupParts: string[] = [column];
+            let k = colIndex + 1;
+            while (k < childInfo.outputColumns.length) {
+              const nextColumn = childInfo.outputColumns[k];
+              const nextIsOrdered = orderedColumns.has(nextColumn);
+              const nextColor = nextIsOrdered ? '#1e90ff' : this.config.nodeColor;
+              if (nextColor === color) {
+                groupParts.push(nextColumn);
+                k++;
+              } else {
+                break;
+              }
+            }
+
+            // Create text element for grouped columns
+            const groupText = colIndex > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
+            const groupTextId = this.generateId();
+            const groupWidth = this.measureText(groupText, fontSize);
+            const groupTextElement: ExcalidrawText = {
+              id: groupTextId,
+              type: 'text',
+              x: currentX,
+              y: arrowMidY - 8.75,
+              width: groupWidth,
+              height: 17.5,
+              angle: 0,
+              strokeColor: color,
+              backgroundColor: 'transparent',
+              fillStyle: 'solid',
+              strokeWidth: 1,
+              strokeStyle: 'solid',
+              roughness: 0,
+              opacity: 100,
+              groupIds: [groupId],
+              frameId: null,
+              index: this.generateIndex(),
+              roundness: null,
+              seed: this.generateSeed(),
+              version: 1,
+              versionNonce: this.generateSeed(),
+              isDeleted: false,
+              boundElements: [],
+              updated: Date.now(),
+              link: null,
+              locked: false,
+              text: groupText,
+              fontSize: fontSize,
+              fontFamily: 6,
+              textAlign: 'left',
+              verticalAlign: 'top',
+              baseline: fontSize,
+              containerId: null,
+              originalText: groupText,
+              autoResize: false,
+              lineHeight: 1.25,
+            };
+            elements.push(groupTextElement);
+            currentX += groupWidth;
+
+            colIndex = k;
+          }
+        }
       }
     }
 
     // UnionExec: output arrows = total input arrows from all children
-    // Calculate output arrow positions distributed across the width
-    const outputArrowPositions: number[] = [];
-    if (totalInputArrows === 0) {
-      // No children, use single arrow at center
-      outputArrowPositions.push(x + nodeWidth / 2);
-    } else if (totalInputArrows === 1) {
-      outputArrowPositions.push(x + nodeWidth / 2);
-    } else if (totalInputArrows === 2) {
-      outputArrowPositions.push(x);
-      outputArrowPositions.push(x + nodeWidth);
-    } else {
-      // More than two arrows: distribute evenly
-      const spacing = nodeWidth / (totalInputArrows - 1);
-      for (let j = 0; j < totalInputArrows; j++) {
-        outputArrowPositions.push(x + j * spacing);
-      }
-    }
+    // Calculate output arrow positions with ellipsis support
+    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
+      this.calculateOutputArrowPositions(totalInputArrows, x, nodeWidth);
 
     return {
       x,
@@ -5054,7 +5265,7 @@ export class ExcalidrawGenerator {
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: totalInputArrows, // UnionExec: output arrows = total input arrows
+      inputArrowCount: outputArrowCount, // UnionExec: output arrows (full count, ellipsis handled in positions)
       inputArrowPositions: outputArrowPositions,
       outputColumns,
       outputSortOrder,

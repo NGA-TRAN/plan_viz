@@ -7,7 +7,7 @@
 [![Code Style](https://img.shields.io/badge/code%20style-google-blueviolet)](https://google.github.io/styleguide/tsguide.html)
 [![CI/CD](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml)
 
-Convert Apache DataFusion physical execution plans into Excalidraw JSON format for easier visualization and understanding. The diagrams highlight key properties using different colors and propagate them throughout the plan, making it clear how many streams or partitions are executed in parallel at each operator and whether the sort order is preserved and leveraged.
+Convert Apache DataFusion physical execution plans into Excalidraw JSON format for easier visualization and understanding. The diagrams highlight key properties using different colors and propagate them throughout the plan, making it clear how many streams or partitions are executed in parallel at each operator and whether the sort order is preserved and leveraged. The visualization also identifies operators where parallelism or sort order is no longer possible, which can become bottlenecks if there is still a significant amount of data at that stage.
 
 
 <!-- > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues) -->
@@ -244,8 +244,10 @@ The project includes numerous example execution plans in the [`examples/`](examp
 - Filter operations (`filter*.sql`)
 - Repartitioning (`repartition*.sql`)
 - Aggregation examples (`*aggregate*.sql`)
+- Projection (`*projection*.sql`)
 - Join operations (`join*.sql`)
 - Sorting (`sort*.sql`)
+- Union (`union*.sql`)
 - And many more!
 
 Each example includes:
