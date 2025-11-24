@@ -131,6 +131,11 @@ export class ExcalidrawGenerator {
       return this.generateHashJoinExecElements(node, x, y, elements, isRoot);
     }
 
+    // Special handling for SortMergeJoin and SortMergeJoinExec
+    if (node.operator === 'SortMergeJoin' || node.operator === 'SortMergeJoinExec') {
+      return this.generateSortMergeJoinElements(node, x, y, elements, isRoot);
+    }
+
     // Special handling for UnionExec
     if (node.operator === 'UnionExec') {
       return this.generateUnionExecElements(node, x, y, elements, isRoot);
@@ -2337,48 +2342,89 @@ export class ExcalidrawGenerator {
       }
     }
 
-    // Create detail text at bottom center
+    // Build detail text lines
+    const detailLines: Array<{ text: string; color: string }> = [];
+
+    // Add partitioning detail
     if (partitioningDetail) {
-      const detailTextId = this.generateId();
-      const detailText: ExcalidrawText = {
-        id: detailTextId,
-        type: 'text',
-        x: x + 10,
-        y: y + nodeHeight - 25, // Position near bottom
-        width: nodeWidth - 20,
-        height: 20,
-        angle: 0,
-        strokeColor: this.config.nodeColor,
-        backgroundColor: 'transparent',
-        fillStyle: 'solid',
-        strokeWidth: 1,
-        strokeStyle: 'solid',
-        roughness: 0,
-        opacity: 100,
-        groupIds: [],
-        frameId: null,
-        index: this.generateIndex(),
-        roundness: null,
-        seed: this.generateSeed(),
-        version: 1,
-        versionNonce: this.generateSeed(),
-        isDeleted: false,
-        boundElements: [],
-        updated: Date.now(),
-        link: null,
-        locked: false,
-        text: partitioningDetail,
-        fontSize: 14,
-        fontFamily: 6, // Normal font
-        textAlign: 'center',
-        verticalAlign: 'top',
-        baseline: 14,
-        containerId: null,
-        originalText: partitioningDetail,
-        autoResize: false,
-        lineHeight: 1.25,
-      };
-      elements.push(detailText);
+      detailLines.push({ text: partitioningDetail, color: this.config.nodeColor });
+    }
+
+    // Check for preserve_order property
+    const hasPreserveOrder = node.properties?.preserve_order === 'true';
+    if (hasPreserveOrder) {
+      detailLines.push({ text: 'preserve_order=true', color: '#8B0000' }); // Dark red color
+    }
+
+    // Check for sort_exprs property and extract column names
+    if (node.properties?.sort_exprs) {
+      const sortExprs = node.properties.sort_exprs;
+      // Extract column names from expressions like "f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST"
+      // Split by comma, then extract column name before @ symbol
+      const columnNames: string[] = [];
+      const expressions = sortExprs.split(',');
+      for (const expr of expressions) {
+        const trimmed = expr.trim();
+        // Extract column name before @ symbol
+        const columnMatch = trimmed.match(/^([^@\s]+)/);
+        if (columnMatch) {
+          columnNames.push(columnMatch[1].trim());
+        }
+      }
+      if (columnNames.length > 0) {
+        detailLines.push({ text: `sort_exprs=[${columnNames.join(', ')}]`, color: this.config.nodeColor });
+      }
+    }
+
+    // Create detail text elements
+    if (detailLines.length > 0) {
+      const lineHeight = 17.5;
+      const totalHeight = detailLines.length * lineHeight;
+      let currentY = y + nodeHeight - totalHeight - 5; // Position above bottom with some padding
+
+      for (const detailLine of detailLines) {
+        const detailTextId = this.generateId();
+        const detailText: ExcalidrawText = {
+          id: detailTextId,
+          type: 'text',
+          x: x + 10,
+          y: currentY,
+          width: nodeWidth - 20,
+          height: lineHeight,
+          angle: 0,
+          strokeColor: detailLine.color,
+          backgroundColor: 'transparent',
+          fillStyle: 'solid',
+          strokeWidth: 1,
+          strokeStyle: 'solid',
+          roughness: 0,
+          opacity: 100,
+          groupIds: [],
+          frameId: null,
+          index: this.generateIndex(),
+          roundness: null,
+          seed: this.generateSeed(),
+          version: 1,
+          versionNonce: this.generateSeed(),
+          isDeleted: false,
+          boundElements: [],
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          text: detailLine.text,
+          fontSize: 14,
+          fontFamily: 6, // Normal font
+          textAlign: 'center',
+          verticalAlign: 'top',
+          baseline: 14,
+          containerId: null,
+          originalText: detailLine.text,
+          autoResize: false,
+          lineHeight: 1.25,
+        };
+        elements.push(detailText);
+        currentY += lineHeight;
+      }
     }
 
     // Calculate positions for children and get input arrow count
@@ -2386,9 +2432,14 @@ export class ExcalidrawGenerator {
     let maxChildY = y + nodeHeight + this.config.verticalSpacing;
     let totalInputArrows = 0;
     const allInputArrowPositions: number[] = []; // Track all input arrow positions
-    // RepartitionExec: outputColumns and outputSortOrder from input (child)
+    // RepartitionExec: outputColumns from input (child)
     let outputColumns: string[] = [];
     let outputSortOrder: string[] = [];
+    let childInfo: {
+      outputColumns: string[];
+      outputSortOrder: string[];
+      inputArrowCount: number;
+    } | null = null;
 
     if (node.children.length > 0) {
       // Use the same X position as parent for all children (vertical alignment)
@@ -2402,25 +2453,29 @@ export class ExcalidrawGenerator {
 
         // Generate child elements recursively (children are not root)
         // All children at the same depth use the same X position
-        const childInfo = this.generateNodeElements(child, childX, childY, elements, false);
+        const currentChildInfo = this.generateNodeElements(child, childX, childY, elements, false);
 
-        // RepartitionExec: outputColumns and outputSortOrder from input (child)
+        // RepartitionExec: outputColumns from input (child)
         if (i === 0) {
-          outputColumns = [...childInfo.outputColumns];
-          outputSortOrder = [...childInfo.outputSortOrder];
+          outputColumns = [...currentChildInfo.outputColumns];
+          childInfo = {
+            outputColumns: currentChildInfo.outputColumns,
+            outputSortOrder: currentChildInfo.outputSortOrder,
+            inputArrowCount: currentChildInfo.inputArrowCount,
+          };
         }
 
         // RepartitionExec input arrows = child's output arrow count
         // For RepartitionExec, use child's inputArrowCount as the number of input arrows
-        const numInputArrows = Math.max(1, childInfo.inputArrowCount);
+        const numInputArrows = Math.max(1, currentChildInfo.inputArrowCount);
         totalInputArrows += numInputArrows;
 
         // Use child's input arrow positions if available and count matches
         // Otherwise, calculate balanced positions
         let arrowPositions: number[];
-        if (childInfo.inputArrowPositions.length === numInputArrows && numInputArrows > 0) {
+        if (currentChildInfo.inputArrowPositions.length === numInputArrows && numInputArrows > 0) {
           // Align with child's input arrows
-          arrowPositions = childInfo.inputArrowPositions;
+          arrowPositions = currentChildInfo.inputArrowPositions;
         } else {
           // Balance arrows across parent width
           const rectangleLeft = x;
@@ -2453,18 +2508,18 @@ export class ExcalidrawGenerator {
         this.createArrowsWithEllipsis(
           numInputArrows,
           arrowPositions,
-          childInfo.inputArrowPositions,
+          currentChildInfo.inputArrowPositions,
           childTop,
           rectangleBottom,
-          childInfo.rectId,
+          currentChildInfo.rectId,
           rectId,
           elements,
-          childInfo.outputColumns,
-          childInfo.outputSortOrder
+          currentChildInfo.outputColumns,
+          currentChildInfo.outputSortOrder
         );
 
         // Track the maximum Y position for next child
-        maxChildY = Math.max(maxChildY, childInfo.y + childInfo.height);
+        maxChildY = Math.max(maxChildY, currentChildInfo.y + currentChildInfo.height);
       }
     }
 
@@ -2483,9 +2538,34 @@ export class ExcalidrawGenerator {
         { positions: [], fullCount: 0 } :
         this.calculateOutputArrowPositions(countToUse, x, nodeWidth);
 
+    // Determine output sort order based on partitioning type
+    // For Hash and RoundRobinBatch partitioning: only preserve sort order when:
+    //   - Input is ordered (has outputSortOrder) AND
+    //   - Either preserve_order=true (with multiple input partitions) OR input has single partition
+    if (childInfo) {
+      const isHashPartitioning = partitioningDetail.startsWith('Hash');
+      const isRoundRobinPartitioning = partitioningDetail.startsWith('RoundRobinBatch');
+      const inputIsOrdered = childInfo.outputSortOrder.length > 0;
+      const hasSingleInputPartition = totalInputArrows === 1;
+      const preserveOrder = node.properties?.preserve_order === 'true';
+
+      if (isHashPartitioning || isRoundRobinPartitioning) {
+        if (inputIsOrdered && (preserveOrder || hasSingleInputPartition)) {
+          // Preserve sort order
+          outputSortOrder = [...childInfo.outputSortOrder];
+        } else {
+          // Don't preserve sort order for Hash/RoundRobinBatch partitioning
+          outputSortOrder = [];
+        }
+      } else {
+        // For other partitioning types, preserve sort order from input
+        outputSortOrder = [...childInfo.outputSortOrder];
+      }
+    }
+
     // Root nodes (first line of physical_plan) don't have output arrows
     // For RepartitionExec, return outputArrowCount as inputArrowCount so parent knows how many arrows to create
-    // RepartitionExec: outputColumns and outputSortOrder from input
+    // RepartitionExec: outputColumns from input, outputSortOrder based on partitioning rules
     return {
       x,
       y: maxChildY,
@@ -4746,6 +4826,100 @@ export class ExcalidrawGenerator {
       elements.push(arrow);
     }
 
+    // Display columns on arrows from build side (using build side's columns and sort order)
+    if (buildSideInfo.outputColumns.length > 0) {
+      const arrowMidY = (buildSideTopY + hashTableCenterY) / 2;
+      const leftmostArrowX =
+        buildSideTopArrowPositions.length > 0 ?
+          buildSideTopArrowPositions[0] :
+          buildSideX + buildSideInfo.width / 2;
+      const leftOffset = -5; // Negative offset to position text to the left
+      const projectionTextX = leftmostArrowX + leftOffset;
+
+      const orderedColumns = new Set(buildSideInfo.outputSortOrder);
+      const groupId = this.generateId();
+      const charWidth = 8;
+      const textHeight = 17.5;
+
+      // Collect all groups first to determine total width and proper comma placement
+      const groups: Array<{ text: string; color: string; width: number }> = [];
+      let i = 0;
+      while (i < buildSideInfo.outputColumns.length) {
+        const column = buildSideInfo.outputColumns[i];
+        const isOrdered = orderedColumns.has(column);
+        const color = isOrdered ? '#1e90ff' : this.config.nodeColor;
+
+        const groupParts: string[] = [column];
+        let j = i + 1;
+        while (j < buildSideInfo.outputColumns.length) {
+          const nextColumn = buildSideInfo.outputColumns[j];
+          const nextIsOrdered = orderedColumns.has(nextColumn);
+          const nextColor = nextIsOrdered ? '#1e90ff' : this.config.nodeColor;
+          if (nextColor === color) {
+            groupParts.push(nextColumn);
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        const groupText = groupParts.join(', ');
+        const groupWidth = groupText.length * charWidth;
+        groups.push({ text: groupText, color, width: groupWidth });
+        i = j;
+      }
+
+      // Position from right to left, building text correctly
+      let currentX = projectionTextX;
+      for (let idx = groups.length - 1; idx >= 0; idx--) {
+        const group = groups[idx];
+        const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
+        const groupWidth = groupText.length * charWidth;
+        const groupTextId = this.generateId();
+        // Position text to the left of the arrow, so we need to adjust X position
+        const groupTextElement: ExcalidrawText = {
+          id: groupTextId,
+          type: 'text',
+          x: currentX - groupWidth, // Position to the left
+          y: arrowMidY - 8.75,
+          width: groupWidth,
+          height: textHeight,
+          angle: 0,
+          strokeColor: group.color,
+          backgroundColor: 'transparent',
+          fillStyle: 'solid',
+          strokeWidth: 1,
+          strokeStyle: 'solid',
+          roughness: 0,
+          opacity: 100,
+          groupIds: [groupId],
+          frameId: null,
+          index: this.generateIndex(),
+          roundness: null,
+          seed: this.generateSeed(),
+          version: 1,
+          versionNonce: this.generateSeed(),
+          isDeleted: false,
+          boundElements: [],
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          text: groupText,
+          fontSize: 14,
+          fontFamily: 6,
+          textAlign: 'right', // Right align since text is to the left
+          verticalAlign: 'top',
+          baseline: 14,
+          containerId: null,
+          originalText: groupText,
+          autoResize: false,
+          lineHeight: 1.25,
+        };
+        elements.push(groupTextElement);
+        currentX -= groupWidth;
+      }
+    }
+
     // Create arrows from probe side to HashJoinExec rectangle
     // Arrows MUST start from the TOP edge of the probe side operator rectangle
     const probeSideArrows = Math.max(1, probeSideInfo.inputArrowCount);
@@ -4921,6 +5095,575 @@ export class ExcalidrawGenerator {
   }
 
   /**
+   * Special handling for SortMergeJoin and SortMergeJoinExec nodes
+   * SortMergeJoin has two inputs: left side (first child) and right side (second child)
+   * Differences from HashJoinExec:
+   * 1. The number of partitions/streams from both inputs must be the same
+   * 2. The number of output partitions are the same as number of input partitions of each of its input
+   * 3. Output of the SortMergeJoin is sorted on the columns in the on= expressions
+   */
+  private generateSortMergeJoinElements(
+    node: ExecutionPlanNode,
+    x: number,
+    y: number,
+    elements: ExcalidrawElement[],
+    _isRoot: boolean = false
+  ): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rectId: string;
+    inputArrowCount: number;
+    inputArrowPositions: number[];
+    outputColumns: string[];
+    outputSortOrder: string[];
+  } {
+    const nodeWidth = 300;
+    const nodeHeight = 125;
+
+    // Create rectangle
+    const rectId = this.generateId();
+    const rect: ExcalidrawRectangle = {
+      id: rectId,
+      type: 'rectangle',
+      x,
+      y,
+      width: nodeWidth,
+      height: nodeHeight,
+      angle: 0,
+      strokeColor: this.config.nodeColor,
+      backgroundColor: 'transparent',
+      fillStyle: 'solid',
+      strokeWidth: 1,
+      strokeStyle: 'solid',
+      roughness: 0,
+      opacity: 100,
+      groupIds: [],
+      frameId: null,
+      index: this.generateIndex(),
+      roundness: { type: 3 },
+      seed: this.generateSeed(),
+      version: 7,
+      versionNonce: this.generateSeed(),
+      isDeleted: false,
+      boundElements: [],
+      updated: Date.now(),
+      link: null,
+      locked: false,
+    };
+    elements.push(rect);
+
+    // Create operator name text (centered, bold)
+    const operatorTextId = this.generateId();
+    const operatorText = node.operator === 'SortMergeJoinExec' ? 'SortMergeJoinExec' : 'SortMergeJoin';
+    const operatorTextElement: ExcalidrawText = {
+      id: operatorTextId,
+      type: 'text',
+      x,
+      y: y + 5,
+      width: nodeWidth,
+      height: 25,
+      angle: 0,
+      strokeColor: this.config.nodeColor,
+      backgroundColor: 'transparent',
+      fillStyle: 'solid',
+      strokeWidth: 1,
+      strokeStyle: 'solid',
+      roughness: 0,
+      opacity: 100,
+      groupIds: [],
+      frameId: null,
+      index: this.generateIndex(),
+      roundness: null,
+      seed: this.generateSeed(),
+      version: 3,
+      versionNonce: this.generateSeed(),
+      isDeleted: false,
+      boundElements: [],
+      updated: Date.now(),
+      link: null,
+      locked: false,
+      text: operatorText,
+      fontSize: 20,
+      fontFamily: 7, // Bold
+      textAlign: 'center',
+      verticalAlign: 'top',
+      baseline: 20,
+      containerId: rectId,
+      originalText: operatorText,
+      autoResize: false,
+      lineHeight: 1.25,
+    };
+    elements.push(operatorTextElement);
+
+    // Create details text showing join_type and on=
+    const details: string[] = [];
+    if (node.properties) {
+      if (node.properties.join_type) {
+        details.push(`join_type=${node.properties.join_type}`);
+      }
+      if (node.properties.on) {
+        // Simplify the on= expression: remove @ symbols and indices
+        // Example: on=[(d_dkey@0, f_dkey@0)] -> on=[(d_dkey, f_dkey)]
+        let onValue = node.properties.on;
+        // Remove @ symbols and numbers after them
+        onValue = onValue.replace(/@\d+/g, '');
+        details.push(`on=${onValue}`);
+      }
+    }
+
+    if (details.length > 0) {
+      const detailTextId = this.generateId();
+      // Calculate text height for centering
+      const textHeight = details.length * 17.5; // Approximate height per line
+      const detailText: ExcalidrawText = {
+        id: detailTextId,
+        type: 'text',
+        x: x + 10,
+        y: y + 35, // Position below operator name
+        width: nodeWidth - 20,
+        height: textHeight,
+        angle: 0,
+        strokeColor: this.config.nodeColor,
+        backgroundColor: 'transparent',
+        fillStyle: 'solid',
+        strokeWidth: 1,
+        strokeStyle: 'solid',
+        roughness: 0,
+        opacity: 100,
+        groupIds: [],
+        frameId: null,
+        index: this.generateIndex(),
+        roundness: null,
+        seed: this.generateSeed(),
+        version: 1,
+        versionNonce: this.generateSeed(),
+        isDeleted: false,
+        boundElements: [],
+        updated: Date.now(),
+        link: null,
+        locked: false,
+        text: details.join('\n'),
+        fontSize: 14,
+        fontFamily: 6, // Normal font
+        textAlign: 'center', // Center align the text
+        verticalAlign: 'top',
+        baseline: 14,
+        containerId: null,
+        originalText: details.join('\n'),
+        autoResize: false,
+        lineHeight: 1.25,
+      };
+      elements.push(detailText);
+    }
+
+    // SortMergeJoin must have exactly 2 children: left side (first) and right side (second)
+    if (node.children.length !== 2) {
+      throw new Error(
+        `${operatorText} must have exactly 2 children, but found ${node.children.length}`
+      );
+    }
+
+    // First input: left side (first child)
+    const leftSideChild = node.children[0];
+    // Second input: right side (second child)
+    const rightSideChild = node.children[1];
+
+    // Position left side (first child) to the LEFT of SortMergeJoin
+    // Position right side (second child) to the RIGHT of SortMergeJoin
+    // Both at the same Y level (not stacked vertically)
+    const childY = y + nodeHeight + this.config.verticalSpacing;
+
+    // Calculate X positions: left side to the left, right side to the right
+    const standardNodeWidth = 300;
+    const leftSideX = x - standardNodeWidth - this.config.horizontalSpacing;
+    const rightSideX = x + nodeWidth + this.config.horizontalSpacing;
+
+    const leftSideInfo = this.generateNodeElements(
+      leftSideChild,
+      leftSideX,
+      childY,
+      elements,
+      false
+    );
+    const rightSideInfo = this.generateNodeElements(
+      rightSideChild,
+      rightSideX,
+      childY,
+      elements,
+      false
+    );
+
+    // Validate that both inputs have the same number of partitions/streams
+    const leftSideArrows = Math.max(1, leftSideInfo.inputArrowCount);
+    const rightSideArrows = Math.max(1, rightSideInfo.inputArrowCount);
+    if (leftSideArrows !== rightSideArrows) {
+      throw new Error(
+        `${operatorText} requires both inputs to have the same number of partitions/streams, but left side has ${leftSideArrows} and right side has ${rightSideArrows}`
+      );
+    }
+
+    // Create arrows from left side to SortMergeJoin rectangle
+    // Arrows MUST start from the TOP edge of the left side operator rectangle
+    const leftSideTopArrowPositions: number[] = [];
+    if (leftSideArrows === 1) {
+      leftSideTopArrowPositions.push(leftSideX + leftSideInfo.width / 2);
+    } else {
+      const centerRegionWidth = leftSideInfo.width * 0.6;
+      const centerRegionLeft = leftSideX + leftSideInfo.width / 2 - centerRegionWidth / 2;
+      const centerRegionRight = leftSideX + leftSideInfo.width / 2 + centerRegionWidth / 2;
+      const spacing = (centerRegionRight - centerRegionLeft) / (leftSideArrows - 1);
+      for (let j = 0; j < leftSideArrows; j++) {
+        leftSideTopArrowPositions.push(centerRegionLeft + j * spacing);
+      }
+    }
+
+    // Top edge of left side rectangle - THIS IS WHERE ARROWS START
+    const leftSideTopY = childY;
+
+    // Create arrows from right side to SortMergeJoin rectangle
+    // Arrows MUST start from the TOP edge of the right side operator rectangle
+    const rightSideTopArrowPositions: number[] = [];
+    if (rightSideArrows === 1) {
+      rightSideTopArrowPositions.push(rightSideX + rightSideInfo.width / 2);
+    } else {
+      const centerRegionWidth = rightSideInfo.width * 0.6;
+      const centerRegionLeft = rightSideX + rightSideInfo.width / 2 - centerRegionWidth / 2;
+      const centerRegionRight = rightSideX + rightSideInfo.width / 2 + centerRegionWidth / 2;
+      const spacing = (centerRegionRight - centerRegionLeft) / (rightSideArrows - 1);
+      for (let j = 0; j < rightSideArrows; j++) {
+        rightSideTopArrowPositions.push(centerRegionLeft + j * spacing);
+      }
+    }
+
+    // Top edge of right side rectangle - THIS IS WHERE ARROWS START
+    const rightSideTopY = childY;
+
+    // Calculate arrow end positions on SortMergeJoin rectangle (bottom edge)
+    // All arrows from both inputs go to the bottom edge of SortMergeJoin rectangle
+    // Since both inputs have the same number of partitions, distribute all arrows evenly
+    const bottomEdgeY = y + nodeHeight;
+    const totalArrows = leftSideArrows; // Same as rightSideArrows since validated
+    const bottomEdgeArrowPositions: number[] = [];
+    if (totalArrows === 1) {
+      bottomEdgeArrowPositions.push(x + nodeWidth / 2);
+    } else {
+      // Distribute arrows evenly across the bottom edge using central region (60% of width)
+      const centerRegionWidth = nodeWidth * 0.6;
+      const centerRegionLeft = x + nodeWidth / 2 - centerRegionWidth / 2;
+      const centerRegionRight = x + nodeWidth / 2 + centerRegionWidth / 2;
+      const spacing = (centerRegionRight - centerRegionLeft) / (totalArrows - 1);
+      for (let j = 0; j < totalArrows; j++) {
+        bottomEdgeArrowPositions.push(centerRegionLeft + j * spacing);
+      }
+    }
+
+    // Create arrows from left side to SortMergeJoin rectangle bottom edge
+    for (let i = 0; i < leftSideArrows; i++) {
+      const arrowStartX = leftSideTopArrowPositions[i];
+      const arrowEndX = bottomEdgeArrowPositions[i];
+      const arrowId = this.generateId();
+      const arrow = this.createArrowWithBinding(
+        arrowId,
+        arrowStartX,
+        leftSideTopY, // Start from TOP edge of left side rectangle
+        arrowEndX,
+        bottomEdgeY, // End at bottom edge of SortMergeJoin rectangle
+        leftSideInfo.rectId,
+        rectId
+      );
+      elements.push(arrow);
+    }
+
+    // Display columns on arrows from left side (using left side's columns and sort order)
+    if (leftSideInfo.outputColumns.length > 0) {
+      const arrowMidY = (leftSideTopY + bottomEdgeY) / 2;
+      const leftmostArrowX =
+        leftSideTopArrowPositions.length > 0 ?
+          leftSideTopArrowPositions[0] :
+          leftSideX + leftSideInfo.width / 2;
+      const leftOffset = -5; // Negative offset to position text to the left
+      const projectionTextX = leftmostArrowX + leftOffset;
+
+      const orderedColumns = new Set(leftSideInfo.outputSortOrder);
+      const groupId = this.generateId();
+      const charWidth = 8;
+      const textHeight = 17.5;
+
+      // Collect all groups first to determine total width and proper comma placement
+      const groups: Array<{ text: string; color: string; width: number }> = [];
+      let i = 0;
+      while (i < leftSideInfo.outputColumns.length) {
+        const column = leftSideInfo.outputColumns[i];
+        const isOrdered = orderedColumns.has(column);
+        const color = isOrdered ? '#1e90ff' : this.config.nodeColor;
+
+        const groupParts: string[] = [column];
+        let j = i + 1;
+        while (j < leftSideInfo.outputColumns.length) {
+          const nextColumn = leftSideInfo.outputColumns[j];
+          const nextIsOrdered = orderedColumns.has(nextColumn);
+          const nextColor = nextIsOrdered ? '#1e90ff' : this.config.nodeColor;
+          if (nextColor === color) {
+            groupParts.push(nextColumn);
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        const groupText = groupParts.join(', ');
+        const groupWidth = groupText.length * charWidth;
+        groups.push({ text: groupText, color, width: groupWidth });
+        i = j;
+      }
+
+      // Position from right to left, building text correctly
+      let currentX = projectionTextX;
+      for (let idx = groups.length - 1; idx >= 0; idx--) {
+        const group = groups[idx];
+        const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
+        const groupWidth = groupText.length * charWidth;
+        const groupTextId = this.generateId();
+        // Position text to the left of the arrow, so we need to adjust X position
+        const groupTextElement: ExcalidrawText = {
+          id: groupTextId,
+          type: 'text',
+          x: currentX - groupWidth, // Position to the left
+          y: arrowMidY - 8.75,
+          width: groupWidth,
+          height: textHeight,
+          angle: 0,
+          strokeColor: group.color,
+          backgroundColor: 'transparent',
+          fillStyle: 'solid',
+          strokeWidth: 1,
+          strokeStyle: 'solid',
+          roughness: 0,
+          opacity: 100,
+          groupIds: [groupId],
+          frameId: null,
+          index: this.generateIndex(),
+          roundness: null,
+          seed: this.generateSeed(),
+          version: 1,
+          versionNonce: this.generateSeed(),
+          isDeleted: false,
+          boundElements: [],
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          text: groupText,
+          fontSize: 14,
+          fontFamily: 6,
+          textAlign: 'right', // Right align since text is to the left
+          verticalAlign: 'top',
+          baseline: 14,
+          containerId: null,
+          originalText: groupText,
+          autoResize: false,
+          lineHeight: 1.25,
+        };
+        elements.push(groupTextElement);
+        currentX -= groupWidth;
+      }
+    }
+
+    // Create arrows from right side to SortMergeJoin rectangle bottom edge
+    for (let i = 0; i < rightSideArrows; i++) {
+      const arrowStartX = rightSideTopArrowPositions[i];
+      const arrowEndX = bottomEdgeArrowPositions[i];
+      const arrowId = this.generateId();
+      const arrow = this.createArrowWithBinding(
+        arrowId,
+        arrowStartX,
+        rightSideTopY, // Start from TOP edge of right side rectangle
+        arrowEndX,
+        bottomEdgeY, // End at bottom edge of SortMergeJoin rectangle
+        rightSideInfo.rectId,
+        rectId
+      );
+      elements.push(arrow);
+    }
+
+    // Display columns on arrows from right side (using right side's columns and sort order)
+    if (rightSideInfo.outputColumns.length > 0) {
+      const arrowMidY = (rightSideTopY + bottomEdgeY) / 2;
+      const rightmostArrowX =
+        rightSideTopArrowPositions.length > 0 ?
+          rightSideTopArrowPositions[rightSideTopArrowPositions.length - 1] :
+          rightSideX + rightSideInfo.width / 2;
+      const rightOffset = 5;
+      const projectionTextX = rightmostArrowX + rightOffset;
+
+      const orderedColumns = new Set(rightSideInfo.outputSortOrder);
+      const groupId = this.generateId();
+      let currentX = projectionTextX;
+      const charWidth = 8;
+      const textHeight = 17.5;
+
+      let i = 0;
+      while (i < rightSideInfo.outputColumns.length) {
+        const column = rightSideInfo.outputColumns[i];
+        const isOrdered = orderedColumns.has(column);
+        const color = isOrdered ? '#1e90ff' : this.config.nodeColor;
+
+        const groupParts: string[] = [column];
+        let j = i + 1;
+        while (j < rightSideInfo.outputColumns.length) {
+          const nextColumn = rightSideInfo.outputColumns[j];
+          const nextIsOrdered = orderedColumns.has(nextColumn);
+          const nextColor = nextIsOrdered ? '#1e90ff' : this.config.nodeColor;
+          if (nextColor === color) {
+            groupParts.push(nextColumn);
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
+        const groupTextId = this.generateId();
+        const groupWidth = groupText.length * charWidth;
+        const groupTextElement: ExcalidrawText = {
+          id: groupTextId,
+          type: 'text',
+          x: currentX,
+          y: arrowMidY - 8.75,
+          width: groupWidth,
+          height: textHeight,
+          angle: 0,
+          strokeColor: color,
+          backgroundColor: 'transparent',
+          fillStyle: 'solid',
+          strokeWidth: 1,
+          strokeStyle: 'solid',
+          roughness: 0,
+          opacity: 100,
+          groupIds: [groupId],
+          frameId: null,
+          index: this.generateIndex(),
+          roundness: null,
+          seed: this.generateSeed(),
+          version: 1,
+          versionNonce: this.generateSeed(),
+          isDeleted: false,
+          boundElements: [],
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          text: groupText,
+          fontSize: 14,
+          fontFamily: 6,
+          textAlign: 'left',
+          verticalAlign: 'top',
+          baseline: 14,
+          containerId: null,
+          originalText: groupText,
+          autoResize: false,
+          lineHeight: 1.25,
+        };
+        elements.push(groupTextElement);
+        currentX += groupWidth;
+        i = j;
+      }
+    }
+
+    // SortMergeJoin output columns = all columns from both sides
+    // Combine columns from left and right inputs
+    const outputColumns: string[] = [];
+    const seenColumns = new Set<string>();
+
+    // Add columns from left side
+    for (const col of leftSideInfo.outputColumns) {
+      if (!seenColumns.has(col)) {
+        outputColumns.push(col);
+        seenColumns.add(col);
+      }
+    }
+
+    // Add columns from right side
+    for (const col of rightSideInfo.outputColumns) {
+      if (!seenColumns.has(col)) {
+        outputColumns.push(col);
+        seenColumns.add(col);
+      }
+    }
+
+    // Extract output sort order from on= property
+    // Output of SortMergeJoin is sorted on the join keys from the on= expressions
+    // Format: on=[(f_dkey@0, f_dkey@0)] -> extract f_dkey (the join key)
+    // For multiple join keys: on=[(col1@0, col1@0), (col2@1, col2@1)] -> extract col1, col2
+    const outputSortOrder: string[] = [];
+    if (node.properties && node.properties.on) {
+      // Extract content from brackets: on=[(f_dkey@0, f_dkey@0)]
+      const onMatch = node.properties.on.match(/\[([^\]]+)\]/);
+      if (onMatch) {
+        const onContent = onMatch[1];
+        // Parse pairs like (f_dkey@0, f_dkey@0)
+        // Match all pairs: (column1@N, column2@N)
+        const pairPattern = /\(([^,]+),\s*([^)]+)\)/g;
+        let match;
+        const seenJoinKeys = new Set<string>();
+
+        while ((match = pairPattern.exec(onContent)) !== null) {
+          // Extract column name from left side of the pair (join key)
+          const leftCol = match[1].trim();
+
+          // Extract column name before @ symbol from left side (join key)
+          const leftMatch = leftCol.match(/^([^@]+)/);
+          if (leftMatch) {
+            const joinKey = leftMatch[1].trim();
+            // Add the join key to sort order
+            // Note: For join keys, typically both sides refer to the same logical column
+            // (e.g., f_dkey@0 from left table and f_dkey@0 from right table)
+            // So we only need to extract from one side
+            if (!seenJoinKeys.has(joinKey)) {
+              outputSortOrder.push(joinKey);
+              seenJoinKeys.add(joinKey);
+            }
+          }
+        }
+      }
+    }
+
+    // SortMergeJoin: output arrows = input arrows (same as each input)
+    const outputArrowCount = leftSideArrows; // Same as rightSideArrows since we validated they're equal
+    // Output arrows come from the bottom edge of SortMergeJoin rectangle
+    const outputArrowPositions: number[] = [];
+    if (outputArrowCount === 1) {
+      outputArrowPositions.push(x + nodeWidth / 2);
+    } else {
+      const centerRegionWidth = nodeWidth * 0.6;
+      const centerRegionLeft = x + nodeWidth / 2 - centerRegionWidth / 2;
+      const centerRegionRight = x + nodeWidth / 2 + centerRegionWidth / 2;
+      const spacing = (centerRegionRight - centerRegionLeft) / (outputArrowCount - 1);
+      for (let j = 0; j < outputArrowCount; j++) {
+        outputArrowPositions.push(centerRegionLeft + j * spacing);
+      }
+    }
+
+    // Calculate max child Y for positioning next node
+    const maxChildY = Math.max(
+      leftSideInfo.y + leftSideInfo.height,
+      rightSideInfo.y + rightSideInfo.height
+    );
+
+    return {
+      x,
+      y: maxChildY,
+      width: nodeWidth,
+      height: nodeHeight,
+      rectId,
+      inputArrowCount: outputArrowCount,
+      inputArrowPositions: outputArrowPositions,
+      outputColumns,
+      outputSortOrder,
+    };
+  }
+
+  /**
    * Generates Excalidraw elements for UnionExec
    * UnionExec can have many inputs (not just 1 or 2)
    * The number of output arrows is the total number of output arrows from all its inputs
@@ -5030,19 +5773,20 @@ export class ExcalidrawGenerator {
 
     if (node.children.length > 0) {
       // Position children horizontally centered around the parent
-      // Calculate total width of all children including spacing
-      const childWidth = 300; // Using 300 as a safer default since DataSourceExec uses 300
       // Increase horizontal spacing to avoid overlap between children
       // Use larger spacing for UnionExec children as they might have wider subtrees
       const spacing = this.config.horizontalSpacing * 1.5;
-      const totalWidth = node.children.length * childWidth + (node.children.length - 1) * spacing;
 
-      // Start X position to center the group of children relative to parent center
-      // Parent center = x + nodeWidth/2
-      // Start X = Parent Center - TotalWidth/2
-      let currentChildX = x + nodeWidth / 2 - totalWidth / 2;
+      // Track element count before generating children so we can shift them later
+      const elementsBeforeChildren = elements.length;
 
-      // First pass: collect all children info and calculate total input arrows
+      // Adjust vertical spacing to make arrows 3/5 of original length
+      const adjustedVerticalSpacing = (this.config.verticalSpacing * 3) / 5;
+      const childY = y + nodeHeight + adjustedVerticalSpacing;
+
+      // Start with an initial X position (will be adjusted after we know actual widths)
+      let currentChildX = x;
+
       const childrenInfo: Array<{
         childInfo: {
           x: number;
@@ -5059,11 +5803,9 @@ export class ExcalidrawGenerator {
         childTopY: number; // Store the top Y position of the child (not the bottom of subtree)
       }> = [];
 
+      // Generate all children first to get their actual widths
       for (let i = 0; i < node.children.length; i++) {
         const child = node.children[i];
-        // Adjust vertical spacing to make arrows 3/5 of original length
-        const adjustedVerticalSpacing = (this.config.verticalSpacing * 3) / 5;
-        const childY = y + nodeHeight + adjustedVerticalSpacing;
 
         // Generate child elements recursively
         const childInfo = this.generateNodeElements(child, currentChildX, childY, elements, false);
@@ -5078,13 +5820,63 @@ export class ExcalidrawGenerator {
         const numArrows = Math.max(1, childInfo.inputArrowCount);
         totalInputArrows += numArrows;
 
-        childrenInfo.push({ childInfo, numArrows, childTopY: childY });
+        // Calculate the actual top Y of the child's rectangle
+        // For nodes with children, childInfo.y is the bottom of the subtree (maxChildY)
+        // The rectangle's top Y is childY (the parameter we passed to generateNodeElements)
+        // But we need to ensure we're using the actual rectangle top, not the subtree start
+        // The rectangle is always created at the y parameter, so childY is correct
+        const childRectTopY = childY;
+
+        childrenInfo.push({ childInfo, numArrows, childTopY: childRectTopY });
 
         // Track the maximum Y position for next child
         maxChildY = Math.max(maxChildY, childInfo.y + childInfo.height);
 
-        // Move to next child position
-        currentChildX += childWidth + spacing;
+        // Move to next child position using actual child width (prevents overlaps)
+        currentChildX += childInfo.width + spacing;
+      }
+
+      // Now that we know the actual total width, center all children relative to parent
+      const totalWidth = childrenInfo.reduce((sum, info) => sum + info.childInfo.width, 0) +
+                        (childrenInfo.length - 1) * spacing;
+      const startX = x + nodeWidth / 2 - totalWidth / 2;
+      const firstChildX = childrenInfo[0].childInfo.x;
+      const shiftAmount = startX - firstChildX;
+
+      // Shift all elements created during child generation to center the children
+      if (Math.abs(shiftAmount) > 0.1) {
+        // Update child x positions in info
+        for (let i = 0; i < childrenInfo.length; i++) {
+          childrenInfo[i].childInfo.x += shiftAmount;
+        }
+
+        // Shift all elements that were created during child generation
+        // For arrows with bindings, we only shift the base x coordinate
+        // Excalidraw bindings will automatically adjust the endpoints to connect to shifted rectangles
+        for (let j = elementsBeforeChildren; j < elements.length; j++) {
+          const element = elements[j];
+
+          if (element.type === 'arrow') {
+            const arrow = element as ExcalidrawArrow;
+            // For arrows with bindings, only shift the base x coordinate
+            // The bindings will handle endpoint positioning automatically
+            if (arrow.startBinding && arrow.endBinding) {
+              element.x += shiftAmount;
+              // Don't shift points - bindings will handle endpoint positioning
+            } else {
+              // For arrows without bindings (shouldn't happen in our code), shift everything
+              element.x += shiftAmount;
+              if (arrow.points) {
+                for (let k = 0; k < arrow.points.length; k++) {
+                  arrow.points[k][0] += shiftAmount;
+                }
+              }
+            }
+          } else {
+            // Shift x coordinate for non-arrow elements (rectangles, text, ellipses, etc.)
+            element.x += shiftAmount;
+          }
+        }
       }
 
       // Calculate arrow positions distributed across UnionExec's bottom edge
@@ -5113,6 +5905,11 @@ export class ExcalidrawGenerator {
       // Second pass: create arrows connecting each child to UnionExec's bottom edge
       for (let i = 0; i < childrenInfo.length; i++) {
         const { childInfo, numArrows, childTopY } = childrenInfo[i];
+
+        // Find the actual rectangle element to get its exact top Y coordinate
+        // This ensures we connect to the actual top edge of the rectangle
+        const childRect = elements.find((el) => el.id === childInfo.rectId && el.type === 'rectangle') as ExcalidrawRectangle | undefined;
+        const actualChildTopY = childRect ? childRect.y : childTopY;
 
         // Calculate arrow end positions on UnionExec's bottom edge for this child's arrows
         const arrowEndPositions: number[] = [];
@@ -5144,10 +5941,9 @@ export class ExcalidrawGenerator {
           }
         }
 
-        // Calculate arrow positions - arrows connect child top to parent bottom
-        // Use childTopY (the top Y position) instead of childInfo.y (which might be bottom of subtree)
+        // Calculate arrow positions - arrows connect child top edge to parent bottom edge
         const rectangleBottom = y + nodeHeight;
-        const childTop = childTopY;
+        const childTop = actualChildTopY;
 
         // Create arrows - connect child top edge to UnionExec's bottom edge
         // For UnionExec, arrows are diagonal (different X for start and end)

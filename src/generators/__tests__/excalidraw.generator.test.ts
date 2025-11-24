@@ -275,6 +275,21 @@ describe('ExcalidrawGenerator', () => {
       expect(result.elements.length).toBeGreaterThan(0);
     });
 
+    it('should handle DataSourceExec with 3+ file groups and projection fallback', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'DataSourceExec',
+        properties: {
+          file_groups: '5 groups: [[f1.parquet], [f2.parquet], [f3.parquet], [f4.parquet], [f5.parquet]]',
+          projection: '[col1, col2, col3]',
+        },
+        children: [],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
     it('should handle DataSourceExec with output_ordering', () => {
       const node: ExecutionPlanNode = {
         operator: 'DataSourceExec',
@@ -467,6 +482,35 @@ describe('ExcalidrawGenerator', () => {
       const arrows = result.elements.filter((el) => el.type === 'arrow');
       expect(arrows.length).toBeGreaterThan(0);
     });
+
+    it('should handle CoalescePartitionsExec with 2 arrows from child', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'CoalescePartitionsExec',
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'RoundRobinBatch(2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d_1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
   });
 
   describe('RepartitionExec operator', () => {
@@ -524,6 +568,247 @@ describe('ExcalidrawGenerator', () => {
       const arrows = result.elements.filter((el) => el.type === 'arrow');
       expect(arrows.length).toBeGreaterThan(0);
     });
+
+    it('should display preserve_order=true in red when present', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 4)',
+          preserve_order: 'true',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[d_1.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      const textElements = result.elements.filter((el): el is ExcalidrawText => el.type === 'text');
+      const preserveOrderText = textElements.find((t) => t.text === 'preserve_order=true');
+      expect(preserveOrderText).toBeDefined();
+      expect(preserveOrderText?.strokeColor).toBe('#8B0000'); // Dark red color
+    });
+
+    it('should display sort_exprs with column names when present', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 4)',
+          preserve_order: 'true',
+          sort_exprs: 'f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[d_1.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      const textElements = result.elements.filter((el): el is ExcalidrawText => el.type === 'text');
+      const sortExprsText = textElements.find((t) => t.text === 'sort_exprs=[f_dkey, timestamp]');
+      expect(sortExprsText).toBeDefined();
+    });
+
+    it('should handle RepartitionExec with 2 input arrows from child', () => {
+      // Create a RepartitionExec whose child outputs 2 arrows
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 4)',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'RoundRobinBatch(2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d_1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle RepartitionExec with 3+ input arrows from child', () => {
+      // Create a RepartitionExec whose child outputs 3 arrows
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 4)',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'RoundRobinBatch(3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d_1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should preserve sort order for non-Hash/RoundRobinBatch partitioning', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'UnknownPartitioning(4)',
+        },
+        children: [
+          {
+            operator: 'SortExec',
+            properties: {
+              expr: '[col1@0 ASC]',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d_1.parquet]]',
+                  output_ordering: '[col1@0 ASC]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should not preserve sort order for Hash partitioning without preserve_order and multiple partitions', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 4)',
+        },
+        children: [
+          {
+            operator: 'SortExec',
+            properties: {
+              expr: '[col1@0 ASC]',
+            },
+            children: [
+              {
+                operator: 'RepartitionExec',
+                properties: {
+                  partitioning: 'RoundRobinBatch(3)',
+                },
+                children: [
+                  {
+                    operator: 'DataSourceExec',
+                    properties: {
+                      file_groups: '1 groups: [[d_1.parquet]]',
+                      output_ordering: '[col1@0 ASC]',
+                    },
+                    children: [],
+                    level: 3,
+                  },
+                ],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle RepartitionExec with 2 output arrows', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 2)',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[d_1.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle RepartitionExec with 3+ output arrows', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'RepartitionExec',
+        properties: {
+          partitioning: 'Hash([col1@0], 3)',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[d_1.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
   });
 
   describe('AggregateExec operator', () => {
@@ -553,6 +838,22 @@ describe('ExcalidrawGenerator', () => {
           mode: 'Partial',
           gby: '[col1@0]',
           aggr: '[sum(col2@1)]',
+        },
+        children: [],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle AggregateExec with gby containing braces and brackets', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'AggregateExec',
+        properties: {
+          mode: 'Single',
+          gby: '[col1@0, func(col2@1, {param: value})]',
+          aggr: '[sum(col3@2)]',
         },
         children: [],
         level: 0,
@@ -721,6 +1022,146 @@ describe('ExcalidrawGenerator', () => {
       const arrows = result.elements.filter((el) => el.type === 'arrow');
       expect(arrows.length).toBeGreaterThan(0);
     });
+
+    it('should handle HashJoinExec with projection property', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'HashJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+          projection: '[col1@0, col2@1, col3@2]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[left.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[right.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle HashJoinExec with 2 arrows on probe side', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'HashJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[left.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col2@0], 2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[right.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle HashJoinExec with 3+ arrows on probe side', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'HashJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[left.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col2@0], 3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[right.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should throw error when HashJoinExec has wrong number of children', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'HashJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[left.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      expect(() => generator.generate(node)).toThrow(
+        /must have exactly 2 children/
+      );
+    });
   });
 
   describe('SortPreservingMergeExec operator', () => {
@@ -763,6 +1204,20 @@ describe('ExcalidrawGenerator', () => {
       const result = generator.generate(node);
       const arrows = result.elements.filter((el) => el.type === 'arrow');
       expect(arrows.length).toBeGreaterThan(0);
+    });
+
+    it('should handle SortPreservingMergeExec with expr containing braces and brackets', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortPreservingMergeExec',
+        properties: {
+          expr: '[func(col1@0, {param: value}) ASC, col2@1 DESC]',
+        },
+        children: [],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
     });
   });
 
@@ -828,6 +1283,376 @@ describe('ExcalidrawGenerator', () => {
       const result = generator.generate(node);
       expect(result.elements.length).toBeGreaterThan(0);
     });
+
+    it('should handle HashJoinExec with 2 arrows on build side', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'HashJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[left.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[right.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle HashJoinExec with 3+ arrows on build side', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'HashJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[left.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[right.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('SortMergeJoin operator', () => {
+    it('should generate SortMergeJoin with join properties', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoin',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col1@0)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '3 groups: [[f1.parquet], [f2.parquet], [f3.parquet]]',
+              projection: '[col1, col2]',
+            },
+            children: [],
+            level: 1,
+          },
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '3 groups: [[f1.parquet], [f2.parquet], [f3.parquet]]',
+              projection: '[col3, col4]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+
+      const textElements = result.elements.filter((el): el is ExcalidrawText => el.type === 'text');
+      const operatorText = textElements.find((t) => t.text === 'SortMergeJoin');
+      expect(operatorText).toBeDefined();
+    });
+
+    it('should generate SortMergeJoinExec with join properties', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoinExec',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '3 groups: [[f1.parquet], [f2.parquet], [f3.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '3 groups: [[f1.parquet], [f2.parquet], [f3.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+
+      const textElements = result.elements.filter((el): el is ExcalidrawText => el.type === 'text');
+      const operatorText = textElements.find((t) => t.text === 'SortMergeJoinExec');
+      expect(operatorText).toBeDefined();
+    });
+
+    it('should extract output sort order from on= property', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoin',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0), (col3@1, col4@1)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '3 groups: [[f1.parquet], [f2.parquet], [f3.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '3 groups: [[f1.parquet], [f2.parquet], [f3.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+
+      // Verify that output sort order includes columns from on= expression
+      // The result should have outputSortOrder with col1, col2, col3, col4
+      const textElements = result.elements.filter((el): el is ExcalidrawText => el.type === 'text');
+      const detailText = textElements.find((t) => t.text.includes('on='));
+      expect(detailText).toBeDefined();
+    });
+
+    it('should throw error when inputs have different partition counts', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoin',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col2@0)]',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[left.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col2@0], 4)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[right.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      expect(() => generator.generate(node)).toThrow(
+        /requires both inputs to have the same number of partitions/
+      );
+    });
+
+    it('should throw error when SortMergeJoin has wrong number of children', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoin',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col1@0)]',
+        },
+        children: [
+          {
+            operator: 'DataSourceExec',
+            properties: {
+              file_groups: '1 groups: [[left.parquet]]',
+            },
+            children: [],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      expect(() => generator.generate(node)).toThrow(
+        /must have exactly 2 children/
+      );
+    });
+
+    it('should handle SortMergeJoin with 2 arrows on both sides', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoin',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col1@0)]',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[left.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[right.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle SortMergeJoin with 3+ arrows on both sides', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'SortMergeJoin',
+        properties: {
+          join_type: 'Inner',
+          on: '[(col1@0, col1@0)]',
+        },
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[left.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'Hash([col1@0], 3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[right.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
   });
 
   describe('UnionExec operator', () => {
@@ -860,6 +1685,64 @@ describe('ExcalidrawGenerator', () => {
       const textElements = result.elements.filter((el): el is ExcalidrawText => el.type === 'text');
       const operatorText = textElements.find((t) => t.text === 'UnionExec');
       expect(operatorText).toBeDefined();
+    });
+
+    it('should handle UnionExec with 2 arrows', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'UnionExec',
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'RoundRobinBatch(2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should handle UnionExec with 3+ arrows', () => {
+      const node: ExecutionPlanNode = {
+        operator: 'UnionExec',
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'RoundRobinBatch(3)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
     });
 
     it('should handle UnionExec with multiple children', () => {
@@ -2170,6 +3053,36 @@ describe('ExcalidrawGenerator', () => {
           projection: '[col1, col2]',
         },
         children: [],
+        level: 0,
+      };
+
+      const result = generator.generate(node);
+      expect(result.elements.length).toBeGreaterThan(0);
+    });
+
+    it('should cover branch for 2 arrows in default node handling', () => {
+      // Create a node that triggers the else if branch (numArrows === 2)
+      const node: ExecutionPlanNode = {
+        operator: 'UnknownOperator',
+        children: [
+          {
+            operator: 'RepartitionExec',
+            properties: {
+              partitioning: 'RoundRobinBatch(2)',
+            },
+            children: [
+              {
+                operator: 'DataSourceExec',
+                properties: {
+                  file_groups: '1 groups: [[d_1.parquet]]',
+                },
+                children: [],
+                level: 2,
+              },
+            ],
+            level: 1,
+          },
+        ],
         level: 0,
       };
 
