@@ -46,6 +46,9 @@ Convert Apache DataFusion Physical Execution Plans to Excalidraw JSON format for
 
 - **Output**: JSON format rendered in Excalidraw display
 
+   - **Arrows between nodes** represent streams or partitions of data. Multiple arrows indicate that data is being streamed in parallel and independently.
+   - **Blue highlights** denote attributes that are sorted.
+
   ![Execution Plan Visualization](docs/assets/join_aggregates.png)
 
 
