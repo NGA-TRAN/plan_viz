@@ -9,7 +9,7 @@
 
 Convert Apache DataFusion physical execution plans into Excalidraw JSON format for easier visualization and understanding. The diagrams highlight key properties using different colors and propagate them throughout the plan, making it clear how many streams or partitions are executed in parallel at each operator and whether the sort order is preserved and leveraged. The visualization also identifies operators where parallelism or sort order is lost, making it easier to identify bottlenecks and guide further improvements.
 
-<!-- > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues) -->
+> **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues)
 
 <!-- ## Features
 
@@ -119,13 +119,13 @@ const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
 
 ```bash
 # Basic usage: from file
-plan-viz -i examples/join.sql -o output.excalidraw
+plan-viz -i tests/join.sql -o output.excalidraw
 
 # From stdin
-cat examples/join.sql | plan-viz > output.excalidraw
+cat tests/join.sql | plan-viz > output.excalidraw
 
 # With custom dimensions and spacing
-plan-viz -i examples/join.sql -o output.excalidraw \
+plan-viz -i tests/join.sql -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
   --vertical-spacing 120 \
@@ -138,13 +138,13 @@ plan-viz -i examples/join.sql -o output.excalidraw \
 npm run build
 
 # Basic usage: from file
-node dist/cli.js -i examples/join.sql -o output.excalidraw
+node dist/cli.js -i tests/join.sql -o output.excalidraw
 
 # From stdin
-cat examples/join.sql | node dist/cli.js > output.excalidraw
+cat tests/join.sql | node dist/cli.js > output.excalidraw
 
 # With custom dimensions and spacing
-node dist/cli.js -i examples/join.sql -o output.excalidraw \
+node dist/cli.js -i tests/join.sql -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
   --vertical-spacing 120 \
@@ -176,7 +176,11 @@ If you use an IDE such as VSCode or Cursor, you can install the Excalidraw exten
 2. Open your generated `.excalidraw` file in your IDE
 3. The diagram will render automatically in the editor
 
-See the [`examples/`](examples/) directory for sample execution plans and their visualizations.
+> **Note:** The `tests/` directory serves a dual purpose:
+> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
+> - **Examples**: SQL files you can use directly with the CLI: `plan-viz -i tests/join.sql -o output.excalidraw`
+>
+> See the [`tests/`](tests/) directory for sample execution plans. Expected visualizations are available in [`tests/expected/`](tests/expected/) for reference.
 
 ## API
 
@@ -237,7 +241,7 @@ const result = convertPlanToExcalidraw(plan, {
 
 ## Examples
 
-The project includes numerous example execution plans in the [`examples/`](examples/) directory, including:
+The project includes numerous example execution plans in the [`tests/`](tests/) directory, including:
 
 - Data source plans (`dataSource*.sql`)
 - Filter operations (`filter*.sql`)
@@ -249,19 +253,23 @@ The project includes numerous example execution plans in the [`examples/`](examp
 - Union (`union*.sql`)
 - And many more!
 
+> **Note:** The `tests/` directory serves a dual purpose:
+> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
+> - **Examples**: SQL files you can use directly with the CLI
+
 Each example includes:
-- A `.sql` file with the execution plan
-- A `.excalidraw` file showing the generated visualization
+- A `.sql` file with the execution plan (in `tests/`)
+- A `.excalidraw` file showing the expected visualization (in `tests/expected/`)
 
 Try them out:
 
 ```bash
 # Convert an example (after building)
 npm run build
-node dist/cli.js -i examples/join.sql -o output.excalidraw
+node dist/cli.js -i tests/join.sql -o output.excalidraw
 
 # Or use the usage example script
-npx ts-node examples/usage-example.ts
+npx ts-node tests/usage-example.ts
 ```
 
 ## Development
@@ -297,7 +305,10 @@ plan_viz/
 │   ├── services/           # Business logic services
 │   ├── cli.ts             # CLI entry point
 │   └── index.ts           # Library entry point
-├── examples/              # Example execution plans
+├── tests/                 # Test fixtures and example execution plans
+│   ├── *.sql              # Example SQL files (also used as test fixtures)
+│   ├── expected/          # Expected Excalidraw outputs for tests
+│   └── usage-example.ts   # Usage example script
 ├── dist/                  # Compiled output (gitignored)
 ├── coverage/              # Test coverage reports (gitignored)
 └── package.json           # Project configuration
@@ -362,12 +373,12 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Roadmap
 
-- [ ] Support for more DataFusion operators
-- [ ] Interactive web interface
+- [ ] Support for more DataFusion operators listed in [MISSING_OPERATOR](./MISSING_OPERATORS.md)
+- [ ] Interactive web interface (in-progress)
 - [ ] Enhanced custom styling options
 - [ ] Export to other diagram formats (SVG, PNG, PDF)
-- [ ] Performance optimizations for large plans
-- [ ] Plan comparison and diff visualization
+- [ ] Performance display optimizations for large plans
+- [ ] Plan comparison and diff visualization (in-progress)
 
 ## Resources
 
