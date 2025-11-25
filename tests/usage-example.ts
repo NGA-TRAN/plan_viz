@@ -1,5 +1,12 @@
 import { convertPlanToExcalidraw } from '../src/index';
 import * as fs from 'fs';
+import * as path from 'path';
+
+// Ensure output directory exists
+const outputDir = 'output';
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
 
 // Example 1: Simple conversion
 const simplePlan = `
@@ -23,14 +30,20 @@ const customResult = convertPlanToExcalidraw(simplePlan, {
   },
 });
 
-fs.writeFileSync('examples/simplePlan.excalidraw', JSON.stringify(customResult, null, 2));
-console.log('Custom configuration output written to simplePlan.excalidraw');
+fs.writeFileSync(
+  path.join(outputDir, 'simplePlan.excalidraw'),
+  JSON.stringify(customResult, null, 2)
+);
+console.log(`Custom configuration output written to ${outputDir}/simplePlan.excalidraw`);
 
 // Example 3: Loading from file
-const complexPlan = fs.readFileSync('examples/join.sql', 'utf-8');
+const complexPlan = fs.readFileSync('tests/join.sql', 'utf-8');
 const result3 = convertPlanToExcalidraw(complexPlan);
-fs.writeFileSync('examples/complexPlan.excalidraw', JSON.stringify(result3, null, 2));
-console.log('Complex plan output written to complexPlan.excalidraw');
+fs.writeFileSync(
+  path.join(outputDir, 'complexPlan.excalidraw'),
+  JSON.stringify(result3, null, 2)
+);
+console.log(`Complex plan output written to ${outputDir}/complexPlan.excalidraw`);
 
 // Example 4: Error handling
 try {

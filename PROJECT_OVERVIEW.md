@@ -55,9 +55,11 @@ plan_viz/
 │   ├── index.test.ts             # Library integration tests
 │   └── cli.ts                    # CLI entry point
 │
-├── 📝 Examples
-│   ├── *.sql                     # Execution plan examples (dataSource, join, aggregate, etc.)
-│   ├── *.excalidraw              # Generated Excalidraw visualizations
+├── 🧪 Tests & Examples (tests/)
+│   ├── *.sql                     # Example execution plans (also used as test fixtures)
+│   ├── expected/                  # Expected Excalidraw outputs for integration tests
+│   │   └── *.excalidraw          # Reference visualizations
+│   ├── integration.test.ts       # Integration tests
 │   └── usage-example.ts          # TypeScript usage examples
 │
 └── 🔧 Scripts
@@ -149,13 +151,13 @@ Expected: >80% coverage across all metrics
 
 ```bash
 # Convert a simple plan
-node dist/cli.js -i examples/dataSource.sql -o output.excalidraw
+node dist/cli.js -i tests/dataSource.sql -o output.excalidraw
 
 # Convert a complex plan
-node dist/cli.js -i examples/join.sql -o output.excalidraw
+node dist/cli.js -i tests/join.sql -o output.excalidraw
 
 # With custom dimensions
-node dist/cli.js -i examples/join.sql -o custom.excalidraw \
+node dist/cli.js -i tests/join.sql -o custom.excalidraw \
   --node-width 300 \
   --node-height 120 \
   --vertical-spacing 120
@@ -165,7 +167,7 @@ node dist/cli.js -i examples/join.sql -o custom.excalidraw \
 
 **Option A: Use the provided example**
 ```bash
-npx ts-node examples/usage-example.ts
+npx ts-node tests/usage-example.ts
 ```
 
 **Option B: Create your own file**
@@ -191,7 +193,11 @@ npx ts-node test.ts
 
 ### 5. Available Examples
 
-The `examples/` directory contains many sample execution plans:
+> **Note:** The `tests/` directory serves a dual purpose:
+> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
+> - **Examples**: SQL files you can use directly with the CLI
+
+The `tests/` directory contains many sample execution plans:
 
 - **Data sources**: `dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`, `dataSource_read_seq_3.sql`, `dataSource_read_seq_4.sql`
 - **Filters**: `fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`, `filter_coalesceBatch_read_seq_many.sql`
@@ -200,7 +206,9 @@ The `examples/` directory contains many sample execution plans:
 - **Joins**: `join.sql`, `join_hash_collectLeft.sql`, `join_aggregates.sql`
 - **Sorting**: `sort.sql`, `sortPreservingMerge.sql`
 
-Each example includes both the `.sql` file (execution plan) and `.excalidraw` file (visualization).
+Each example includes:
+- A `.sql` file with the execution plan (in `tests/`)
+- A `.excalidraw` file showing the expected visualization (in `tests/expected/`)
 
 ## 📊 Features Implemented
 
@@ -249,7 +257,7 @@ All files                    |   >80   |   >80    |   >80   |   >80   |
 ## 📦 Package Information
 
 **Package Name:** `plan-viz`  
-**Version:** 0.1.0  
+**Version:** 0.1.3  
 **License:** MIT  
 **Node Version:** >=20.0.0 (LTS)  
 **Language:** TypeScript 5.4  

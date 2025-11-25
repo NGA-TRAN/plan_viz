@@ -440,6 +440,6 @@ All configuration is optional with sensible defaults:
 
 ---
 
-**Last Updated**: November 23, 2025  
-**Version**: 0.1.2
+**Last Updated**: November 25, 2025  
+**Version**: 0.1.3
 

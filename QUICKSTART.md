@@ -42,7 +42,7 @@ You can use the existing example file or create your own:
 
 **Option A: Use the provided example**
 ```bash
-npx ts-node examples/usage-example.ts
+npx ts-node tests/usage-example.ts
 ```
 
 **Option B: Create your own file**
@@ -77,13 +77,13 @@ After building:
 
 ```bash
 # From file
-node dist/cli.js -i examples/join.sql -o output.excalidraw
+node dist/cli.js -i tests/join.sql -o output.excalidraw
 
 # From stdin
-cat examples/join.sql | node dist/cli.js > output.excalidraw
+cat tests/join.sql | node dist/cli.js > output.excalidraw
 
 # With custom options
-node dist/cli.js -i examples/join.sql -o output.excalidraw \
+node dist/cli.js -i tests/join.sql -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
   --vertical-spacing 120 \
@@ -99,7 +99,11 @@ node dist/cli.js -i examples/join.sql -o output.excalidraw \
 
 ## Available Examples
 
-The `examples/` directory contains many sample execution plans you can try:
+> **Note:** The `tests/` directory serves a dual purpose:
+> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
+> - **Examples**: SQL files you can use directly with the CLI
+
+The `tests/` directory contains many sample execution plans you can try:
 
 - **Data sources**: `dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`
 - **Filters**: `fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`
@@ -108,13 +112,15 @@ The `examples/` directory contains many sample execution plans you can try:
 - **Sorting**: `sort.sql`, `sortPreservingMerge.sql`
 - **Repartitioning**: `repartition.sql`, `coalescePartition.sql`
 
-Each example has a corresponding `.excalidraw` file showing the expected visualization.
+Each example includes:
+- A `.sql` file with the execution plan (in `tests/`)
+- A `.excalidraw` file showing the expected visualization (in `tests/expected/`)
 
 ## Next Steps
 
 - Read the [README.md](README.md) for detailed documentation
 - Check out [CONTRIBUTING.md](CONTRIBUTING.md) to contribute
-- Explore [examples/](examples/) for more use cases
+- Explore [tests/](tests/) for more use cases (SQL files serve as examples)
 - Review the [API documentation](README.md#api)
 
 ## Troubleshooting
@@ -145,5 +151,5 @@ npm run lint:fix
 
 - Open an issue on GitHub
 - Check existing documentation
-- Review example files in `examples/`
+- Review example files in `tests/` (SQL files can be used as examples)
 
