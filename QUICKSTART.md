@@ -153,3 +153,4 @@ npm run lint:fix
 - Check existing documentation
 - Review example files in `tests/` (SQL files can be used as examples)
 
+[EOF]
