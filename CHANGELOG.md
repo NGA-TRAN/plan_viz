@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2025-11-25
+
+### Added
+- Added execution plan analysis documentation with annotated diagrams
+- Example visualization with analysis annotations showing how to interpret execution plans
+
+### Changed
+- Updated README with output analysis section and annotated diagram example
+- Removed completed roadmap item for plan comparison visualization
+
 ## [0.1.3] - 2025-11-25
 
 ### Added

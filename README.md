@@ -52,7 +52,9 @@ Convert Apache DataFusion physical execution plans into Excalidraw JSON format f
 
   ![Execution Plan Visualization](docs/assets/join_aggregates.png)
 
+- **Output Analysis**: Describes how easy it is to interpret the graphical diagram. Recommended to read from bottom to top.
 
+  ![Execution Plan Visualization with Analyses](docs/assets/join_aggregates_with_analyses.png)
 
 ## Prerequisites
 
@@ -378,7 +380,6 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 - [ ] Enhanced custom styling options
 - [ ] Export to other diagram formats (SVG, PNG, PDF)
 - [ ] Performance display optimizations for large plans
-- [ ] Plan comparison and diff visualization (in-progress)
 
 ## Resources
 
