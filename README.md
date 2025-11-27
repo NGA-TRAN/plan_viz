@@ -172,7 +172,7 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 1. Enter your `EXPLAIN` output in the input panel
 2. Click the **Visualize** button to see the graphical output
 
-#### Option 3: Use Online [Excalidraw](https://excalidraw.com/)
+#### Option 2: Use Online [Excalidraw](https://excalidraw.com/)
 
 1. Go to [Excalidraw](https://excalidraw.com/)
 2. Click "Open" in the top menu
