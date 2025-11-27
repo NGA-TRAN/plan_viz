@@ -23,7 +23,9 @@ Convert Apache DataFusion physical execution plans into Excalidraw JSON format f
 
 ## Example
 
-- **Input**: Full EXPLAIN output in indent format (including or excluding SQL query) or just the physical plan portion
+### Input:
+
+An indented EXPLAIN. You may also provide SQL or just the plan; the function automatically extracts physical operators.
 
   ```SQL
   | physical_plan | SortExec: expr=[env@0 ASC NULLS LAST, time_bin@1 ASC NULLS LAST], preserve_partitioning=[false]                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -44,15 +46,19 @@ Convert Apache DataFusion physical execution plans into Excalidraw JSON format f
   |               |                   DataSourceExec: file_groups={3 groups: [[f1.parquet, f4.parquet, f5.parquet, f6.parquet, f7.parquet, f8.parquet], [f2.parquet], [f3.parquet, f9.parquet, f10.parquet]]}, projection=[f_dkey, timestamp, value], output_ordering=[f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST], file_type=parquet, predicate=DynamicFilter [ empty ]             |
   ```
 
+### Output
 
-- **Output**: JSON format rendered in Excalidraw display
+A JSON‑formatted plan that, when opened in Excalidraw, visualizes the plan as a tree.
+
 
    - **Arrows between nodes** represent streams or partitions of data. Multiple arrows indicate that data is being streamed in parallel and independently.
    - **Blue highlights** denote attributes that are sorted.
 
   ![Execution Plan Visualization](docs/assets/join_aggregates.png)
 
-- **Output Analysis**: Describes how easy it is to interpret the graphical diagram. Recommended to read from bottom to top.
+### Output Analysis
+
+The graphical plan includes pink annotations that clarify the roles of arrows, circles/ellipses, and color coding. As always, the plan tree is read in a bottom‑up fashion. This highlights how the visualization makes the plan easy to interpret—showing precisely what the plan does, how parallel execution is maintained, and how sort order is preserved and leveraged.
 
   ![Execution Plan Visualization with Analyses](docs/assets/join_aggregates_with_analyses.png)
 
@@ -89,7 +95,6 @@ const executionPlan = `
 ProjectionExec: expr=[id, name, age]
   FilterExec: age > 18
     DataSourceExec: file_groups={1 groups: [[data.parquet]]}
-      
 `;
 
 const excalidrawJson = convertPlanToExcalidraw(executionPlan);
@@ -163,14 +168,18 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 
 ### Viewing the Output
 
-#### Option 1: Use Online [Excalidraw](https://excalidraw.com/)
+#### Option 1: Use the UI App [plan-visualizer](https://nga-tran.github.io/plan-visualizer), customized for this library
+1. Enter your `EXPLAIN` output in the input panel
+2. Click the **Visualize** button to see the graphical output
+
+#### Option 3: Use Online [Excalidraw](https://excalidraw.com/)
 
 1. Go to [Excalidraw](https://excalidraw.com/)
 2. Click "Open" in the top menu
 3. Upload your generated `.excalidraw` file
 4. View your execution plan diagram!
 
-#### Option 2: Directly in your IDE
+#### Option 3: Directly in your IDE
 
 If you use an IDE such as VSCode or Cursor, you can install the Excalidraw extension and view the diagram directly in your IDE:
 
@@ -178,17 +187,19 @@ If you use an IDE such as VSCode or Cursor, you can install the Excalidraw exten
 2. Open your generated `.excalidraw` file in your IDE
 3. The diagram will render automatically in the editor
 
+
 > **Note:** The `tests/` directory serves a dual purpose:
-> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
-> - **Examples**: SQL files you can use directly with the CLI: `plan-viz -i tests/join.sql -o output.excalidraw`
+> - **Test fixtures**: `.sql` files containing physical plans (and their SQL queries) with expected outputs in [`tests/expected/`] for integration tests
+> - **Examples**: `.sql` files containing physical plans you can run directly with the CLI (`plan-viz -i tests/join.sql -o output.excalidraw`) or use as input to the UI App in Option 1
 >
-> See the [`tests/`](tests/) directory for sample execution plans. Expected visualizations are available in [`tests/expected/`](tests/expected/) for reference.
+> See the [`tests/`](tests/) directory for sample execution plans. Expected JSON‑formatted outputs are available in [`tests/expected/`](tests/expected/) and can be opened using Option 2 or Option 3.
+
 
 ## API
 
 #### `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
 
-Converts an Apache DataFusion Physical Execution Plan to Excalidraw JSON format.
+Converts an Apache DataFusion physical execution plan into Excalidraw-compatible JSON for visualization.
 
 **Parameters:**
 - `plan` - The physical execution plan as a string
@@ -213,7 +224,7 @@ interface ConverterConfig {
     nodeHeight?: number;              // Default: 80
     verticalSpacing?: number;         // Default: 100
     horizontalSpacing?: number;       // Default: 50
-    operatorFontSize?: number;       // Default: 18 (for operator name)
+    operatorFontSize?: number;        // Default: 18 (for operator name)
     detailsFontSize?: number;         // Default: 14 (for properties/details)
     nodeColor?: string;               // Default: '#1971c2'
     arrowColor?: string;              // Default: '#495057'
@@ -255,13 +266,11 @@ The project includes numerous example execution plans in the [`tests/`](tests/) 
 - Union (`union*.sql`)
 - And many more!
 
-> **Note:** The `tests/` directory serves a dual purpose:
-> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
-> - **Examples**: SQL files you can use directly with the CLI
+> **Note:** The `tests/` directory serves a dual purpose: test fixtures and examples
 
 Each example includes:
 - A `.sql` file with the execution plan (in `tests/`)
-- A `.excalidraw` file showing the expected visualization (in `tests/expected/`)
+- A `.excalidraw` file showing the expected Excalidraw-compatible JSON for visualization (in `tests/expected/`)
 
 Try them out:
 
@@ -375,11 +384,10 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Roadmap
 
-- [ ] Support for more DataFusion operators listed in [MISSING_OPERATOR](./MISSING_OPERATORS.md)
-- [ ] Interactive web interface (in-progress)
-- [ ] Enhanced custom styling options
-- [ ] Export to other diagram formats (SVG, PNG, PDF)
-- [ ] Performance display optimizations for large plans
+- [X] Interactive web interface: [plan-visualizer](https://nga-tran.github.io/plan-visualizer) — try it out!
+- [ ] Support for additional DataFusion operators (see [MISSING_OPERATORS](./MISSING_OPERATORS.md))
+- [ ] Enhanced options for custom styling
+- [ ] Performance optimizations for large plans
 
 ## Resources
 

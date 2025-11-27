@@ -92,16 +92,26 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 
 ## Viewing the Output
 
+**Option 1: Use the UI App [plan-visualizer](https://nga-tran.github.io/plan-visualizer)** (Recommended)
+1. Enter your `EXPLAIN` output in the input panel
+2. Click the **Visualize** button to see the graphical output
+
+**Option 2: Use Online [Excalidraw](https://excalidraw.com/)**
 1. Go to [Excalidraw](https://excalidraw.com/)
 2. Click "Open" in the top menu
 3. Upload your generated `.excalidraw` file
 4. View your execution plan diagram!
 
+**Option 3: Directly in your IDE**
+1. Install the Excalidraw extension from the marketplace (e.g., "Excalidraw" by pomdtr)
+2. Open your generated `.excalidraw` file in your IDE
+3. The diagram will render automatically in the editor
+
 ## Available Examples
 
 > **Note:** The `tests/` directory serves a dual purpose:
-> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
-> - **Examples**: SQL files you can use directly with the CLI
+> - **Test fixtures**: `.sql` files containing physical plans (and their SQL queries) with expected outputs in [`tests/expected/`] for integration tests
+> - **Examples**: `.sql` files containing physical plans you can run directly with the CLI or use as input to the [plan-visualizer](https://nga-tran.github.io/plan-visualizer) UI app
 
 The `tests/` directory contains many sample execution plans you can try:
 
