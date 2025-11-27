@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2025-11-27
+
+### Changed
+- Improved README documentation with clearer formatting and descriptions
+- Enhanced Example section with better structure (Input/Output/Output Analysis)
+- Updated API documentation for better clarity
+- Improved documentation about test fixtures and examples
+- Updated roadmap to mark interactive web interface as completed
+
+### Added
+- Added reference to [plan-visualizer](https://nga-tran.github.io/plan-visualizer) UI app as primary viewing option
+- Enhanced documentation about visualization features and annotations
+
 ## [0.1.4] - 2025-11-25
 
 ### Added
