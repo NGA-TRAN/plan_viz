@@ -7,7 +7,15 @@
 [![Code Style](https://img.shields.io/badge/code%20style-google-blueviolet)](https://google.github.io/styleguide/tsguide.html)
 [![CI/CD](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml)
 
-Convert Apache DataFusion physical execution plans into Excalidraw JSON format for easier visualization and understanding. The diagrams highlight key properties using different colors and propagate them throughout the plan, making it clear how many streams or partitions are executed in parallel at each operator and whether the sort order is preserved and leveraged. The visualization also identifies operators where parallelism or sort order is lost, making it easier to identify bottlenecks and guide further improvements.
+
+Convert Apache DataFusion physical execution plans into **Excalidraw‑JSON** for clear visualization and deeper understanding. The generated diagrams use color coding to highlight key properties and propagate them throughout the plan, making it easy to see how many streams or partitions run in parallel at each operator and whether sort order is preserved and leveraged. The visualization also pinpoints operators where parallelism or sort order is lost, helping you quickly identify bottlenecks and guide performance improvements.
+
+**Additional advantages of using Excalidraw:**
+- Edit or extend the graphical plan directly in Excalidraw, then re‑save it back to JSON
+- Export the visualization to PNG or SVG for sharing in documentation, presentations, or reports
+- Collaborate interactively: Excalidraw supports real‑time editing, so teams can review and annotate plans together
+- Layer annotations or styling to emphasize specific operators, execution paths, or performance concerns
+- Maintain a living artifact: Excalidraw files can serve as both a visualization and editable source of truth
 
 > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues)
 
@@ -166,7 +174,7 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 - `--vertical-spacing <number>` - Vertical spacing between nodes (default: 100)
 - `--horizontal-spacing <number>` - Horizontal spacing between sibling nodes (default: 50)
 
-### Viewing the Output
+### Viewing (and Editing) the Output
 
 #### Option 1: Use the UI App [plan-visualizer](https://nga-tran.github.io/plan-visualizer), customized for this library
 1. Enter your `EXPLAIN` output in the input panel
