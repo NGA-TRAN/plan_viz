@@ -149,19 +149,19 @@ describe('GeometryUtils', () => {
       // Mock Math.sqrt to return 0 to test the denominator === 0 branch
       // This tests the defensive check at line 50
       const sqrtSpy = jest.spyOn(Math, 'sqrt');
-      
+
       // First call is for length calculation, second is for denominator
       // We want the second call to return 0
       sqrtSpy
         .mockReturnValueOnce(70.71) // length calculation: sqrt(50^2 + 50^2) ≈ 70.71
         .mockReturnValueOnce(0); // denominator calculation: return 0 to trigger branch
-      
+
       const [ex, ey] = utils.getEllipseEdgePoint(100, 100, 50, 50, 40, 20);
       // When denominator is 0, should return ellipse center
       expect(ex).toBe(50);
       expect(ey).toBe(50);
       expect(sqrtSpy).toHaveBeenCalledTimes(2);
-      
+
       sqrtSpy.mockRestore();
     });
   });

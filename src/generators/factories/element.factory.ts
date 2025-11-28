@@ -39,6 +39,7 @@ export interface TextOptions {
   containerId?: string | null;
   autoResize?: boolean;
   lineHeight?: number;
+  version?: number; // Version number for Excalidraw element (default: 1 for regular text, 3 for operator text)
 }
 
 export interface ArrowOptions {
@@ -98,7 +99,7 @@ export class ElementFactory {
       index: this.idGenerator.generateIndex(),
       roundness: { type: options.roundnessType ?? ELEMENT_DEFAULTS.ROUNDNESS_TYPE },
       seed: this.idGenerator.generateSeed(),
-      version: 1,
+      version: 7,
       versionNonce: this.idGenerator.generateSeed(),
       isDeleted: false,
       boundElements: [],
@@ -113,6 +114,13 @@ export class ElementFactory {
    */
   createText(options: TextOptions): ExcalidrawText {
     const fontSize = options.fontSize ?? FONT_SIZES.DETAILS;
+    // Operator text (centered, bold, with containerId) uses version 3
+    // Regular text uses version 1
+    const isOperatorText = options.textAlign === 'center' &&
+                          options.fontFamily === FONT_FAMILIES.BOLD &&
+                          options.containerId !== null &&
+                          options.containerId !== undefined;
+    const version = options.version ?? (isOperatorText ? 3 : 1);
     return {
       id: options.id,
       type: 'text',
@@ -133,7 +141,7 @@ export class ElementFactory {
       index: this.idGenerator.generateIndex(),
       roundness: null,
       seed: this.idGenerator.generateSeed(),
-      version: 1,
+      version,
       versionNonce: this.idGenerator.generateSeed(),
       isDeleted: false,
       boundElements: [],

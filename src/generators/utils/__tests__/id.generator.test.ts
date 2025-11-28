@@ -63,12 +63,12 @@ describe('IdGenerator', () => {
     it('should reset counters', () => {
       generator.generateId();
       generator.generateIndex();
-      
+
       generator.reset();
-      
+
       const id2 = generator.generateId();
       const index2 = generator.generateIndex();
-      
+
       // After reset, counters should start from 0 again
       // IDs will be different due to timestamp, but counter part should reset
       expect(id2).toBeDefined();

@@ -75,5 +75,12 @@ export class DetailTextBuilder {
     this.lines = [];
     return this;
   }
+
+  /**
+   * Gets the number of lines added
+   */
+  getLineCount(): number {
+    return this.lines.length;
+  }
 }
 

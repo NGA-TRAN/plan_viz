@@ -4,84 +4,13 @@
 
 A professional Node.js/npm package for converting Apache DataFusion Physical Execution Plans to Excalidraw JSON format. Built with TypeScript following Clean Code principles and SOLID design patterns.
 
-## 🏗️ Complete Project Structure
+## 🏗️ Project Structure
 
-```
-plan_viz/
-├── 📄 Configuration Files
-│   ├── package.json              # Project configuration & dependencies
-│   ├── tsconfig.json             # TypeScript compiler configuration
-│   ├── jest.config.js            # Jest testing configuration
-│   ├── .eslintrc.json            # ESLint configuration (Google style)
-│   ├── .prettierrc               # Prettier formatting configuration
-│   ├── .czrc                     # Commitizen configuration
-│   ├── .editorconfig             # Editor configuration
-│   ├── .gitignore                # Git ignore rules
-│   └── .npmignore                # NPM ignore rules
-│
-├── 📚 Documentation
-│   ├── README.md                 # Main documentation
-│   ├── QUICKSTART.md             # Quick start guide
-│   ├── CONTRIBUTING.md           # Contributing guidelines
-│   ├── CHANGELOG.md              # Version history
-│   ├── LICENSE                   # MIT License
-│   └── PROJECT_OVERVIEW.md       # This file
-│
-├── 🎯 Source Code (src/)
-│   ├── types/                    # TypeScript type definitions
-│   │   ├── execution-plan.types.ts
-│   │   ├── excalidraw.types.ts
-│   │   └── index.ts
-│   │
-│   ├── parsers/                  # Execution plan parsers
-│   │   ├── execution-plan.parser.ts
-│   │   ├── index.ts
-│   │   └── __tests__/
-│   │       └── execution-plan.parser.test.ts
-│   │
-│   ├── generators/               # Excalidraw generators
-│   │   ├── excalidraw.generator.ts
-│   │   ├── index.ts
-│   │   └── __tests__/
-│   │       └── excalidraw.generator.test.ts
-│   │
-│   ├── services/                 # Business logic services
-│   │   ├── converter.service.ts
-│   │   ├── index.ts
-│   │   └── __tests__/
-│   │       └── converter.service.test.ts
-│   │
-│   ├── index.ts                  # Library main entry point
-│   ├── index.test.ts             # Library integration tests
-│   └── cli.ts                    # CLI entry point
-│
-├── 🧪 Tests & Examples (tests/)
-│   ├── *.sql                     # Example execution plans (also used as test fixtures)
-│   ├── expected/                  # Expected Excalidraw outputs for integration tests
-│   │   └── *.excalidraw          # Reference visualizations
-│   ├── integration.test.ts       # Integration tests
-│   └── usage-example.ts          # TypeScript usage examples
-│
-└── 🔧 Scripts
-    ├── setup.sh                  # Unix/Linux setup script
-    └── setup.ps1                 # Windows PowerShell setup script
-```
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the complete project structure and directory organization.
 
 ## 🎨 Architecture Overview
 
-### Design Patterns & Principles
-
-**SOLID Principles:**
-- ✅ **S**ingle Responsibility: Each class has one clear purpose
-- ✅ **O**pen/Closed: Extensible through configuration interfaces
-- ✅ **L**iskov Substitution: Interfaces are contract-based
-- ✅ **I**nterface Segregation: Minimal, focused interfaces
-- ✅ **D**ependency Inversion: Depends on abstractions
-
-**Patterns Used:**
-- **Facade Pattern**: ConverterService provides simple interface
-- **Strategy Pattern**: Configurable parsing and generation
-- **Builder Pattern**: Progressive construction of Excalidraw elements
+See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive architecture documentation.
 
 ### Component Flow
 
@@ -122,93 +51,7 @@ plan_viz/
 
 ## 🚀 Quick Start
 
-### 1. Setup
-
-**Windows:**
-```powershell
-cd path\to\plan_viz
-npm install
-npm run build
-```
-
-**Unix/Linux/Mac:**
-```bash
-cd /path/to/plan_viz
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-```
-
-### 2. Run Tests
-
-```bash
-npm test                  # Run all tests
-npm run test:coverage     # Generate coverage report
-```
-
-Expected: >80% coverage across all metrics
-
-### 3. Try the CLI
-
-```bash
-# Convert a simple plan
-node dist/cli.js -i tests/dataSource.sql -o output.excalidraw
-
-# Convert a complex plan
-node dist/cli.js -i tests/join.sql -o output.excalidraw
-
-# With custom dimensions
-node dist/cli.js -i tests/join.sql -o custom.excalidraw \
-  --node-width 300 \
-  --node-height 120 \
-  --vertical-spacing 120
-```
-
-### 4. Use as Library
-
-**Option A: Use the provided example**
-```bash
-npx ts-node tests/usage-example.ts
-```
-
-**Option B: Create your own file**
-
-Create `test.ts`:
-```typescript
-import { convertPlanToExcalidraw } from './src/index';
-
-const plan = `
-ProjectionExec: expr=[id, name]
-  FilterExec: predicate=age > 18
-    DataSourceExec: file_groups={1 groups: [[users.parquet]]}, projection=[id, name, age], file_type=parquet
-`;
-
-const result = convertPlanToExcalidraw(plan);
-console.log(JSON.stringify(result, null, 2));
-```
-
-Run:
-```bash
-npx ts-node test.ts
-```
-
-### 5. Available Examples
-
-> **Note:** The `tests/` directory serves a dual purpose:
-> - **Test fixtures**: SQL files and expected outputs (`tests/expected/`) for integration tests
-> - **Examples**: SQL files you can use directly with the CLI
-
-The `tests/` directory contains many sample execution plans:
-
-- **Data sources**: `dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`, `dataSource_read_seq_3.sql`, `dataSource_read_seq_4.sql`
-- **Filters**: `fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`, `filter_coalesceBatch_read_seq_many.sql`
-- **Repartitioning**: `repartition.sql`, `coalescePartition.sql`
-- **Aggregations**: `aggregate_single.sql`, `aggregate_single_sorted.sql`, `aggregate_partial_final.sql`
-- **Joins**: `join.sql`, `join_hash_collectLeft.sql`, `join_aggregates.sql`
-- **Sorting**: `sort.sql`, `sortPreservingMerge.sql`
-
-Each example includes:
-- A `.sql` file with the execution plan (in `tests/`)
-- A `.excalidraw` file showing the expected visualization (in `tests/expected/`)
+See [QUICKSTART.md](QUICKSTART.md) for a comprehensive quick start guide covering installation, usage, examples, and troubleshooting.
 
 ## 📊 Features Implemented
 
@@ -257,7 +100,7 @@ All files                    |   >80   |   >80    |   >80   |   >80   |
 ## 📦 Package Information
 
 **Package Name:** `plan-viz`  
-**Version:** 0.1.6  
+**Version:** 0.1.7  
 **License:** MIT  
 **Node Version:** >=20.0.0 (LTS)  
 **Language:** TypeScript 5.4  
@@ -395,5 +238,5 @@ interface ConverterConfig {
 **Status:** ✅ Project Complete and Ready for Development
 
 **Created:** November 17, 2025  
-**Last Updated:** November 22, 2025
+**Last Updated:** November 28, 2025
 

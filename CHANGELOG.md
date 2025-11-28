@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2025-11-28
+
+### Added
+- Comprehensive test suite for refactored utility classes:
+  - `IdGenerator` tests (100% coverage)
+  - `TextMeasurement` tests (100% coverage)
+  - `PropertyParser` tests (93.5% coverage)
+  - `ArrowPositionCalculator` tests (91.48% coverage)
+  - `GeometryUtils` tests (100% coverage)
+  - `LayoutCalculator` tests (100% coverage)
+  - `ElementFactory` tests (100% coverage)
+  - `ColumnLabelRenderer` tests (98.33% coverage)
+  - `DetailTextBuilder` tests (100% coverage)
+  - `NodeGeneratorRegistry` tests (100% coverage)
+- Refactoring infrastructure for improved code organization:
+  - Constants module for centralized configuration values
+  - Element factory for consistent element creation
+  - Property parser utility for extracting node properties
+  - Arrow position calculator for layout calculations
+  - Column label renderer for consistent label formatting
+  - Geometry utilities for geometric calculations
+  - Layout calculator for node positioning
+  - ID generator for unique element IDs
+  - Text measurement utility for text width estimation
+  - Detail text builder for multi-line text creation
+  - Node generator strategy interface and registry pattern
+- 13 specialized node generators extracted from monolithic class:
+  - `DataSourceNodeGenerator` - Handles file groups, ellipses, DynamicFilter visualization
+  - `FilterNodeGenerator` - Handles filter predicates and projections
+  - `CoalesceBatchesNodeGenerator` - Handles batch coalescing
+  - `CoalescePartitionsNodeGenerator` - Handles partition coalescing
+  - `RepartitionNodeGenerator` - Handles repartitioning with preserve_order and sort_exprs
+  - `AggregateNodeGenerator` - Handles aggregation modes, grouping, ordering, date_bin functions
+  - `ProjectionNodeGenerator` - Handles projection expressions and aliases
+  - `SortNodeGenerator` - Handles sorting with preserve_partitioning
+  - `SortPreservingMergeNodeGenerator` - Handles sort-preserving merge operations
+  - `HashJoinNodeGenerator` - Handles hash joins with hash table visualization
+  - `SortMergeJoinNodeGenerator` - Handles sort-merge joins with partition validation
+  - `UnionNodeGenerator` - Handles union operations with multiple children
+  - `DefaultNodeGenerator` - Fallback for unimplemented operators
+
+### Changed
+- **Major Refactoring**: `ExcalidrawGenerator` reduced from 6071 lines to 176 lines (97.1% reduction)
+- Refactored `ExcalidrawGenerator` to coordinator pattern using strategy pattern
+- Extracted all node-specific generation logic into specialized generator strategies
+- Removed unused methods (`createArrowsWithEllipsis`, `createArrowWithBinding`, deprecated wrappers)
+- Extracted registry initialization into `registerNodeGenerators()` method
+- Improved test coverage from 79.15% to 95.97% statements
+- Improved branch coverage from 73.75% to 90.07%
+- Improved function coverage from 56.03% to 100%
+- Improved line coverage from 79.39% to 96.29%
+- Extracted magic numbers into constants module
+- Centralized element creation logic into factory pattern
+- Separated concerns into focused utility classes
+- Improved code maintainability and testability
+- Updated architecture documentation to reflect new modular structure
+- Simplified and reorganized documentation structure:
+  - Created `PROJECT_STRUCTURE.md` for detailed project organization
+  - Moved detailed architecture content to `ARCHITECTURE.md`
+  - Removed duplicate Quick Start section from `PROJECT_OVERVIEW.md`
+  - Removed `REFACTORING_PLAN.md` (refactoring complete, info preserved in CHANGELOG and ARCHITECTURE)
+  - Updated `QUICKSTART.md` to include npm package installation option
+
+### Fixed
+- Fixed TypeScript compilation errors in test files
+- Fixed branch coverage for `GeometryUtils` class (now 100%)
+- Fixed all test failures during incremental refactoring phases
+
 ## [0.1.6] - 2025-11-27
 
 ### Added

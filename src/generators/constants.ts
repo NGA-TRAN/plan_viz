@@ -32,7 +32,7 @@ export const COLORS = {
   ORDERED_COLUMN: '#1e90ff',
   ORANGE_BORDER: '#f08c00',
   PURPLE_MODE: '#9b59b6',
-  DARK_RED: '#8b0000',
+  DARK_RED: '#8B0000',
   RED_ERROR: '#ff0000',
   TRANSPARENT: 'transparent',
   WHITE_BACKGROUND: '#ffffff',

@@ -1,5 +1,6 @@
 import { ExcalidrawElement } from '../../types/excalidraw.types';
 import { ExcalidrawConfig } from '../../types/excalidraw.types';
+import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { ElementFactory } from '../factories/element.factory';
 import { PropertyParser } from '../utils/property.parser';
 import { ArrowPositionCalculator } from '../utils/arrow-position.calculator';
@@ -7,6 +8,7 @@ import { ColumnLabelRenderer } from '../renderers/column-label.renderer';
 import { IdGenerator } from '../utils/id.generator';
 import { TextMeasurement } from '../utils/text-measurement';
 import { GeometryUtils } from '../utils/geometry.utils';
+import { NodeInfo } from './node-info.types';
 
 /**
  * Context passed to node generators
@@ -31,5 +33,12 @@ export interface GenerationContext {
   config: Required<ExcalidrawConfig>;
   /** Elements array to add generated elements to */
   elements: ExcalidrawElement[];
+  /** Recursive generator function for processing child nodes */
+  generateChildNode: (
+    child: ExecutionPlanNode,
+    childX: number,
+    childY: number,
+    isRoot: boolean
+  ) => NodeInfo;
 }
 

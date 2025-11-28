@@ -25,7 +25,7 @@ Convert Apache DataFusion physical execution plans into **Excalidraw‑JSON** fo
 - 🎨 Generate Excalidraw-compatible JSON diagrams
 - 🔧 Use as a library or CLI tool
 - ✅ TypeScript support with full type definitions
-- 🧪 Comprehensive test coverage (>80%)
+- 🧪 Comprehensive test coverage (>95%)
 - 🏗️ Built with Clean Code and SOLID principles
 - ⚡ Fast and lightweight -->
 
@@ -315,39 +315,17 @@ npm run format
 
 ## Project Structure
 
-```
-plan_viz/
-├── src/
-│   ├── types/              # Type definitions
-│   ├── parsers/            # Execution plan parsers
-│   ├── generators/         # Excalidraw generators
-│   ├── services/           # Business logic services
-│   ├── cli.ts             # CLI entry point
-│   └── index.ts           # Library entry point
-├── tests/                 # Test fixtures and example execution plans
-│   ├── *.sql              # Example SQL files (also used as test fixtures)
-│   ├── expected/          # Expected Excalidraw outputs for tests
-│   └── usage-example.ts   # Usage example script
-├── dist/                  # Compiled output (gitignored)
-├── coverage/              # Test coverage reports (gitignored)
-└── package.json           # Project configuration
-```
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed project organization.
 
 ## Architecture
 
-The project follows Clean Code principles and SOLID design patterns:
+The project follows Clean Code principles and SOLID design patterns. See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive architecture documentation.
 
-- **Single Responsibility**: Each class has one clear purpose
-- **Open/Closed**: Extensible through configuration
-- **Liskov Substitution**: Interfaces are contract-based
-- **Interface Segregation**: Minimal, focused interfaces
-- **Dependency Inversion**: Depends on abstractions, not implementations
-
-### Components
-
-1. **ExecutionPlanParser**: Parses raw plan text into a tree structure
-2. **ExcalidrawGenerator**: Converts plan trees to Excalidraw JSON
-3. **ConverterService**: Orchestrates the conversion process
+**Key Highlights:**
+- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+- **Design Patterns**: Coordinator, Strategy, Factory, Builder, Renderer patterns
+- **Components**: ExecutionPlanParser, ExcalidrawGenerator (coordinator), ConverterService
+- **Testability**: >95% test coverage across all components
 
 ## Testing
 
@@ -362,7 +340,7 @@ npm run test:watch
 npm run test:coverage
 ```
 
-Current coverage: >80% (branches, functions, lines, statements)
+Current coverage: >95% (branches, functions, lines, statements)
 
 ## Code Quality
 
