@@ -257,7 +257,7 @@ All files                    |   >80   |   >80    |   >80   |   >80   |
 ## 📦 Package Information
 
 **Package Name:** `plan-viz`  
-**Version:** 0.1.5  
+**Version:** 0.1.6  
 **License:** MIT  
 **Node Version:** >=20.0.0 (LTS)  
 **Language:** TypeScript 5.4  

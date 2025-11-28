@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2025-11-27
+
+### Added
+- Added "Additional advantages of using Excalidraw" section to README highlighting:
+  - Ability to edit or extend graphical plans directly in Excalidraw
+  - Export to PNG or SVG for sharing in documentation and presentations
+  - Real-time collaborative editing capabilities
+  - Layer annotations and styling for emphasis
+  - Maintain visualization as a living artifact
+
+### Changed
+- Enhanced README introduction with clearer description of Excalidraw benefits
+- Improved documentation about Excalidraw's editing and collaboration features
+
 ## [0.1.5] - 2025-11-27
 
 ### Changed
