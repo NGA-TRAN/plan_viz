@@ -315,11 +315,11 @@ npm run format
 
 ## Project Structure
 
-See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed project organization.
+See [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed project organization.
 
 ## Architecture
 
-The project follows Clean Code principles and SOLID design patterns. See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive architecture documentation.
+The project follows Clean Code principles and SOLID design patterns. See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for comprehensive architecture documentation.
 
 **Key Highlights:**
 - **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
@@ -381,7 +381,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 - [Excalidraw API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api)
 - [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
 - [Quick Start Guide](QUICKSTART.md) - Get started quickly
-- [Project Overview](PROJECT_OVERVIEW.md) - Detailed architecture and design
+- [Project Overview](docs/PROJECT_OVERVIEW.md) - Detailed architecture and design
 
 ## License
 
