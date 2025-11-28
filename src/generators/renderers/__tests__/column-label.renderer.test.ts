@@ -116,6 +116,30 @@ describe('ColumnLabelRenderer', () => {
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].textAlign).toBe('right');
     });
+
+    it('should handle columns with mixed colors (ordered and unordered)', () => {
+      // This tests the break branch at line 158 when nextColor !== color
+      const result = renderer.renderLabelsLeft(
+        ['col1', 'col2', 'col3'],
+        ['col2'], // Only col2 is ordered (blue), col1 and col3 are black
+        50,
+        100,
+        '#000000'
+      );
+      expect(result.length).toBeGreaterThan(0);
+      // Should handle the color change between col1 (black) and col2 (blue)
+    });
+
+    it('should handle alternating ordered/unordered columns', () => {
+      const result = renderer.renderLabelsLeft(
+        ['col1', 'col2', 'col3', 'col4'],
+        ['col1', 'col3'], // col1 and col3 are ordered (blue), col2 and col4 are black
+        50,
+        100,
+        '#000000'
+      );
+      expect(result.length).toBeGreaterThan(0);
+    });
   });
 });
 

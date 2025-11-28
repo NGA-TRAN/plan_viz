@@ -6,36 +6,11 @@ plan_viz/
 │   ├── types/              # Type definitions
 │   ├── parsers/            # Execution plan parsers
 │   ├── generators/         # Excalidraw generators
-│   │   ├── utils/          # Utility classes
-│   │   │   ├── id.generator.ts          # Unique ID generation
-│   │   │   ├── text-measurement.ts       # Text width calculation
-│   │   │   ├── property.parser.ts        # Property extraction and parsing
-│   │   │   ├── arrow-position.calculator.ts  # Arrow positioning logic
-│   │   │   ├── geometry.utils.ts         # Geometric calculations
-│   │   │   └── layout.calculator.ts      # Layout calculations
+│   │   ├── utils/          # Utility classes (ID generation, text measurement, property parsing, etc.)
 │   │   ├── factories/      # Element creation factories
-│   │   │   └── element.factory.ts       # Centralized element creation
-│   │   ├── generators/     # Node generator strategies
-│   │   │   ├── node-generator.strategy.ts    # Strategy interface
-│   │   │   ├── node-generator.registry.ts    # Generator registry
-│   │   │   ├── base-node.generator.ts        # Base generator class
-│   │   │   ├── default-node.generator.ts     # Default generator
-│   │   │   ├── data-source-node.generator.ts
-│   │   │   ├── filter-node.generator.ts
-│   │   │   ├── coalesce-batches-node.generator.ts
-│   │   │   ├── coalesce-partitions-node.generator.ts
-│   │   │   ├── repartition-node.generator.ts
-│   │   │   ├── aggregate-node.generator.ts
-│   │   │   ├── projection-node.generator.ts
-│   │   │   ├── sort-node.generator.ts
-│   │   │   ├── sort-preserving-merge-node.generator.ts
-│   │   │   ├── hash-join-node.generator.ts
-│   │   │   ├── sort-merge-join-node.generator.ts
-│   │   │   └── union-node.generator.ts
+│   │   ├── generators/     # Node generator strategies (13 specialized generators)
 │   │   ├── renderers/      # Rendering utilities
-│   │   │   └── column-label.renderer.ts  # Column label rendering
 │   │   ├── builders/       # Builder classes
-│   │   │   └── detail-text.builder.ts    # Multi-line text builder
 │   │   ├── constants.ts    # Centralized configuration constants
 │   │   └── excalidraw.generator.ts       # Main coordinator
 │   ├── services/           # Business logic services
