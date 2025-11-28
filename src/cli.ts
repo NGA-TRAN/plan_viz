@@ -19,7 +19,7 @@ const program = new Command();
 program
   .name('plan-viz')
   .description('Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON')
-  .version('0.1.6');
+  .version('0.1.7');
 
 program
   .option('-i, --input <file>', 'Input file containing the execution plan')

@@ -9,6 +9,14 @@ Get up and running with plan-viz in minutes!
 
 ## Installation
 
+### Option 1: Install from npm (Recommended for usage)
+
+```bash
+npm install plan-viz
+```
+
+### Option 2: Build from source (For development)
+
 ```bash
 # Clone the repository
 git clone https://github.com/NGA-TRAN/plan_viz.git
@@ -37,6 +45,22 @@ npm run test:coverage
 ## Basic Usage
 
 ### 1. As a Library
+
+**If installed from npm:**
+```typescript
+import { convertPlanToExcalidraw } from 'plan-viz';
+
+const plan = `
+ProjectionExec: expr=[id, name]
+  FilterExec: predicate=age > 18
+    DataSourceExec: file_groups={1 groups: [[users.parquet]]}, projection=[id, name, age], file_type=parquet
+`;
+
+const result = convertPlanToExcalidraw(plan);
+console.log(JSON.stringify(result, null, 2));
+```
+
+**If building from source:**
 
 You can use the existing example file or create your own:
 
@@ -73,8 +97,23 @@ npx ts-node example.ts
 
 ### 2. As a CLI Tool
 
-After building:
+**If installed from npm:**
+```bash
+# From file
+plan-viz -i tests/join.sql -o output.excalidraw
 
+# From stdin
+cat tests/join.sql | plan-viz > output.excalidraw
+
+# With custom options
+plan-viz -i tests/join.sql -o output.excalidraw \
+  --node-width 250 \
+  --node-height 100 \
+  --vertical-spacing 120 \
+  --horizontal-spacing 60
+```
+
+**If building from source (after `npm run build`):**
 ```bash
 # From file
 node dist/cli.js -i tests/join.sql -o output.excalidraw
@@ -109,20 +148,7 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 
 ## Available Examples
 
-> **Note:** The `tests/` directory serves a dual purpose:
-> - **Test fixtures**: `.sql` files containing physical plans (and their SQL queries) with expected outputs in [`tests/expected/`] for integration tests
-> - **Examples**: `.sql` files containing physical plans you can run directly with the CLI or use as input to the [plan-visualizer](https://nga-tran.github.io/plan-visualizer) UI app
-
-The `tests/` directory contains many sample execution plans you can try:
-
-- **Data sources**: `dataSource.sql`, `dataSource_2_inputs.sql`, `dataSource_3_inputs.sql`, `dataSource_4_inputs.sql`
-- **Filters**: `fillter_coalesceBatch.sql`, `filter_coalesceBatch_read_seq_2.sql`
-- **Joins**: `join.sql`, `join_hash_collectLeft.sql`, `join_aggregates.sql`
-- **Aggregations**: `aggregate_single.sql`, `aggregate_single_sorted.sql`, `aggregate_partial_final.sql`
-- **Sorting**: `sort.sql`, `sortPreservingMerge.sql`
-- **Repartitioning**: `repartition.sql`, `coalescePartition.sql`
-
-Each example includes:
+The `tests/` directory contains many sample execution plans you can try. Each example includes:
 - A `.sql` file with the execution plan (in `tests/`)
 - A `.excalidraw` file showing the expected visualization (in `tests/expected/`)
 
