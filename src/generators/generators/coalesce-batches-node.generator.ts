@@ -17,7 +17,13 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
     context: GenerationContext
   ): NodeInfo {
     const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
-    const nodeHeight = NODE_DIMENSIONS.DEFAULT_HEIGHT;
+    const baseHeight = NODE_DIMENSIONS.DEFAULT_HEIGHT;
+
+    // Check for limit information
+    const hasLimit = !!context.propertyParser.extractLimit(node.properties);
+    const hasTargetBatchSize = !!(node.properties && node.properties.target_batch_size);
+    const detailLines = (hasTargetBatchSize ? 1 : 0) + (hasLimit ? 1 : 0);
+    const nodeHeight = this.calculateAdjustedHeight(baseHeight, hasLimit, detailLines > 1 ? 1 : 0);
 
     // Create rectangle
     const rectId = context.idGenerator.generateId();
@@ -50,12 +56,13 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
     context.elements.push(operatorText);
 
     // Extract target_batch_size from properties
+    let detailY = y + nodeHeight - 25;
     if (node.properties && node.properties.target_batch_size) {
       const targetBatchSize = `target_batch_size=${node.properties.target_batch_size}`;
       const detailText = context.elementFactory.createText({
         id: context.idGenerator.generateId(),
         x: x + 10,
-        y: y + nodeHeight - 25, // Position near bottom
+        y: detailY,
         width: nodeWidth - 20,
         height: 20,
         text: targetBatchSize,
@@ -66,6 +73,31 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.nodeColor,
       });
       context.elements.push(detailText);
+      // If limit is also present, adjust Y position for limit text
+      if (hasLimit) {
+        detailY -= TEXT_HEIGHTS.DETAILS_LINE;
+      }
+    }
+
+    // Add limit detail text if present
+    if (hasLimit) {
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      if (limitText) {
+        const limitDetailText = context.elementFactory.createText({
+          id: context.idGenerator.generateId(),
+          x: x + 10,
+          y: detailY,
+          width: nodeWidth - 20,
+          height: 20,
+          text: limitText,
+          fontSize: FONT_SIZES.DETAILS,
+          fontFamily: FONT_FAMILIES.NORMAL,
+          textAlign: 'center',
+          verticalAlign: 'top',
+          strokeColor: context.config.nodeColor,
+        });
+        context.elements.push(limitDetailText);
+      }
     }
 
     // Process children using the recursive generator from context

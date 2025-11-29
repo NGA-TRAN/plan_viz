@@ -99,6 +99,12 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
         parts.push(`aggr=${node.properties.aggr}`);
       }
 
+      // Add limit information if present
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      if (limitText) {
+        parts.push(limitText);
+      }
+
       // Format: mode on first line (purple), gby and aggr on second line
       if (parts.length > 0) {
         const hasMode = parts[0].startsWith('mode=');

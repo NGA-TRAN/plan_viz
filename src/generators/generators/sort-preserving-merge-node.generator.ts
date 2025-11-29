@@ -95,16 +95,32 @@ export class SortPreservingMergeNodeGenerator extends BaseNodeGenerator {
           detailText = `[${simplifiedItems.join(', ')}]`;
         }
       }
+
+      // Add limit information if present
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      if (limitText) {
+        if (detailText) {
+          detailText = `${detailText} \n${limitText}`;
+        } else {
+          detailText = limitText;
+        }
+      }
     }
 
     // Create detail text at bottom center
     if (detailText) {
+      const lineCount = detailText.split(' \n').length;
+      const detailHeight = lineCount > 1 ? 35 : 20;
+      // Position text so it fits within the rectangle
+      // For 2 lines (35px height), position at y + 80 - 35 = y + 45
+      // For 1 line (20px height), position at y + 80 - 20 = y + 60
+      const detailTextY = y + nodeHeight - detailHeight - 5; // 5px padding from bottom
       const detailTextElement = context.elementFactory.createText({
         id: context.idGenerator.generateId(),
         x: x + 10,
-        y: y + nodeHeight - 25, // Position near bottom
+        y: detailTextY,
         width: nodeWidth - 20,
-        height: 20,
+        height: detailHeight,
         text: detailText,
         fontSize: FONT_SIZES.DETAILS,
         fontFamily: FONT_FAMILIES.NORMAL,

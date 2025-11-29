@@ -84,24 +84,51 @@ export class SortNodeGenerator extends BaseNodeGenerator {
         parts.push(`preserve_partitioning=${node.properties.preserve_partitioning}`);
       }
 
+      // Add limit information if present
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      if (limitText) {
+        parts.push(limitText);
+      }
+
       // Format: first part on first line, second part on second line
       if (parts.length > 0) {
         if (parts.length === 1) {
           detailText = parts[0];
-        } else {
+        } else if (parts.length === 2) {
           detailText = `${parts[0]} \n${parts[1]}`;
+        } else {
+          // 3 or more parts (e.g., when limit is added)
+          detailText = parts.join(' \n');
         }
       }
     }
 
     // Create detail text at bottom center
     if (detailText) {
+      const lineCount = detailText.split(' \n').length;
+      let detailHeight: number;
+      let detailTextY: number;
+
+      // Only adjust positioning when limit is present, not just for multiple lines
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      const hasLimit = !!limitText;
+      if (hasLimit && lineCount > 1) {
+        // Multiple lines with limit - need to fit within rectangle
+        detailHeight = 35;
+        // Position at y + 80 - 35 - 5 = y + 40 to fit within rectangle
+        detailTextY = y + nodeHeight - detailHeight - 5;
+      } else {
+        // Single line or multiple lines without limit - use original positioning
+        detailHeight = 35; // Original was always 35
+        detailTextY = y + nodeHeight - 35; // Original positioning: y + 80 - 35 = y + 45
+      }
+
       const detailTextElement = context.elementFactory.createText({
         id: context.idGenerator.generateId(),
         x: x + 10,
-        y: y + nodeHeight - 35, // Position near bottom (allowing for 2 lines)
+        y: detailTextY,
         width: nodeWidth - 20,
-        height: 35,
+        height: detailHeight,
         text: detailText,
         fontSize: FONT_SIZES.DETAILS,
         fontFamily: FONT_FAMILIES.NORMAL,

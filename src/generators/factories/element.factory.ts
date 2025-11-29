@@ -103,7 +103,7 @@ export class ElementFactory {
       versionNonce: this.idGenerator.generateSeed(),
       isDeleted: false,
       boundElements: [],
-      updated: Date.now(),
+      updated: this.idGenerator.generateTimestamp(),
       link: null,
       locked: false,
     };
@@ -145,7 +145,7 @@ export class ElementFactory {
       versionNonce: this.idGenerator.generateSeed(),
       isDeleted: false,
       boundElements: [],
-      updated: Date.now(),
+      updated: this.idGenerator.generateTimestamp(),
       link: null,
       locked: false,
       text: options.text,
@@ -192,7 +192,7 @@ export class ElementFactory {
       versionNonce: this.idGenerator.generateSeed(),
       isDeleted: false,
       boundElements: [],
-      updated: Date.now(),
+      updated: this.idGenerator.generateTimestamp(),
       link: null,
       locked: false,
       points: [
@@ -244,7 +244,7 @@ export class ElementFactory {
       versionNonce: this.idGenerator.generateSeed(),
       isDeleted: false,
       boundElements: [],
-      updated: Date.now(),
+      updated: this.idGenerator.generateTimestamp(),
       link: null,
       locked: false,
     };

@@ -71,6 +71,12 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
         details.push(`file_type=${node.properties.file_type}`);
       }
 
+      // Add limit information if present
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      if (limitText) {
+        details.push(limitText);
+      }
+
       if (details.length > 0) {
         const detailsText = context.elementFactory.createText({
           id: context.idGenerator.generateId(),

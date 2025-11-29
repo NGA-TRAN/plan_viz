@@ -130,6 +130,9 @@ export class RepartitionNodeGenerator extends BaseNodeGenerator {
       }
     }
 
+    // Add limit information if present
+    this.extractAndAddLimit(node, detailBuilder, context);
+
     // Create detail text elements
     // Position details above bottom with padding (same as original)
     // Pattern from expected output:

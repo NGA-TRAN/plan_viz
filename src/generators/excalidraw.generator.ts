@@ -25,6 +25,7 @@ import { HashJoinNodeGenerator } from './generators/hash-join-node.generator';
 import { SortMergeJoinNodeGenerator } from './generators/sort-merge-join-node.generator';
 import { UnionNodeGenerator } from './generators/union-node.generator';
 import { DataSourceNodeGenerator } from './generators/data-source-node.generator';
+import { LocalLimitNodeGenerator } from './generators/local-limit-node.generator';
 import { GenerationContext } from './types/generation-context.types';
 
 /**
@@ -172,5 +173,6 @@ export class ExcalidrawGenerator {
     this.nodeGeneratorRegistry.register('SortMergeJoinExec', new SortMergeJoinNodeGenerator());
     this.nodeGeneratorRegistry.register('UnionExec', new UnionNodeGenerator());
     this.nodeGeneratorRegistry.register('DataSourceExec', new DataSourceNodeGenerator());
+    this.nodeGeneratorRegistry.register('LocalLimitExec', new LocalLimitNodeGenerator());
   }
 }
