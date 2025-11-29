@@ -14,14 +14,13 @@
 10. **HashJoinExec** - Hash join operations
 11. **SortMergeJoinExec** / **SortMergeJoin** - Sort-merge join operations
 12. **UnionExec** - Union operations
+13. **LocalLimitExec** - Local limit per partition
+14. **GlobalLimitExec** - Global limit across partitions
 
 ## Missing Operators (Confirmed from DataFusion Documentation)
 
 Based on research from DataFusion's physical plan documentation at https://docs.rs/datafusion/latest/datafusion/physical_plan/, the following operators are **NOT yet** implemented in this project:
 
-### Limit Operations
-- **GlobalLimitExec** - Global limit across partitions
-- **LocalLimitExec** - Local limit per partition
 
 ### Window Functions
 - **WindowAggExec** - Window aggregation functions
@@ -65,8 +64,8 @@ These operators are common in query engines but need verification in DataFusion:
 
 ## Summary
 
-**Total Implemented:** 12 operators  
-**Total Missing (Confirmed):** 15+ operators  
+**Total Implemented:** 14 operators  
+**Total Missing (Confirmed):** 13+ operators  
 **Total Missing (Unverified):** ~10 operators
 
 ## Next Steps
@@ -74,7 +73,7 @@ These operators are common in query engines but need verification in DataFusion:
 1. ✅ Checked DataFusion documentation at https://docs.rs/datafusion/latest/datafusion/physical_plan/
 2. Test with various SQL queries to discover additional operators in practice
 3. Prioritize implementation based on common usage:
-   - **High Priority**: LimitExec variants, WindowAggExec, CrossJoinExec, NestedLoopJoinExec
+   - **High Priority**: WindowAggExec, CrossJoinExec, NestedLoopJoinExec
    - **Medium Priority**: AnalyzeExec, ExplainExec, UnnestExec
    - **Low Priority**: RecursiveQueryExec, WorkTableExec, PlaceholderRowExec
 

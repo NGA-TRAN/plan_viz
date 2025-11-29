@@ -148,8 +148,10 @@ class ExcalidrawGenerator {
   - `HashJoinNodeGenerator`: Handles hash joins with hash table visualization
   - `SortMergeJoinNodeGenerator`: Handles sort-merge joins with validation
   - `UnionNodeGenerator`: Handles multiple children with horizontal layout
+  - `LocalLimitNodeGenerator`: Handles local limit per partition
+  - `GlobalLimitNodeGenerator`: Handles global limit across partitions
   - `DefaultNodeGenerator`: Fallback for unimplemented operators
-  - And 6 more specialized generators
+  - And 6 more specialized generators (CoalesceBatchesNodeGenerator, CoalescePartitionsNodeGenerator, RepartitionNodeGenerator, ProjectionNodeGenerator, SortNodeGenerator, SortPreservingMergeNodeGenerator)
 - **Benefits**:
   - Single Responsibility: Each generator handles one operator type
   - Open/Closed: New operators can be added without modifying existing code
@@ -278,7 +280,7 @@ The codebase follows SOLID principles and DRY through focused utility classes an
 - **Benefits**: Separation of concerns, extensibility
 
 ### 2. Strategy Pattern
-- **Node Generator Strategies**: Each operator type has its own generator strategy (13 specialized generators + default)
+- **Node Generator Strategies**: Each operator type has its own generator strategy (14 specialized generators + default)
 - **NodeGeneratorRegistry**: Manages generator registration and lookup
 - **Benefits**: Open/Closed principle - new operators can be added without modifying existing code
 
@@ -536,7 +538,7 @@ The `ExcalidrawGenerator` class underwent a comprehensive refactoring to follow 
 
 **Key Improvements**:
 - **97.1% code reduction** in main generator class
-- **13 specialized node generators** extracted (one per operator type)
+- **14 specialized node generators** extracted (one per operator type)
 - **6 utility classes** for common operations
 - **Factory, Strategy, Builder, Renderer patterns** implemented
 - **100% test coverage maintained** throughout refactoring
