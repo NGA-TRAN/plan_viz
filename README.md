@@ -66,7 +66,7 @@ A JSON‑formatted plan that, when opened in Excalidraw, visualizes the plan as 
 
 ### Output Analysis
 
-The graphical plan includes pink annotations that clarify the roles of arrows, circles/ellipses, and color coding. As always, the plan tree is read in a bottom‑up fashion. This highlights how the visualization makes the plan easy to interpret—showing precisely what the plan does, how parallel execution is maintained, and how sort order is preserved and leveraged.
+This section adds pink annotations to clarify the roles of arrows, circles/ellipses, and color coding. Plans are read bottom-up, and the visualization clearly shows what each operator does, how parallel execution is maintained, and how sort order is preserved and leveraged.
 
   ![Execution Plan Visualization with Analyses](docs/assets/join_aggregates_with_analyses.png)
 
