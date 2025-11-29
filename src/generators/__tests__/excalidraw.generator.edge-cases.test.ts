@@ -63,8 +63,9 @@ describe('ExcalidrawGenerator - Edge Cases', () => {
 
       const result = generator.generate(node);
       const textElements = TestHelpers.getTextElements(result.elements);
+      // Details (file_groups, projection, file_type) are no longer shown - only limit is shown when present
       const detailText = textElements.find((t) => t.text?.includes('file_groups'));
-      expect(detailText).toBeDefined();
+      expect(detailText).toBeUndefined();
     });
 
     it('should handle FilterExec with projection in filter property', () => {

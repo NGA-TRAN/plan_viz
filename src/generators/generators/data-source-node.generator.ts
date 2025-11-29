@@ -52,41 +52,13 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
     });
     context.elements.push(operatorTextElement);
 
-    // Create details text
+    // Add limit detail text if present (like CoalescePartitionsExec)
+    // Do not show other details (file_groups, projection, file_type) - they are not critical
     if (node.properties) {
-      const details: string[] = [];
-      if (node.properties.file_groups) {
-        // Extract number of groups from file_groups property
-        const fileGroupsMatch = node.properties.file_groups.match(/(\d+)\s+groups/);
-        if (fileGroupsMatch) {
-          details.push(`file_groups=${fileGroupsMatch[1]} groups`);
-        } else {
-          details.push(`file_groups=${node.properties.file_groups}`);
-        }
-      }
-      if (node.properties.projection) {
-        details.push(`projection=${node.properties.projection}`);
-      }
-      if (node.properties.file_type) {
-        details.push(`file_type=${node.properties.file_type}`);
-      }
-
-      if (details.length > 0) {
-        const detailsText = context.elementFactory.createText({
-          id: context.idGenerator.generateId(),
-          x: x + 10,
-          y: y + 34,
-          width: nodeWidth - 20,
-          height: 64,
-          text: details.join('\n'),
-          fontSize: FONT_SIZES.DETAILS,
-          fontFamily: FONT_FAMILIES.REGULAR,
-          textAlign: 'left',
-          verticalAlign: 'top',
-          strokeColor: context.config.nodeColor,
-          containerId: rectId,
-        });
-        context.elements.push(detailsText);
+      const limitText = context.propertyParser.extractLimit(node.properties);
+      if (limitText) {
+        // Use addLimitDetailText from base class (like CoalescePartitionsExec)
+        this.addLimitDetailText(node, x, y, nodeWidth, nodeHeight, context);
       }
 
       // Check if DynamicFilter is present in predicate

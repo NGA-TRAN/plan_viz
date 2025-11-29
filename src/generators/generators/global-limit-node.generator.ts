@@ -5,10 +5,13 @@ import { BaseNodeGenerator } from './base-node.generator';
 import { NODE_DIMENSIONS, FONT_SIZES, FONT_FAMILIES, TEXT_HEIGHTS } from '../constants';
 
 /**
- * CoalesceBatchesExec node generator
- * CoalesceBatchesExec coalesces batches from children and displays target_batch_size
+ * GlobalLimitExec node generator
+ * GlobalLimitExec limits the number of rows fetched globally across partitions
+ * Output columns and sort order are the same as input
+ * Must have exactly 1 input arrow (error if many)
+ * Always has 1 output arrow
  */
-export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
+export class GlobalLimitNodeGenerator extends BaseNodeGenerator {
   generate(
     node: ExecutionPlanNode,
     x: number,
@@ -16,14 +19,15 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
     _isRoot: boolean,
     context: GenerationContext
   ): NodeInfo {
-    const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
-    const baseHeight = NODE_DIMENSIONS.DEFAULT_HEIGHT;
+    // GlobalLimitExec must have exactly 1 child
+    if (node.children.length !== 1) {
+      throw new Error(
+        `GlobalLimitExec must have exactly 1 child, but found ${node.children.length}`
+      );
+    }
 
-    // Check for limit information
-    const hasLimit = !!context.propertyParser.extractLimit(node.properties);
-    const hasTargetBatchSize = !!(node.properties && node.properties.target_batch_size);
-    const detailLines = (hasTargetBatchSize ? 1 : 0) + (hasLimit ? 1 : 0);
-    const nodeHeight = this.calculateAdjustedHeight(baseHeight, hasLimit, detailLines > 1 ? 1 : 0);
+    const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
+    const nodeHeight = NODE_DIMENSIONS.DEFAULT_HEIGHT;
 
     // Create rectangle
     const rectId = context.idGenerator.generateId();
@@ -45,7 +49,7 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
       y: y + 5,
       width: nodeWidth,
       height: TEXT_HEIGHTS.OPERATOR,
-      text: 'CoalesceBatchesExec',
+      text: 'GlobalLimitExec',
       fontSize: FONT_SIZES.OPERATOR,
       fontFamily: FONT_FAMILIES.BOLD,
       textAlign: 'center',
@@ -55,49 +59,33 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
     });
     context.elements.push(operatorText);
 
-    // Extract target_batch_size from properties
-    let detailY = y + nodeHeight - 25;
-    if (node.properties && node.properties.target_batch_size) {
-      const targetBatchSize = `target_batch_size=${node.properties.target_batch_size}`;
-      const detailText = context.elementFactory.createText({
+    // Extract skip and fetch properties and display as detail text
+    const detailParts: string[] = [];
+    if (node.properties?.skip !== undefined) {
+      detailParts.push(`skip=${node.properties.skip}`);
+    }
+    if (node.properties?.fetch !== undefined) {
+      detailParts.push(`fetch=${node.properties.fetch}`);
+    }
+
+    const detailText = detailParts.join(', ');
+
+    // Create detail text at bottom center
+    if (detailText) {
+      const detailTextElement = context.elementFactory.createText({
         id: context.idGenerator.generateId(),
         x: x + 10,
-        y: detailY,
+        y: y + nodeHeight - 25, // Position near bottom
         width: nodeWidth - 20,
         height: 20,
-        text: targetBatchSize,
+        text: detailText,
         fontSize: FONT_SIZES.DETAILS,
         fontFamily: FONT_FAMILIES.NORMAL,
         textAlign: 'center',
         verticalAlign: 'top',
         strokeColor: context.config.nodeColor,
       });
-      context.elements.push(detailText);
-      // If limit is also present, adjust Y position for limit text
-      if (hasLimit) {
-        detailY -= TEXT_HEIGHTS.DETAILS_LINE;
-      }
-    }
-
-    // Add limit detail text if present
-    if (hasLimit) {
-      const limitText = context.propertyParser.extractLimit(node.properties);
-      if (limitText) {
-        const limitDetailText = context.elementFactory.createText({
-          id: context.idGenerator.generateId(),
-          x: x + 10,
-          y: detailY,
-          width: nodeWidth - 20,
-          height: 20,
-          text: limitText,
-          fontSize: FONT_SIZES.DETAILS,
-          fontFamily: FONT_FAMILIES.NORMAL,
-          textAlign: 'center',
-          verticalAlign: 'top',
-          strokeColor: context.config.nodeColor,
-        });
-        context.elements.push(limitDetailText);
-      }
+      context.elements.push(detailTextElement);
     }
 
     // Process children using the recursive generator from context
@@ -114,7 +102,14 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
       }
     );
 
-    // CoalesceBatchesExec: outputColumns and outputSortOrder from input (child)
+    // Validate that there's exactly 1 input arrow
+    if (childResult.totalInputArrows !== 1) {
+      throw new Error(
+        `GlobalLimitExec must have exactly 1 input arrow, but found ${childResult.totalInputArrows}`
+      );
+    }
+
+    // GlobalLimitExec: output columns and sort order are the same as input (from children)
     const outputColumns: string[] = [];
     const outputSortOrder: string[] = [];
 
@@ -123,13 +118,9 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
       outputSortOrder.push(...childResult.firstChildInfo.outputSortOrder);
     }
 
-    // Calculate output arrow positions with ellipsis support
-    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
-      context.arrowCalculator.calculateOutputArrowPositions(
-        childResult.totalInputArrows,
-        x,
-        nodeWidth
-      );
+    // GlobalLimitExec: always has 1 output arrow
+    const outputArrowPositions = [x + nodeWidth / 2];
+    const outputArrowCount = 1;
 
     return {
       x,
@@ -138,7 +129,7 @@ export class CoalesceBatchesNodeGenerator extends BaseNodeGenerator {
       height: nodeHeight,
       rectId,
       inputArrowCount: outputArrowCount,
-      inputArrowPositions: outputArrowPositions.length > 0 ? outputArrowPositions : childResult.allInputArrowPositions,
+      inputArrowPositions: outputArrowPositions,
       outputColumns,
       outputSortOrder,
     };

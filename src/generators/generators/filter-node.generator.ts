@@ -105,6 +105,12 @@ export class FilterNodeGenerator extends BaseNodeGenerator {
       details.push(`projection=[${projectionColumns.join(', ')}]`);
     }
 
+    // Add limit information if present
+    const limitText = context.propertyParser.extractLimit(node.properties);
+    if (limitText) {
+      details.push(limitText);
+    }
+
     if (details.length > 0) {
       const detailText = context.elementFactory.createText({
         id: context.idGenerator.generateId(),

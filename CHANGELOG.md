@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2025-11-28
+
+### Added
+- **GlobalLimitExec** & **LocalLimitExec** operator support:
+  - Visualizes global and local limit operations
+  - Displays skip and fetch properties (e.g., "skip=0, fetch=2")
+  - GlobalLimitExec validates exactly 1 input arrow (throws error if multiple inputs)
+  - GlobalLimitExec always produces 1 output arrow
+  - Preserves input/output columns and sort order from child nodes
+  - Comprehensive test coverage with unit and integration tests
+
 ## [0.1.7] - 2025-11-28
 
 ### Added

@@ -270,6 +270,44 @@ export class PropertyParser {
   }
 
   /**
+   * Extracts limit information from properties
+   * Handles formats: "limit=100", "fetch=100", "TopK(fetch=100)"
+   * Returns the limit text to display (e.g., "fetch=100", "limit=100", "TopK(fetch=100)")
+   * Returns null if no limit is found
+   */
+  extractLimit(properties?: Record<string, string>): string | null {
+    if (!properties) {
+      return null;
+    }
+
+    // Check for direct limit= or fetch= properties
+    if (properties.limit) {
+      return `limit=${properties.limit}`;
+    }
+    if (properties.fetch) {
+      return `fetch=${properties.fetch}`;
+    }
+
+    // Check for TopK(fetch=100) format in any property value
+    for (const value of Object.values(properties)) {
+      if (value && typeof value === 'string') {
+        // Check for TopK(fetch=XXX) pattern
+        const topKMatch = value.match(/TopK\(fetch=(\d+)\)/);
+        if (topKMatch) {
+          return `TopK(fetch=${topKMatch[1]})`;
+        }
+        // Also check if the property value itself contains fetch=XXX
+        const fetchMatch = value.match(/fetch=(\d+)/);
+        if (fetchMatch) {
+          return `fetch=${fetchMatch[1]}`;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Simplifies partitioning expression
    * Example: "Hash([d_dkey@0, env@1], 16)" -> "Hash([d_dkey, env], 16)"
    */

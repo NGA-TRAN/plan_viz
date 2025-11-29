@@ -3,7 +3,8 @@ import { ExcalidrawText } from '../../types/excalidraw.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
 import { NodeGeneratorStrategy } from './node-generator.strategy';
-import { SPACING } from '../constants';
+import { SPACING, TEXT_HEIGHTS, FONT_SIZES, FONT_FAMILIES } from '../constants';
+import { DetailTextBuilder } from '../builders/detail-text.builder';
 
 /**
  * Base class for node generators
@@ -284,6 +285,72 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       containerId: rectId,
       strokeColor: context.config.nodeColor,
     });
+  }
+
+  /**
+   * Extracts limit information from node properties and adds it to detail builder
+   * Handles formats: "limit=100", "fetch=100", "TopK(fetch=100)"
+   * Returns the limit text if found, null otherwise
+   */
+  protected extractAndAddLimit(
+    node: ExecutionPlanNode,
+    detailBuilder: DetailTextBuilder,
+    context: GenerationContext
+  ): string | null {
+    const limitText = context.propertyParser.extractLimit(node.properties);
+    if (limitText) {
+      detailBuilder.addLine(limitText, context.config.nodeColor);
+    }
+    return limitText;
+  }
+
+  /**
+   * Adds limit information as detail text element
+   * Returns the limit text if found, null otherwise
+   * This is a simpler version that creates text directly (for generators that don't use DetailTextBuilder)
+   */
+  protected addLimitDetailText(
+    node: ExecutionPlanNode,
+    x: number,
+    y: number,
+    nodeWidth: number,
+    nodeHeight: number,
+    context: GenerationContext
+  ): string | null {
+    const limitText = context.propertyParser.extractLimit(node.properties);
+    if (limitText) {
+      const detailTextElement = context.elementFactory.createText({
+        id: context.idGenerator.generateId(),
+        x: x + 10,
+        y: y + nodeHeight - 25, // Position near bottom
+        width: nodeWidth - 20,
+        height: 20,
+        text: limitText,
+        fontSize: FONT_SIZES.DETAILS,
+        fontFamily: FONT_FAMILIES.NORMAL,
+        textAlign: 'center',
+        verticalAlign: 'top',
+        strokeColor: context.config.nodeColor,
+      });
+      context.elements.push(detailTextElement);
+    }
+    return limitText;
+  }
+
+  /**
+   * Calculates adjusted node height if limit information is present
+   * Adds extra height for limit detail line
+   */
+  protected calculateAdjustedHeight(
+    baseHeight: number,
+    hasLimit: boolean,
+    existingDetailLines: number = 0
+  ): number {
+    if (hasLimit && existingDetailLines === 0) {
+      // Add space for one additional detail line
+      return baseHeight + TEXT_HEIGHTS.DETAILS_LINE;
+    }
+    return baseHeight;
   }
 }
 

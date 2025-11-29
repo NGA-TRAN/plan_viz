@@ -62,7 +62,10 @@ describe('ExcalidrawGenerator - Core', () => {
       const result = generator.generate(node);
 
       TestHelpers.assertHasOperator(result, 'FilterExec');
-      TestHelpers.assertHasText(result, 'a > 10');
+      // Check that the detail text contains the predicate (it may be on a separate line from limit)
+      const textElements = TestHelpers.getTextElements(result.elements);
+      const hasPredicate = textElements.some((t) => t.text && t.text.includes('a > 10'));
+      expect(hasPredicate).toBe(true);
     });
 
     it('should handle null root node', () => {
