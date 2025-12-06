@@ -168,6 +168,30 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
   }
 
   /**
+   * Binds an arrow to the connected elements so Excalidraw keeps them attached when moved
+   */
+  protected bindArrowToElements(
+    context: GenerationContext,
+    arrowId: string,
+    elementIds: string[]
+  ): void {
+    for (const element of context.elements) {
+      if (!elementIds.includes(element.id)) {
+        continue;
+      }
+
+      if (!element.boundElements) {
+        element.boundElements = [];
+      }
+
+      const alreadyBound = element.boundElements.some((binding) => binding.id === arrowId);
+      if (!alreadyBound) {
+        element.boundElements.push({ id: arrowId, type: 'arrow' });
+      }
+    }
+  }
+
+  /**
    * Helper method for creating arrows with ellipsis
    * Uses ArrowPositionCalculator and ColumnLabelRenderer for consistent behavior
    */
@@ -201,6 +225,7 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [childRectId, parentRectId]);
     }
 
     // Add "..." text if needed
@@ -232,14 +257,15 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
           startX: arrowX,
           startY: childTop,
           endX: arrowX,
-          endY: parentBottom,
-          childRectId,
-          parentRectId,
-          strokeColor: context.config.arrowColor,
-        });
-        context.elements.push(arrow);
-      }
+        endY: parentBottom,
+        childRectId,
+        parentRectId,
+        strokeColor: context.config.arrowColor,
+      });
+      context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [childRectId, parentRectId]);
     }
+  }
 
     // Display column labels if provided using ColumnLabelRenderer
     if (columns && columns.length > 0) {
@@ -353,4 +379,3 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     return baseHeight;
   }
 }
-
