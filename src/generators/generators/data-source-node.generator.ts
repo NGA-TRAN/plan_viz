@@ -383,6 +383,7 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
           strokeColor: context.config.arrowColor,
         });
         context.elements.push(arrow);
+        this.bindArrowToElements(context, arrowId, [arrowStartElementId, rectId]);
       }
 
       // Create projection text element at the middle of the edges (arrows)
@@ -543,4 +544,3 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
     };
   }
 }
-

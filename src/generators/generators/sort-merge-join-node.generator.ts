@@ -188,6 +188,7 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [leftSideInfo.rectId, rectId]);
     }
 
     // Display columns on arrows from left side (using left side's columns and sort order)
@@ -277,6 +278,7 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [rightSideInfo.rectId, rectId]);
     }
 
     // Display columns on arrows from right side (using right side's columns and sort order)
@@ -432,4 +434,3 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
     };
   }
 }
-
