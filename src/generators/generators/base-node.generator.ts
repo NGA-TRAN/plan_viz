@@ -257,15 +257,15 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
           startX: arrowX,
           startY: childTop,
           endX: arrowX,
-        endY: parentBottom,
-        childRectId,
-        parentRectId,
-        strokeColor: context.config.arrowColor,
-      });
-      context.elements.push(arrow);
-      this.bindArrowToElements(context, arrowId, [childRectId, parentRectId]);
+          endY: parentBottom,
+          childRectId,
+          parentRectId,
+          strokeColor: context.config.arrowColor,
+        });
+        context.elements.push(arrow);
+        this.bindArrowToElements(context, arrowId, [childRectId, parentRectId]);
+      }
     }
-  }
 
     // Display column labels if provided using ColumnLabelRenderer
     if (columns && columns.length > 0) {
