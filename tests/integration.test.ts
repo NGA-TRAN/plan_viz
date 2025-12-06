@@ -39,6 +39,11 @@ function normalizeExcalidraw(data: ExcalidrawData): ExcalidrawData {
       normalizedElement.groupIds = [];
     }
 
+    // Remove boundElements because bindings depend on generated IDs
+    if (normalizedElement.boundElements) {
+      normalizedElement.boundElements = [];
+    }
+
     return normalizedElement;
   });
 
@@ -123,4 +128,3 @@ describe('Examples Integration Tests', () => {
     expect(orphanedExpected).toEqual([]);
   });
 });
-
