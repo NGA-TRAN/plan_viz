@@ -14,12 +14,17 @@ interface CliOptions {
   horizontalSpacing: number;
 }
 
+// Read version from package.json
+const packageJsonPath = path.join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+const version = packageJson.version;
+
 const program = new Command();
 
 program
   .name('plan-viz')
   .description('Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON')
-  .version('0.1.7');
+  .version(version);
 
 program
   .option('-i, --input <file>', 'Input file containing the execution plan')
