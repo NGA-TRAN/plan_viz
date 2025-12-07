@@ -5,7 +5,7 @@ import { BaseNodeGenerator } from '../base-node.generator';
 import { ExecutionPlanNode } from '../../../types/execution-plan.types';
 import { NodeInfo } from '../../types/node-info.types';
 import { GenerationContext } from '../../types/generation-context.types';
-import { ExcalidrawElement } from '../../../types/excalidraw.types';
+import { ExcalidrawArrow, ExcalidrawElement } from '../../../types/excalidraw.types';
 
 /**
  * Test implementation to test createOperatorText protected method
@@ -234,6 +234,29 @@ describe('BaseNodeGenerator', () => {
       // Should create arrows with column labels if applicable
       TestHelpers.assertHasArrows(result);
     });
+
+    it('should bind arrows to connected elements', () => {
+      const childNode = NodeBuilder.createSimpleNode('ChildOp');
+      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const result = generator.generate(node);
+
+      const arrows = TestHelpers.getArrows(result.elements) as ExcalidrawArrow[];
+      expect(arrows.length).toBe(1);
+      const arrow = arrows[0];
+      const rectangles = TestHelpers.getRectangles(result.elements);
+
+      const parentRect = rectangles.find((rect) => rect.id === arrow.endBinding?.elementId);
+      const childRect = rectangles.find((rect) => rect.id === arrow.startBinding?.elementId);
+
+      expect(parentRect).toBeDefined();
+      expect(childRect).toBeDefined();
+
+      const parentBindings = parentRect?.boundElements ?? [];
+      const childBindings = childRect?.boundElements ?? [];
+
+      expect(parentBindings).toEqual(expect.arrayContaining([{ id: arrow.id, type: 'arrow' }]));
+      expect(childBindings).toEqual(expect.arrayContaining([{ id: arrow.id, type: 'arrow' }]));
+    });
   });
 
   describe('createArrowsToParent', () => {
@@ -311,4 +334,3 @@ describe('BaseNodeGenerator', () => {
     });
   });
 });
-

@@ -193,6 +193,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [buildSideInfo.rectId, hashTableId]);
     }
 
     // Display columns on arrows from build side (using build side's columns and sort order)
@@ -306,6 +307,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [probeSideInfo.rectId, hashTableId]);
     }
 
     // Display columns on arrows from probe side (using probe side's columns and sort order)
@@ -411,4 +413,3 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     };
   }
 }
-

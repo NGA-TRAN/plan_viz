@@ -241,6 +241,7 @@ export class UnionNodeGenerator extends BaseNodeGenerator {
             strokeColor: context.config.arrowColor,
           });
           context.elements.push(arrow);
+          this.bindArrowToElements(context, arrowId, [childInfo.rectId, rectId]);
         }
 
         // Add column labels if available (once per child, not per arrow)
@@ -324,4 +325,3 @@ export class UnionNodeGenerator extends BaseNodeGenerator {
     };
   }
 }
-
