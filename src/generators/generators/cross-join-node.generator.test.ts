@@ -20,5 +20,21 @@ describe('CrossJoinExec generator', () => {
 
     const arrows = result.elements.filter((el) => el.type === 'arrow');
     expect(arrows.length).toBe(2); // one from each side
+
+    // Arrows should stay bound to their rectangles when dragged
+    for (const arrow of arrows) {
+      expect(arrow.startBinding?.elementId).toBeTruthy();
+      expect(arrow.endBinding?.elementId).toBeTruthy();
+
+      const startRect = result.elements.find(
+        (el) => el.type === 'rectangle' && el.id === arrow.startBinding?.elementId
+      );
+      const endRect = result.elements.find(
+        (el) => el.type === 'rectangle' && el.id === arrow.endBinding?.elementId
+      );
+
+      expect(startRect?.boundElements?.some((b) => b.id === arrow.id && b.type === 'arrow')).toBe(true);
+      expect(endRect?.boundElements?.some((b) => b.id === arrow.id && b.type === 'arrow')).toBe(true);
+    }
   });
 });

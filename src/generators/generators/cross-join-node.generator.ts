@@ -111,6 +111,7 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [leftInfo.rectId, rectId]);
     }
 
     // Draw arrows from right child
@@ -127,6 +128,7 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
         strokeColor: context.config.arrowColor,
       });
       context.elements.push(arrow);
+      this.bindArrowToElements(context, arrowId, [rightInfo.rectId, rectId]);
     }
 
     // Merge columns from both sides
