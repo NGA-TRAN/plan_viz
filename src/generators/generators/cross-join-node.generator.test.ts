@@ -1,4 +1,5 @@
 import { convertPlanToExcalidraw } from '../../index';
+import { ExcalidrawText } from '../../types/excalidraw.types';
 
 describe('CrossJoinExec generator', () => {
   it('renders a two-input cross join without falling back to unimplemented', () => {
@@ -8,7 +9,9 @@ describe('CrossJoinExec generator', () => {
 
     const result = convertPlanToExcalidraw(plan);
 
-    const texts = result.elements.filter((el) => el.type === 'text').map((el: any) => el.text);
+    const texts = result.elements
+      .filter((el): el is ExcalidrawText => el.type === 'text')
+      .map((el) => el.text);
     expect(texts).toContain('CrossJoinExec');
     expect(texts).not.toContain('unimplemented');
 

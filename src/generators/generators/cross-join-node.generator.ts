@@ -70,7 +70,7 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
     const rightArrows = Math.max(1, rightInfo.inputArrowCount);
 
     // Arrow start positions on top of children (use central 60% of width)
-    const centerRegion = (width: number) => width * 0.6;
+    const centerRegion = (width: number): number => width * 0.6;
     const leftStartLeft = leftX + leftInfo.width / 2 - centerRegion(leftInfo.width) / 2;
     const leftStartRight = leftStartLeft + centerRegion(leftInfo.width);
     const rightStartLeft = rightX + rightInfo.width / 2 - centerRegion(rightInfo.width) / 2;
