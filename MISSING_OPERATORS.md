@@ -16,6 +16,7 @@
 12. **UnionExec** - Union operations
 13. **LocalLimitExec** - Local limit per partition
 14. **GlobalLimitExec** - Global limit across partitions
+15. **CrossJoinExec** - Cross join (Cartesian product)
 
 ## Missing Operators (Confirmed from DataFusion Documentation)
 
@@ -27,7 +28,6 @@ Based on research from DataFusion's physical plan documentation at https://docs.
 - **BoundedWindowAggExec** - Bounded window aggregation functions
 
 ### Join Operations
-- **CrossJoinExec** - Cross join (Cartesian product)
 - **NestedLoopJoinExec** - Nested loop join
 - **SymmetricHashJoinExec** - Symmetric hash join
 - **PiecewiseMergeJoinExec** - Piecewise merge join
@@ -64,7 +64,7 @@ These operators are common in query engines but need verification in DataFusion:
 
 ## Summary
 
-**Total Implemented:** 14 operators  
+**Total Implemented:** 15 operators  
 **Total Missing (Confirmed):** 13+ operators  
 **Total Missing (Unverified):** ~10 operators
 
@@ -73,7 +73,7 @@ These operators are common in query engines but need verification in DataFusion:
 1. ✅ Checked DataFusion documentation at https://docs.rs/datafusion/latest/datafusion/physical_plan/
 2. Test with various SQL queries to discover additional operators in practice
 3. Prioritize implementation based on common usage:
-   - **High Priority**: WindowAggExec, CrossJoinExec, NestedLoopJoinExec
+   - **High Priority**: WindowAggExec, NestedLoopJoinExec
    - **Medium Priority**: AnalyzeExec, ExplainExec, UnnestExec
    - **Low Priority**: RecursiveQueryExec, WorkTableExec, PlaceholderRowExec
 
@@ -81,4 +81,3 @@ These operators are common in query engines but need verification in DataFusion:
 
 - DataFusion Physical Plan Documentation: https://docs.rs/datafusion/latest/datafusion/physical_plan/
 - DataFusion GitHub Repository: https://github.com/apache/arrow-datafusion
-
