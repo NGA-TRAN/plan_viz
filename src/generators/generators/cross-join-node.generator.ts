@@ -51,16 +51,60 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
 
     // Require exactly 2 inputs
     if (node.children.length !== 2) {
-      throw new Error(`CrossJoinExec must have exactly 2 children, but found ${node.children.length}`);
+      throw new Error(
+        `CrossJoinExec must have exactly 2 children, but found ${node.children.length}`
+      );
     }
 
     const leftChild = node.children[0];
     const rightChild = node.children[1];
 
-    // Position children side by side below the join
+    // Extract number of input groups from children to calculate variable spacing
+    // The inputArrowCount represents the number of file groups in DataSourceExec
+    // We need to look at the DataSourceExec nodes (children of CoalescePartitionsExec)
+    let leftGroupCount = 0;
+    let rightGroupCount = 0;
+
+    // Try to extract from left child (CoalescePartitionsExec -> DataSourceExec)
+    if (leftChild.children && leftChild.children.length > 0) {
+      const leftDataSource = leftChild.children[0];
+      if (leftDataSource.operator === 'DataSourceExec' && leftDataSource.properties?.file_groups) {
+        // Parse file_groups to get count: "5 groups: ..." or "{5 groups: ...}"
+        const fileGroupsMatch = leftDataSource.properties.file_groups.match(/(\d+)\s+groups?/);
+        if (fileGroupsMatch) {
+          leftGroupCount = parseInt(fileGroupsMatch[1], 10);
+        }
+      }
+    }
+
+    // Try to extract from right child (CoalescePartitionsExec -> DataSourceExec)
+    if (rightChild.children && rightChild.children.length > 0) {
+      const rightDataSource = rightChild.children[0];
+      if (
+        rightDataSource.operator === 'DataSourceExec' &&
+        rightDataSource.properties?.file_groups
+      ) {
+        // Parse file_groups to get count: "10 groups: ..." or "{10 groups: ...}"
+        const fileGroupsMatch = rightDataSource.properties.file_groups.match(/(\d+)\s+groups?/);
+        if (fileGroupsMatch) {
+          rightGroupCount = parseInt(fileGroupsMatch[1], 10);
+        }
+      }
+    }
+
+    // Calculate variable spacing based on total number of input groups
+    // Use more aggressive scaling to prevent overlap with many groups
+    const totalGroups = leftGroupCount + rightGroupCount;
+    const baseSpacing = context.config.horizontalSpacing;
+    // Scale more aggressively: use larger per-group spacing and add quadratic component for very large groups
+    const perGroupSpacing = 30; // Increased from 15 to 30 pixels per input group
+    const quadraticComponent = totalGroups > 20 ? (totalGroups - 20) * 5 : 0; // Extra spacing for groups > 20
+    const variableSpacing = baseSpacing + totalGroups * perGroupSpacing + quadraticComponent;
+
+    // Position children side by side below the join with variable spacing
     const childY = y + nodeHeight + context.config.verticalSpacing;
-    const leftX = x - nodeWidth - context.config.horizontalSpacing;
-    const rightX = x + nodeWidth + context.config.horizontalSpacing;
+    const leftX = x - nodeWidth - variableSpacing;
+    const rightX = x + nodeWidth + variableSpacing;
 
     const leftInfo = context.generateChildNode(leftChild, leftX, childY, false);
     const rightInfo = context.generateChildNode(rightChild, rightX, childY, false);
@@ -70,10 +114,11 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
     const rightArrows = Math.max(1, rightInfo.inputArrowCount);
 
     // Arrow start positions on top of children (use central 60% of width)
+    // Use final positions from child info (leftInfo.x, rightInfo.x) in case they were adjusted
     const centerRegion = (width: number): number => width * 0.6;
-    const leftStartLeft = leftX + leftInfo.width / 2 - centerRegion(leftInfo.width) / 2;
+    const leftStartLeft = leftInfo.x + leftInfo.width / 2 - centerRegion(leftInfo.width) / 2;
     const leftStartRight = leftStartLeft + centerRegion(leftInfo.width);
-    const rightStartLeft = rightX + rightInfo.width / 2 - centerRegion(rightInfo.width) / 2;
+    const rightStartLeft = rightInfo.x + rightInfo.width / 2 - centerRegion(rightInfo.width) / 2;
     const rightStartRight = rightStartLeft + centerRegion(rightInfo.width);
 
     const leftStartPositions = context.arrowCalculator.distributeArrows(
@@ -90,7 +135,11 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
     const parentBottomY = y + nodeHeight;
 
     // Arrow end positions on join (left half for left child, right half for right child)
-    const leftEndPositions = context.arrowCalculator.distributeArrows(leftArrows, x, x + nodeWidth / 2);
+    const leftEndPositions = context.arrowCalculator.distributeArrows(
+      leftArrows,
+      x,
+      x + nodeWidth / 2
+    );
     const rightEndPositions = context.arrowCalculator.distributeArrows(
       rightArrows,
       x + nodeWidth / 2,
