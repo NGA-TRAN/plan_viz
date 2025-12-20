@@ -252,9 +252,9 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
     if (rightInfo.outputColumns.length > 0) {
       const arrowMidY = (childY + parentBottomY) / 2;
       const rightmostArrowX =
-        rightStartPositions.length > 0
-          ? rightStartPositions[rightStartPositions.length - 1]
-          : rightInfo.x + rightInfo.width / 2;
+        rightStartPositions.length > 0 ?
+          rightStartPositions[rightStartPositions.length - 1] :
+          rightInfo.x + rightInfo.width / 2;
       const rightOffset = 5; // Positive offset to position text to the right
       const projectionTextX = rightmostArrowX + rightOffset;
 
