@@ -33,8 +33,12 @@ describe('CrossJoinExec generator', () => {
         (el) => el.type === 'rectangle' && el.id === arrow.endBinding?.elementId
       );
 
-      expect(startRect?.boundElements?.some((b) => b.id === arrow.id && b.type === 'arrow')).toBe(true);
-      expect(endRect?.boundElements?.some((b) => b.id === arrow.id && b.type === 'arrow')).toBe(true);
+      expect(startRect?.boundElements?.some((b) => b.id === arrow.id && b.type === 'arrow')).toBe(
+        true
+      );
+      expect(endRect?.boundElements?.some((b) => b.id === arrow.id && b.type === 'arrow')).toBe(
+        true
+      );
     }
   });
 });

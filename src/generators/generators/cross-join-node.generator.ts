@@ -93,11 +93,11 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
     }
 
     // Calculate variable spacing based on total number of input groups
-    // Use more aggressive scaling to prevent overlap with many groups
+    // Use aggressive scaling to prevent overlap with many groups
     const totalGroups = leftGroupCount + rightGroupCount;
     const baseSpacing = context.config.horizontalSpacing;
     // Scale more aggressively: use larger per-group spacing and add quadratic component for very large groups
-    const perGroupSpacing = 30; // Increased from 15 to 30 pixels per input group
+    const perGroupSpacing = 30; // 30 pixels per input group
     const quadraticComponent = totalGroups > 20 ? (totalGroups - 20) * 5 : 0; // Extra spacing for groups > 20
     const variableSpacing = baseSpacing + totalGroups * perGroupSpacing + quadraticComponent;
 
@@ -163,6 +163,74 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [leftInfo.rectId, rectId]);
     }
 
+    // Display columns on arrows from left child (using left side's columns and sort order)
+    if (leftInfo.outputColumns.length > 0) {
+      const arrowMidY = (childY + parentBottomY) / 2;
+      const leftmostArrowX =
+        leftStartPositions.length > 0 ? leftStartPositions[0] : leftInfo.x + leftInfo.width / 2;
+      const leftOffset = -5; // Negative offset to position text to the left
+      const projectionTextX = leftmostArrowX + leftOffset;
+
+      const orderedColumns = new Set(leftInfo.outputSortOrder);
+      const groupId = context.idGenerator.generateId();
+      const charWidth = 8; // Match HashJoinExec and SortMergeJoinExec implementation
+      const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
+
+      // Collect all groups first to determine total width and proper comma placement
+      const groups: Array<{ text: string; color: string; width: number }> = [];
+      let i = 0;
+      while (i < leftInfo.outputColumns.length) {
+        const column = leftInfo.outputColumns[i];
+        const isOrdered = orderedColumns.has(column);
+        const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
+
+        const groupParts: string[] = [column];
+        let j = i + 1;
+        while (j < leftInfo.outputColumns.length) {
+          const nextColumn = leftInfo.outputColumns[j];
+          const nextIsOrdered = orderedColumns.has(nextColumn);
+          const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
+          if (nextColor === color) {
+            groupParts.push(nextColumn);
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        const groupText = groupParts.join(', ');
+        const groupWidth = groupText.length * charWidth;
+        groups.push({ text: groupText, color, width: groupWidth });
+        i = j;
+      }
+
+      // Position from right to left, building text correctly
+      let currentX = projectionTextX;
+      for (let idx = groups.length - 1; idx >= 0; idx--) {
+        const group = groups[idx];
+        const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
+        const groupWidth = groupText.length * charWidth;
+        const groupTextId = context.idGenerator.generateId();
+        // Position text to the left of the arrow, so we need to adjust X position
+        const groupTextElement = context.elementFactory.createText({
+          id: groupTextId,
+          x: currentX - groupWidth, // Position to the left
+          y: arrowMidY - textHeight / 2,
+          width: groupWidth,
+          height: textHeight,
+          text: groupText,
+          fontSize: FONT_SIZES.COLUMN_LABEL,
+          fontFamily: FONT_FAMILIES.NORMAL,
+          textAlign: 'right', // Right align since text is to the left
+          verticalAlign: 'top',
+          strokeColor: group.color,
+        });
+        groupTextElement.groupIds = [groupId];
+        context.elements.push(groupTextElement);
+        currentX -= groupWidth;
+      }
+    }
+
     // Draw arrows from right child
     for (let i = 0; i < rightArrows; i++) {
       const arrowId = context.idGenerator.generateId();
@@ -178,6 +246,76 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
       });
       context.elements.push(arrow);
       this.bindArrowToElements(context, arrowId, [rightInfo.rectId, rectId]);
+    }
+
+    // Display columns on arrows from right child (using right side's columns and sort order)
+    if (rightInfo.outputColumns.length > 0) {
+      const arrowMidY = (childY + parentBottomY) / 2;
+      const rightmostArrowX =
+        rightStartPositions.length > 0
+          ? rightStartPositions[rightStartPositions.length - 1]
+          : rightInfo.x + rightInfo.width / 2;
+      const rightOffset = 5; // Positive offset to position text to the right
+      const projectionTextX = rightmostArrowX + rightOffset;
+
+      const orderedColumns = new Set(rightInfo.outputSortOrder);
+      const groupId = context.idGenerator.generateId();
+      const charWidth = 8; // Match HashJoinExec and SortMergeJoinExec implementation
+      const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
+
+      // Collect all groups first to determine total width and proper comma placement
+      const groups: Array<{ text: string; color: string; width: number }> = [];
+      let i = 0;
+      while (i < rightInfo.outputColumns.length) {
+        const column = rightInfo.outputColumns[i];
+        const isOrdered = orderedColumns.has(column);
+        const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
+
+        const groupParts: string[] = [column];
+        let j = i + 1;
+        while (j < rightInfo.outputColumns.length) {
+          const nextColumn = rightInfo.outputColumns[j];
+          const nextIsOrdered = orderedColumns.has(nextColumn);
+          const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
+          if (nextColor === color) {
+            groupParts.push(nextColumn);
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        const groupText = groupParts.join(', ');
+        const groupWidth = groupText.length * charWidth;
+        groups.push({ text: groupText, color, width: groupWidth });
+        i = j;
+      }
+
+      // Position from left to right, building text correctly
+      let currentX = projectionTextX;
+      for (let idx = 0; idx < groups.length; idx++) {
+        const group = groups[idx];
+        const groupText = idx > 0 ? ', ' + group.text : group.text;
+        const groupWidth = groupText.length * charWidth;
+        const groupTextId = context.idGenerator.generateId();
+        // Position text to the right of the arrow
+        const groupTextElement = context.elementFactory.createText({
+          id: groupTextId,
+          x: currentX, // Position to the right
+          y: arrowMidY - textHeight / 2,
+          width: groupWidth,
+          height: textHeight,
+          text: groupText,
+          fontSize: FONT_SIZES.COLUMN_LABEL,
+          fontFamily: FONT_FAMILIES.NORMAL,
+          textAlign: 'left', // Left align since text is to the right
+          verticalAlign: 'top',
+          strokeColor: group.color,
+        });
+        groupTextElement.groupIds = [groupId];
+        context.elements.push(groupTextElement);
+        currentX += groupWidth;
+      }
     }
 
     // Merge columns from both sides
@@ -196,13 +334,11 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
       }
     }
 
-    // Output arrows: use the larger side count to propagate downstream
-    const { positions: outputArrowPositions, fullCount: outputArrowCount } =
-      context.arrowCalculator.calculateOutputArrowPositions(
-        Math.max(leftArrows, rightArrows),
-        x,
-        nodeWidth
-      );
+    // Output arrows: CrossJoin produces Cartesian product, so output = leftArrows * rightArrows
+    // Each partition from left side is joined with each partition from right side
+    const outputArrowCount = leftArrows * rightArrows;
+    const { positions: outputArrowPositions, fullCount: outputArrowFullCount } =
+      context.arrowCalculator.calculateOutputArrowPositions(outputArrowCount, x, nodeWidth);
 
     const maxChildY = Math.max(leftInfo.y + leftInfo.height, rightInfo.y + rightInfo.height);
 
@@ -212,7 +348,7 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount: outputArrowCount,
+      inputArrowCount: outputArrowFullCount,
       inputArrowPositions: outputArrowPositions,
       outputColumns,
       outputSortOrder: [],
