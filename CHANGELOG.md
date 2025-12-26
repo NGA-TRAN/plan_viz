@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] - 2025-12-26
+
+### Changed
+- Updated GitHub Actions workflow permissions for npm publishing
+- Added explicit permissions (contents: read, packages: write, id-token: write) to workflow for better security and reliability
+
 ## [0.1.11] - 2025-12-26
 
 ### Fixed
