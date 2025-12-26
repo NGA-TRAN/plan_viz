@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2025-12-26
+
+### Fixed
+- Fixed npm publishing authentication in CI/CD workflow for packages with 2FA enabled
+- Configured `NODE_AUTH_TOKEN` in setup-node step to properly authenticate npm registry
+- Added `--access public` flag to npm publish command for explicit package visibility
+
+### Improved
+- Improved test coverage for CrossJoinExec generator from 60.97% to 95.12% branch coverage
+- Added comprehensive tests for error handling, column grouping logic, and variable spacing calculation
+- Enhanced test suite with 18 additional test cases covering edge cases and branch conditions
+
 ## [0.1.10] - 2025-12-26
 
 ### Added
