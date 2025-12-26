@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2025-12-26
+
+### Added
+- **CrossJoinExec** operator support:
+  - Visualizes cross join operations with multiple input groups
+  - Supports variable spacing for better layout of large cross joins
+  - Handles cross joins with 5x5 and 10x10 input groups
+  - Comprehensive test coverage with unit and integration tests
+  - Updated MISSING_OPERATORS.md to mark CrossJoinExec as implemented
+
 ## [0.1.9] - 2025-12-06
 
 ### Fixed
