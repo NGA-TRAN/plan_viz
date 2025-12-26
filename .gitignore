@@ -44,3 +44,7 @@ tmp/
 temp/
 *.tmp
 
+# speckit
+.cursor/commands/
+.specify/
+spec/
