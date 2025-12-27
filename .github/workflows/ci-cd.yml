@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
   id-token: write
 
 env:
@@ -141,4 +140,4 @@ jobs:
           echo "Version match confirmed: $PACKAGE_VERSION"
 
       - name: Publish to npm
-        run: npm publish --provenance
+        run: npm publish
