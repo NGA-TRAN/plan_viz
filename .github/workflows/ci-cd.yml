@@ -139,5 +139,14 @@ jobs:
           fi
           echo "Version match confirmed: $PACKAGE_VERSION"
 
+      - name: Verify npm version
+        run: npm --version
+
+      - name: Install latest npm
+        run: npm install -g npm@latest
+
+      - name: Verify npm version
+        run: npm --version
+
       - name: Publish to npm
         run: npm publish

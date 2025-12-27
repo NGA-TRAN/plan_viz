@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.14] - 2025-12-26
+
+### Changed
+- Added npm version verification steps before and after installing latest npm in CI/CD workflow
+- Added step to install latest npm before publishing to ensure compatibility with latest npm features
+
 ## [0.1.13] - 2025-12-26
 
 ### Changed
