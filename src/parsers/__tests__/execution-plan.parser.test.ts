@@ -221,5 +221,81 @@ describe('ExecutionPlanParser', () => {
       expect(result.root?.operator).toBe('FilterExec');
       expect(result.root?.properties?.predicate).toBe('func(inner_func(a, b), c) > 10');
     });
+
+    it('should parse DataFusion TopK qualifier before key-value properties', () => {
+      const planText =
+        'SortExec: TopK(fetch=10), expr=[service@2 ASC NULLS LAST, host@3 ASC NULLS LAST], preserve_partitioning=[true]';
+      const result = parser.parse(planText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('SortExec');
+      expect(result.root?.properties?.topk).toBe('TopK(fetch=10)');
+      expect(result.root?.properties?.expr).toBe(
+        '[service@2 ASC NULLS LAST, host@3 ASC NULLS LAST]'
+      );
+      expect(result.root?.properties?.preserve_partitioning).toBe('[true]');
+    });
+
+    it('should parse positional sort payload before trailing key-value properties', () => {
+      const planText =
+        'SortPreservingMergeExec: [service@2 ASC NULLS LAST, host@3 ASC NULLS LAST], fetch=10';
+      const result = parser.parse(planText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('SortPreservingMergeExec');
+      expect(result.root?.properties?.expression).toBe(
+        '[service@2 ASC NULLS LAST, host@3 ASC NULLS LAST]'
+      );
+      expect(result.root?.properties?.fetch).toBe('10');
+    });
+
+    it('should preserve unbracketed comma-separated sort expressions', () => {
+      const planText =
+        'RepartitionExec: partitioning=Hash([f_dkey@0], 4), input_partitions=3, preserve_order=true, sort_exprs=f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST';
+      const result = parser.parse(planText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('RepartitionExec');
+      expect(result.root?.properties?.partitioning).toBe('Hash([f_dkey@0], 4)');
+      expect(result.root?.properties?.input_partitions).toBe('3');
+      expect(result.root?.properties?.preserve_order).toBe('true');
+      expect(result.root?.properties?.sort_exprs).toBe(
+        'f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST'
+      );
+    });
+
+    it('should parse expression-first FilterExec properties', () => {
+      const planText = 'FilterExec: service@2 = log, projection=[d_dkey@0, env@1]';
+      const result = parser.parse(planText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('FilterExec');
+      expect(result.root?.properties?.filter).toBe('service@2 = log');
+      expect(result.root?.properties?.projection).toBe('[d_dkey@0, env@1]');
+    });
+
+    it('should parse EXPLAIN ANALYZE Plan with Metrics rows', () => {
+      const sqlExplainAnalyzeText = `EXPLAIN ANALYZE SELECT count(*) FROM dim2_parquet;
++-------------------+----------------------------------------------------------------------------------------------------+
+| plan_type         | plan                                                                                               |
++-------------------+----------------------------------------------------------------------------------------------------+
+| Plan with Metrics | CoalescePartitionsExec, metrics=[output_rows=1, elapsed_compute=2375ns]                             |
+|                   |   ProjectionExec: expr=[count(Int64(1))@0 as count(*)], metrics=[output_rows=1, elapsed_compute=1ns] |
++-------------------+----------------------------------------------------------------------------------------------------+`;
+
+      const result = parser.parse(sqlExplainAnalyzeText);
+
+      expect(result.root).not.toBeNull();
+      expect(result.root?.operator).toBe('CoalescePartitionsExec');
+      expect(result.root?.properties?.metrics).toBe(
+        '[output_rows=1, elapsed_compute=2375ns]'
+      );
+      expect(result.root?.children).toHaveLength(1);
+      expect(result.root?.children[0].operator).toBe('ProjectionExec');
+      expect(result.root?.children[0].properties?.expr).toBe('[count(Int64(1))@0 as count(*)]');
+      expect(result.root?.children[0].properties?.metrics).toBe(
+        '[output_rows=1, elapsed_compute=1ns]'
+      );
+    });
   });
 });
