@@ -60,11 +60,15 @@ export class ExecutionPlanParser {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // Look for the physical_plan row
-      if (line.trim().startsWith('|') && line.includes('physical_plan')) {
+      // Look for a physical plan row. EXPLAIN ANALYZE uses "Plan with Metrics"
+      // instead of "physical_plan" as the row label.
+      const parts = line.split('|');
+      const planType = parts.length >= 3 ? parts[1].trim() : '';
+      if (
+        line.trim().startsWith('|') &&
+        (planType === 'physical_plan' || planType === 'Plan with Metrics')
+      ) {
         foundPhysicalPlan = true;
-        // Extract the plan part (after the second |)
-        const parts = line.split('|');
         const planLines: string[] = [];
         if (parts.length >= 3) {
           planLines.push(parts[2].trim());
@@ -222,36 +226,84 @@ export class ExecutionPlanParser {
     // Extract operator name and properties from formats like:
     // "ProjectionExec: expr=[a, b, c]"
     // "FilterExec: predicate=a > 10"
+    // "CoalescePartitionsExec, metrics=[...]"
     const colonIndex = line.indexOf(':');
     if (colonIndex === -1) {
+      const bareWithProperties = line.match(/^([A-Za-z]\w*)\s*,\s*(.+)$/);
+      if (bareWithProperties) {
+        const properties = this.parsePropertiesText(bareWithProperties[1], bareWithProperties[2]);
+        return {
+          operator: bareWithProperties[1],
+          properties: Object.keys(properties).length > 0 ? properties : undefined,
+        };
+      }
       return { operator: line };
     }
 
     const operator = line.substring(0, colonIndex).trim();
     const propertiesText = line.substring(colonIndex + 1).trim();
 
+    const properties = this.parsePropertiesText(operator, propertiesText);
+
+    return { operator, properties: Object.keys(properties).length > 0 ? properties : undefined };
+  }
+
+  /**
+   * Parses the text after an operator name.
+   */
+  private parsePropertiesText(operator: string, propertiesText: string): Record<string, string> {
     const properties: Record<string, string> = {};
-    if (propertiesText) {
-      // Simple key=value parsing
-      const pairs = this.extractKeyValuePairs(propertiesText);
+    if (!propertiesText) {
+      return properties;
+    }
+
+    const firstKeyIndex = this.findFirstKeyValueIndex(propertiesText);
+    if (firstKeyIndex > 0) {
+      const positionalText = this.trimTrailingDelimiter(propertiesText.substring(0, firstKeyIndex));
+      this.addPositionalProperty(properties, operator, positionalText);
+    }
+
+    if (firstKeyIndex >= 0) {
+      const pairs = this.extractKeyValuePairs(propertiesText.substring(firstKeyIndex));
       for (const [key, value] of pairs) {
         properties[key] = value;
       }
-
-      // If no key=value pairs were found but there's text, store it as a special property
-      // This handles cases like "FilterExec: service@2 = log" where there's no key=value format
-      if (pairs.length === 0 && propertiesText.length > 0) {
-        // For FilterExec, store as "filter" property
-        if (operator === 'FilterExec') {
-          properties.filter = propertiesText;
-        } else {
-          // For other operators, store as "expression" property
-          properties.expression = propertiesText;
-        }
-      }
     }
 
-    return { operator, properties: Object.keys(properties).length > 0 ? properties : undefined };
+    // If no key=value pairs were found but there's text, store it as a special property.
+    // This handles cases like "FilterExec: service@2 = log" where there's no key=value format.
+    if (Object.keys(properties).length === 0 && propertiesText.length > 0) {
+      this.addPositionalProperty(properties, operator, propertiesText);
+    }
+
+    return properties;
+  }
+
+  /**
+   * Adds an operator-specific positional property for non key=value text.
+   */
+  private addPositionalProperty(
+    properties: Record<string, string>,
+    operator: string,
+    positionalText: string
+  ): void {
+    const value = this.trimTrailingDelimiter(positionalText);
+    if (!value) {
+      return;
+    }
+
+    const qualifierMatch = value.match(/^([A-Za-z]\w*)\([^)]*\)$/);
+    if (qualifierMatch) {
+      properties[qualifierMatch[1].toLowerCase()] = value;
+    } else if (operator === 'FilterExec') {
+      properties.filter = value;
+    } else {
+      properties.expression = value;
+    }
+  }
+
+  private trimTrailingDelimiter(text: string): string {
+    return text.trim().replace(/,\s*$/, '').trim();
   }
 
   /**
@@ -270,7 +322,7 @@ export class ExecutionPlanParser {
       if (pos >= text.length) break;
 
       // Extract key
-      const keyMatch = text.substring(pos).match(/^(\w+)\s*=/);
+      const keyMatch = this.matchKeyValueAt(text, pos);
       if (!keyMatch) break;
 
       const key = keyMatch[1];
@@ -285,6 +337,7 @@ export class ExecutionPlanParser {
       let value = '';
       let bracketDepth = 0;
       let parenDepth = 0;
+      let braceDepth = 0;
 
       while (pos < text.length) {
         const char = text[pos];
@@ -297,6 +350,14 @@ export class ExecutionPlanParser {
           bracketDepth--;
           value += char;
           pos++;
+        } else if (char === '{') {
+          braceDepth++;
+          value += char;
+          pos++;
+        } else if (char === '}') {
+          braceDepth--;
+          value += char;
+          pos++;
         } else if (char === '(') {
           parenDepth++;
           value += char;
@@ -305,10 +366,17 @@ export class ExecutionPlanParser {
           parenDepth--;
           value += char;
           pos++;
-        } else if (char === ',' && bracketDepth === 0 && parenDepth === 0) {
-          // Comma outside brackets and parentheses means end of this property
-          pos++; // Skip the comma
-          break;
+        } else if (char === ',' && bracketDepth === 0 && parenDepth === 0 && braceDepth === 0) {
+          // A comma outside nested structures only ends this property when the
+          // next token is another key=value pair. Some DataFusion values, such
+          // as sort_exprs, are unbracketed comma-separated lists.
+          const nextPos = this.skipWhitespace(text, pos + 1);
+          if (this.matchKeyValueAt(text, nextPos)) {
+            pos++; // Skip the comma
+            break;
+          }
+          value += char;
+          pos++;
         } else {
           value += char;
           pos++;
@@ -319,6 +387,52 @@ export class ExecutionPlanParser {
     }
 
     return pairs;
+  }
+
+  /**
+   * Finds the first top-level key=value token in a property string.
+   */
+  private findFirstKeyValueIndex(text: string): number {
+    let bracketDepth = 0;
+    let parenDepth = 0;
+    let braceDepth = 0;
+
+    for (let pos = 0; pos < text.length; pos++) {
+      const char = text[pos];
+      if (char === '[') {
+        bracketDepth++;
+      } else if (char === ']') {
+        bracketDepth--;
+      } else if (char === '(') {
+        parenDepth++;
+      } else if (char === ')') {
+        parenDepth--;
+      } else if (char === '{') {
+        braceDepth++;
+      } else if (char === '}') {
+        braceDepth--;
+      }
+
+      if (bracketDepth === 0 && parenDepth === 0 && braceDepth === 0) {
+        const previous = pos === 0 ? '' : text[pos - 1];
+        if ((pos === 0 || /[\s,]/.test(previous)) && this.matchKeyValueAt(text, pos)) {
+          return pos;
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  private matchKeyValueAt(text: string, pos: number): RegExpMatchArray | null {
+    return text.substring(pos).match(/^([A-Za-z_][\w.-]*)\s*=/);
+  }
+
+  private skipWhitespace(text: string, pos: number): number {
+    while (pos < text.length && /\s/.test(text[pos])) {
+      pos++;
+    }
+    return pos;
   }
 
   /**
