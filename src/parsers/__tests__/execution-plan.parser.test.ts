@@ -274,6 +274,24 @@ describe('ExecutionPlanParser', () => {
       expect(result.root?.properties?.projection).toBe('[d_dkey@0, env@1]');
     });
 
+    it('should parse simple TopK qualifier as a named property', () => {
+      const planText = 'SortExec: TopK(fetch=10), expr=[col@0 ASC NULLS LAST]';
+      const result = parser.parse(planText);
+
+      expect(result.root?.properties?.topk).toBe('TopK(fetch=10)');
+      expect(result.root?.properties?.expr).toBe('[col@0 ASC NULLS LAST]');
+      expect(result.root?.properties?.expression).toBeUndefined();
+    });
+
+    it('should store nested-paren qualifiers as expression when shallow match fails', () => {
+      const planText = 'SortExec: TopK(fn(a, b)), expr=[col@0 ASC NULLS LAST]';
+      const result = parser.parse(planText);
+
+      expect(result.root?.properties?.topk).toBeUndefined();
+      expect(result.root?.properties?.expression).toBe('TopK(fn(a, b))');
+      expect(result.root?.properties?.expr).toBe('[col@0 ASC NULLS LAST]');
+    });
+
     it('should parse EXPLAIN ANALYZE Plan with Metrics rows', () => {
       const sqlExplainAnalyzeText = `EXPLAIN ANALYZE SELECT count(*) FROM dim2_parquet;
 +-------------------+----------------------------------------------------------------------------------------------------+
