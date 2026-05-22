@@ -9,6 +9,13 @@ import {
  * Follows Single Responsibility Principle - only responsible for parsing
  */
 export class ExecutionPlanParser {
+  /**
+   * EXPLAIN table row labels that contain a physical plan.
+   * - `physical_plan`: standard EXPLAIN output
+   * - `Plan with Metrics`: EXPLAIN ANALYZE output (includes runtime metrics)
+   */
+  private static readonly PHYSICAL_PLAN_ROW_LABELS = ['physical_plan', 'Plan with Metrics'] as const;
+
   private readonly config: Required<ParserConfig>;
 
   constructor(config: ParserConfig = {}) {
@@ -45,7 +52,12 @@ export class ExecutionPlanParser {
   }
 
   /**
-   * Extracts physical plan from SQL EXPLAIN table format
+   * Extracts physical plan from SQL EXPLAIN table format.
+   *
+   * Recognizes rows whose `plan_type` column is one of
+   * {@link ExecutionPlanParser.PHYSICAL_PLAN_ROW_LABELS}. Continuation lines
+   * (indented operators under an empty `plan_type` cell) are included.
+   *
    * @param planText - The raw plan text (may be SQL EXPLAIN output)
    * @returns Extracted physical plan line or null if not SQL EXPLAIN format
    */
@@ -60,13 +72,13 @@ export class ExecutionPlanParser {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // Look for a physical plan row. EXPLAIN ANALYZE uses "Plan with Metrics"
-      // instead of "physical_plan" as the row label.
       const parts = line.split('|');
       const planType = parts.length >= 3 ? parts[1].trim() : '';
       if (
         line.trim().startsWith('|') &&
-        (planType === 'physical_plan' || planType === 'Plan with Metrics')
+        ExecutionPlanParser.PHYSICAL_PLAN_ROW_LABELS.includes(
+          planType as (typeof ExecutionPlanParser.PHYSICAL_PLAN_ROW_LABELS)[number]
+        )
       ) {
         foundPhysicalPlan = true;
         const planLines: string[] = [];
@@ -292,6 +304,9 @@ export class ExecutionPlanParser {
       return;
     }
 
+    // Shallow match only (no nested parentheses). Qualifiers like TopK(fetch=10)
+    // become a named property; nested forms like TopK(fn(a, b)) fall through to
+    // expression instead.
     const qualifierMatch = value.match(/^([A-Za-z]\w*)\([^)]*\)$/);
     if (qualifierMatch) {
       properties[qualifierMatch[1].toLowerCase()] = value;

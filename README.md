@@ -35,6 +35,11 @@ Convert Apache DataFusion physical execution plans into **Excalidraw‑JSON** fo
 
 An indented EXPLAIN. You may also provide SQL or just the plan; the function automatically extracts physical operators.
 
+Supported EXPLAIN table row labels for physical plan extraction:
+
+- `physical_plan` — standard `EXPLAIN` output
+- `Plan with Metrics` — `EXPLAIN ANALYZE` output (includes runtime metrics)
+
   ```SQL
   | physical_plan | SortExec: expr=[env@0 ASC NULLS LAST, time_bin@1 ASC NULLS LAST], preserve_partitioning=[false]                                                                                                                                                                                                                                                                                                                                                                                            |
   |               |   AggregateExec: mode=Single, gby=[env@1 as env, time_bin@0 as time_bin], aggr=[avg(a.max_bin_val)]                                                                                                                                                                                                                                                                                                                                                                                        |
