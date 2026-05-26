@@ -3,7 +3,7 @@ import {
   ExcalidrawText,
   ExcalidrawArrow,
   ExcalidrawEllipse,
-  ExcalidrawConfig,
+  ResolvedExcalidrawConfig,
 } from '../../types/excalidraw.types';
 import { IdGenerator } from '../utils/id.generator';
 import {
@@ -72,7 +72,7 @@ export interface EllipseOptions {
 export class ElementFactory {
   constructor(
     private idGenerator: IdGenerator,
-    private config: Required<ExcalidrawConfig>
+    private config: ResolvedExcalidrawConfig
   ) {}
 
   /**
@@ -305,4 +305,3 @@ export class ElementFactory {
     });
   }
 }
-

@@ -133,6 +133,23 @@ const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
 });
 ```
 
+**With Custom Node Generators:**
+
+```typescript
+import { convertPlanToExcalidraw } from 'plan-viz';
+import { MyCustomExecGenerator } from './my-custom-exec-generator';
+
+const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
+  generator: {
+    customGenerators: [
+      { operator: 'MyCustomExec', generator: new MyCustomExecGenerator() },
+    ],
+  },
+});
+```
+
+Custom generators implement `NodeGeneratorStrategy`. They are registered after built-in generators, so registering the same operator key as a built-in replaces the built-in renderer for that conversion.
+
 ### As a CLI
 
 **After package installation `npm install plan-viz`:**
@@ -241,6 +258,10 @@ interface ConverterConfig {
     detailsFontSize?: number;         // Default: 14 (for properties/details)
     nodeColor?: string;               // Default: '#1971c2'
     arrowColor?: string;              // Default: '#495057'
+    customGenerators?: Array<{
+      operator: string;
+      generator: NodeGeneratorStrategy;
+    }>;
   };
 }
 ```
@@ -399,4 +420,3 @@ Created with ❤️ for the Apache DataFusion community
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
-

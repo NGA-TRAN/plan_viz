@@ -1,11 +1,11 @@
 import { ElementFactory } from '../element.factory';
 import { IdGenerator } from '../../utils/id.generator';
-import { ExcalidrawConfig } from '../../../types/excalidraw.types';
+import { ResolvedExcalidrawConfig } from '../../../types/excalidraw.types';
 
 describe('ElementFactory', () => {
   let factory: ElementFactory;
   let idGenerator: IdGenerator;
-  let config: Required<ExcalidrawConfig>;
+  let config: ResolvedExcalidrawConfig;
 
   beforeEach(() => {
     idGenerator = new IdGenerator();
@@ -204,4 +204,3 @@ describe('ElementFactory', () => {
     });
   });
 });
-
