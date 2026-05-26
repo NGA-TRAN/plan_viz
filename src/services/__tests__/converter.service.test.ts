@@ -1,6 +1,63 @@
 import { ConverterService } from '../converter.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import type {
+  ExecutionPlanNode,
+  GenerationContext,
+  NodeGeneratorStrategy,
+  NodeInfo,
+} from '../../index';
+
+function createLabelGenerator(label: string): NodeGeneratorStrategy {
+  return {
+    generate(
+      node: ExecutionPlanNode,
+      x: number,
+      y: number,
+      _isRoot: boolean,
+      context: GenerationContext
+    ): NodeInfo {
+      const nodeWidth = context.config.nodeWidth;
+      const nodeHeight = context.config.nodeHeight;
+      const rectId = context.idGenerator.generateId();
+
+      context.elements.push(context.elementFactory.createRectangle({
+        id: rectId,
+        x,
+        y,
+        width: nodeWidth,
+        height: nodeHeight,
+        strokeColor: context.config.nodeColor,
+      }));
+      context.elements.push(context.elementFactory.createText({
+        id: context.idGenerator.generateId(),
+        x,
+        y: y + 5,
+        width: nodeWidth,
+        height: context.config.operatorFontSize + 4,
+        text: `${label}: ${node.operator}`,
+        fontSize: context.config.operatorFontSize,
+        fontFamily: 7,
+        textAlign: 'center',
+        verticalAlign: 'top',
+        containerId: rectId,
+        strokeColor: context.config.nodeColor,
+      }));
+
+      return {
+        x,
+        y,
+        width: nodeWidth,
+        height: nodeHeight,
+        rectId,
+        inputArrowCount: 1,
+        inputArrowPositions: [x + nodeWidth / 2],
+        outputColumns: [],
+        outputSortOrder: [],
+      };
+    },
+  };
+}
 
 describe('ConverterService', () => {
   let converter: ConverterService;
@@ -112,6 +169,25 @@ describe('ConverterService', () => {
       expect(rectangle?.width).toBe(300);
       expect(rectangle?.height).toBe(120);
       expect(rectangle?.strokeColor).toBe('#ff0000');
+    });
+
+    it('should pass custom generator configuration through to ExcalidrawGenerator', () => {
+      const customConverter = new ConverterService({
+        generator: {
+          customGenerators: [
+            {
+              operator: 'ServiceCustomExec',
+              generator: createLabelGenerator('service-custom'),
+            },
+          ],
+        },
+      });
+
+      const result = customConverter.convert('ServiceCustomExec');
+      const textElements = result.elements.filter((el) => el.type === 'text');
+
+      expect(textElements.some((text) => text.text === 'service-custom: ServiceCustomExec')).toBe(true);
+      expect(textElements.some((text) => text.text === 'unimplemented')).toBe(false);
     });
   });
 

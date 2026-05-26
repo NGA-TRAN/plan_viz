@@ -2,6 +2,66 @@ import { ExcalidrawGenerator } from '../excalidraw.generator';
 import { ExcalidrawElement } from '../../types/excalidraw.types';
 import { TestHelpers } from './utils/test-helpers';
 import { NodeBuilder } from './builders/node.builder';
+import { BaseNodeGenerator as PublicBaseNodeGenerator } from '../../index';
+import type {
+  ExecutionPlanNode as PublicExecutionPlanNode,
+  GenerationContext as PublicGenerationContext,
+  NodeGeneratorStrategy as PublicNodeGeneratorStrategy,
+  NodeInfo as PublicNodeInfo,
+} from '../../index';
+
+class TestCustomNodeGenerator extends PublicBaseNodeGenerator {
+  constructor(private readonly label: string) {
+    super();
+  }
+
+  generate(
+    node: PublicExecutionPlanNode,
+    x: number,
+    y: number,
+    _isRoot: boolean,
+    context: PublicGenerationContext
+  ): PublicNodeInfo {
+    const nodeWidth = context.config.nodeWidth;
+    const nodeHeight = context.config.nodeHeight;
+    const rectId = context.idGenerator.generateId();
+
+    context.elements.push(context.elementFactory.createRectangle({
+      id: rectId,
+      x,
+      y,
+      width: nodeWidth,
+      height: nodeHeight,
+      strokeColor: context.config.nodeColor,
+    }));
+    context.elements.push(context.elementFactory.createText({
+      id: context.idGenerator.generateId(),
+      x,
+      y: y + 5,
+      width: nodeWidth,
+      height: context.config.operatorFontSize + 4,
+      text: `${this.label}: ${node.operator}`,
+      fontSize: context.config.operatorFontSize,
+      fontFamily: 7,
+      textAlign: 'center',
+      verticalAlign: 'top',
+      containerId: rectId,
+      strokeColor: context.config.nodeColor,
+    }));
+
+    return {
+      x,
+      y,
+      width: nodeWidth,
+      height: nodeHeight,
+      rectId,
+      inputArrowCount: 1,
+      inputArrowPositions: [x + nodeWidth / 2],
+      outputColumns: [],
+      outputSortOrder: [],
+    };
+  }
+}
 
 describe('ExcalidrawGenerator - Core', () => {
   let generator: ExcalidrawGenerator;
@@ -142,6 +202,57 @@ describe('ExcalidrawGenerator - Core', () => {
       // operatorFontSize should be 1.25 * fontSize = 25
       expect(operatorText?.fontSize).toBe(25);
     });
+
+    it('should use a custom generator for an unrecognized operator', () => {
+      const customGenerator = TestHelpers.createGenerator({
+        customGenerators: [
+          {
+            operator: 'CustomExec',
+            generator: new TestCustomNodeGenerator('custom'),
+          },
+        ],
+      });
+
+      const node = NodeBuilder.createSimpleNode('CustomExec');
+      const result = customGenerator.generate(node);
+      const textElements = TestHelpers.getTextElements(result.elements);
+
+      expect(textElements.some((text) => text.text === 'custom: CustomExec')).toBe(true);
+      expect(textElements.some((text) => text.text === 'unimplemented')).toBe(false);
+    });
+
+    it('should allow a custom generator to override a built-in operator', () => {
+      const customGenerator = TestHelpers.createGenerator({
+        customGenerators: [
+          {
+            operator: 'FilterExec',
+            generator: new TestCustomNodeGenerator('override'),
+          },
+        ],
+      });
+
+      const node = NodeBuilder.createNodeWithChildren('FilterExec', [], 0, {
+        predicate: 'a > 10',
+      });
+      const result = customGenerator.generate(node);
+      const textElements = TestHelpers.getTextElements(result.elements);
+
+      expect(textElements.some((text) => text.text === 'override: FilterExec')).toBe(true);
+      expect(textElements.some((text) => text.text.includes('a > 10'))).toBe(false);
+    });
+
+    it('should expose the extension API from the package entry point', () => {
+      const generator: PublicNodeGeneratorStrategy = new TestCustomNodeGenerator('public');
+      const node: PublicExecutionPlanNode = NodeBuilder.createSimpleNode('PublicExec');
+      const acceptsPublicTypes = (
+        _generator: PublicNodeGeneratorStrategy,
+        _node?: PublicExecutionPlanNode,
+        _context?: PublicGenerationContext,
+        _info?: PublicNodeInfo
+      ): boolean => true;
+
+      expect(generator).toBeInstanceOf(PublicBaseNodeGenerator);
+      expect(acceptsPublicTypes(generator, node)).toBe(true);
+    });
   });
 });
-
