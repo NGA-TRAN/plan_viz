@@ -2,6 +2,7 @@ import {
   ExcalidrawData,
   ExcalidrawElement,
   ExcalidrawConfig,
+  ResolvedExcalidrawConfig,
 } from '../types/excalidraw.types';
 import { ExecutionPlanNode } from '../types/execution-plan.types';
 import { IdGenerator } from './utils/id.generator';
@@ -36,7 +37,7 @@ import { GenerationContext } from './types/generation-context.types';
  * Follows Single Responsibility Principle - coordinates generation without implementing details
  */
 export class ExcalidrawGenerator {
-  private readonly config: Required<ExcalidrawConfig>;
+  private readonly config: ResolvedExcalidrawConfig;
   private readonly idGenerator: IdGenerator;
   private readonly textMeasurement: TextMeasurement;
   private readonly elementFactory: ElementFactory;
@@ -59,6 +60,7 @@ export class ExcalidrawGenerator {
       nodeColor: config.nodeColor ?? '#1e1e1e',
       arrowColor: config.arrowColor ?? '#1e1e1e',
     };
+    const customGenerators = config.customGenerators ?? [];
 
     // Initialize utility instances
     this.idGenerator = new IdGenerator();
@@ -72,6 +74,10 @@ export class ExcalidrawGenerator {
     // Initialize node generator registry
     this.nodeGeneratorRegistry = new NodeGeneratorRegistry();
     this.registerNodeGenerators();
+
+    for (const { operator, generator } of customGenerators) {
+      this.nodeGeneratorRegistry.register(operator, generator);
+    }
   }
 
   /**

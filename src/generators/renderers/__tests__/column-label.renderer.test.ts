@@ -2,14 +2,14 @@ import { ColumnLabelRenderer } from '../column-label.renderer';
 import { ElementFactory } from '../../factories/element.factory';
 import { TextMeasurement } from '../../utils/text-measurement';
 import { IdGenerator } from '../../utils/id.generator';
-import { ExcalidrawConfig } from '../../../types/excalidraw.types';
+import { ResolvedExcalidrawConfig } from '../../../types/excalidraw.types';
 
 describe('ColumnLabelRenderer', () => {
   let renderer: ColumnLabelRenderer;
   let elementFactory: ElementFactory;
   let textMeasurement: TextMeasurement;
   let idGenerator: IdGenerator;
-  let config: Required<ExcalidrawConfig>;
+  let config: ResolvedExcalidrawConfig;
 
   beforeEach(() => {
     idGenerator = new IdGenerator();
@@ -142,4 +142,3 @@ describe('ColumnLabelRenderer', () => {
     });
   });
 });
-

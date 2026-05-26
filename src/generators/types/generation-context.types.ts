@@ -1,5 +1,4 @@
-import { ExcalidrawElement } from '../../types/excalidraw.types';
-import { ExcalidrawConfig } from '../../types/excalidraw.types';
+import { ExcalidrawElement, ResolvedExcalidrawConfig } from '../../types/excalidraw.types';
 import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { ElementFactory } from '../factories/element.factory';
 import { PropertyParser } from '../utils/property.parser';
@@ -30,7 +29,7 @@ export interface GenerationContext {
   /** Geometry utilities */
   geometryUtils: GeometryUtils;
   /** Configuration */
-  config: Required<ExcalidrawConfig>;
+  config: ResolvedExcalidrawConfig;
   /** Elements array to add generated elements to */
   elements: ExcalidrawElement[];
   /** Recursive generator function for processing child nodes */
@@ -41,4 +40,3 @@ export interface GenerationContext {
     isRoot: boolean
   ) => NodeInfo;
 }
-

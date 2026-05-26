@@ -1,3 +1,5 @@
+import type { NodeGeneratorStrategy } from '../generators/generators/node-generator.strategy';
+
 /**
  * Excalidraw element types
  */
@@ -126,4 +128,17 @@ export interface ExcalidrawConfig {
   nodeColor?: string;
   /** Default arrow color */
   arrowColor?: string;
+  /**
+   * Custom node generators to register after built-in generators.
+   * If a custom generator uses the same operator key as a built-in generator,
+   * the custom generator overrides the built-in generator.
+   */
+  customGenerators?: Array<{ operator: string; generator: NodeGeneratorStrategy }>;
 }
+
+/**
+ * Fully resolved rendering config passed to node generators.
+ * Extension registration is consumed by ExcalidrawGenerator and is not part of
+ * the per-node rendering context.
+ */
+export type ResolvedExcalidrawConfig = Required<Omit<ExcalidrawConfig, 'customGenerators'>>;

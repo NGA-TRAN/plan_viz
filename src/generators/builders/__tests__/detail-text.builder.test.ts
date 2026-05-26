@@ -1,13 +1,13 @@
 import { DetailTextBuilder } from '../detail-text.builder';
 import { ElementFactory } from '../../factories/element.factory';
 import { IdGenerator } from '../../utils/id.generator';
-import { ExcalidrawConfig } from '../../../types/excalidraw.types';
+import { ResolvedExcalidrawConfig } from '../../../types/excalidraw.types';
 
 describe('DetailTextBuilder', () => {
   let builder: DetailTextBuilder;
   let elementFactory: ElementFactory;
   let idGenerator: IdGenerator;
-  let config: Required<ExcalidrawConfig>;
+  let config: ResolvedExcalidrawConfig;
 
   beforeEach(() => {
     idGenerator = new IdGenerator();
@@ -104,4 +104,3 @@ describe('DetailTextBuilder', () => {
     });
   });
 });
-
