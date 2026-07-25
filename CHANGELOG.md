@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CI publish job: pin global npm to `11.x` instead of `latest` (npm 12 drops Node 20 support)
+
 ## [0.1.15] - 2026-07-25
 
 ### Added

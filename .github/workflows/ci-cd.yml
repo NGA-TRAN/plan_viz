@@ -142,8 +142,9 @@ jobs:
       - name: Verify npm version
         run: npm --version
 
-      - name: Install latest npm
-        run: npm install -g npm@latest
+      # npm 12+ requires Node ^22.22.2; pin to 11.x for Node 20 + OIDC trusted publishing (>=11.5.1)
+      - name: Install npm 11
+        run: npm install -g npm@11
 
       - name: Verify npm version
         run: npm --version
