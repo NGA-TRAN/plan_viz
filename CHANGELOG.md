@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-07-25
+
+### Added
+- **Custom node generators**: register custom `NodeGeneratorStrategy` implementations via converter config to render extension operators or override built-in renderers
+- EXPLAIN ANALYZE / Plan with Metrics integration coverage and parser documentation for supported EXPLAIN row labels
+
+### Fixed
+- Parser handling for standard DataFusion EXPLAIN variants, including nested-paren qualifier handling
+
 ## [0.1.14] - 2025-12-26
 
 ### Changed
