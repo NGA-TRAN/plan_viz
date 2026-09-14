@@ -31,6 +31,7 @@ export const COLORS = {
   ARROW_DEFAULT: '#1e1e1e',
   ORDERED_COLUMN: '#1e90ff',
   ORANGE_BORDER: '#f08c00',
+  BUFFER: '#0d9488',
   PURPLE_MODE: '#9b59b6',
   DARK_RED: '#8B0000',
   RED_ERROR: '#ff0000',

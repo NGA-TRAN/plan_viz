@@ -295,7 +295,9 @@ The project includes numerous example execution plans in the [`tests/`](tests/) 
 - Repartitioning (`repartition*.sql`)
 - Aggregation examples (`*aggregate*.sql`)
 - Projection (`*projection*.sql`)
-- Join operations (`join*.sql`, `join_sort_merge*.sql`)
+- Join operations (`join*.sql`, `join_sort_merge*.sql`, `join_nested_loop.sql`)
+- Window functions (`window_agg*.sql`, `window_bounded*.sql`)
+- Unnest (`unnest_basic.sql`)
 - Sorting (`sort*.sql`)
 - Union (`union*.sql`)
 - And many more!
@@ -397,7 +399,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 ## Roadmap
 
 - [X] Interactive web interface: [plan-visualizer](https://nga-tran.github.io/plan-visualizer) — try it out!
-- [ ] Support for additional DataFusion operators (see [MISSING_OPERATORS](./MISSING_OPERATORS.md))
+- [ ] Support for additional DataFusion operators (see [operator catalog](./docs/operators/README.md))
 - [ ] Enhanced options for custom styling
 - [ ] Performance optimizations for large plans
 

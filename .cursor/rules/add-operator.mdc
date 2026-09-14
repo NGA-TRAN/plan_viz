@@ -1,0 +1,15 @@
+---
+description: Conventions for adding a DataFusion operator renderer
+globs: src/generators/generators/**/*.ts,src/generators/__tests__/operators/**/*.ts,docs/operators/**/*.md,tests/*.sql
+alwaysApply: false
+---
+
+# Operator additions
+
+Follow `docs/operators/WORKFLOW.md`. One spec file per operator. Own only
+that operator's generator, unit test, and `tests/<prefix>_*.sql` pair.
+
+Register the name in `excalidraw.generator.ts`. Unknown names already fall
+back to red `unimplemented` via `DefaultNodeGenerator`.
+
+Verify with `./scripts/verify-operator.sh <prefix>` before the full suite.

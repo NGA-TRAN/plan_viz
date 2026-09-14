@@ -29,6 +29,9 @@ import { UnionNodeGenerator } from './generators/union-node.generator';
 import { DataSourceNodeGenerator } from './generators/data-source-node.generator';
 import { LocalLimitNodeGenerator } from './generators/local-limit-node.generator';
 import { GlobalLimitNodeGenerator } from './generators/global-limit-node.generator';
+import { WindowAggNodeGenerator } from './generators/window-agg-node.generator';
+import { UnnestNodeGenerator } from './generators/unnest-node.generator';
+import { NestedLoopJoinNodeGenerator } from './generators/nested-loop-join-node.generator';
 import { GenerationContext } from './types/generation-context.types';
 
 /**
@@ -184,5 +187,12 @@ export class ExcalidrawGenerator {
     this.nodeGeneratorRegistry.register('DataSourceExec', new DataSourceNodeGenerator());
     this.nodeGeneratorRegistry.register('LocalLimitExec', new LocalLimitNodeGenerator());
     this.nodeGeneratorRegistry.register('GlobalLimitExec', new GlobalLimitNodeGenerator());
+    this.nodeGeneratorRegistry.register('WindowAggExec', new WindowAggNodeGenerator('WindowAggExec'));
+    this.nodeGeneratorRegistry.register(
+      'BoundedWindowAggExec',
+      new WindowAggNodeGenerator('BoundedWindowAggExec')
+    );
+    this.nodeGeneratorRegistry.register('UnnestExec', new UnnestNodeGenerator());
+    this.nodeGeneratorRegistry.register('NestedLoopJoinExec', new NestedLoopJoinNodeGenerator());
   }
 }
