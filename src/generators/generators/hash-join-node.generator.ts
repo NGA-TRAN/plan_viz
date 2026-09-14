@@ -19,8 +19,14 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     _isRoot: boolean,
     context: GenerationContext
   ): NodeInfo {
-    const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
-    const nodeHeight = 125; // Increased to accommodate details text and hash table
+    const joinMode = node.properties?.mode ?? '';
+    const isPartitioned = joinMode.toLowerCase() === 'partitioned';
+    const nodeWidth = isPartitioned ?
+      NODE_DIMENSIONS.HASH_JOIN_PARTITIONED_WIDTH :
+      NODE_DIMENSIONS.DATASOURCE_WIDTH;
+    const nodeHeight = isPartitioned ?
+      NODE_DIMENSIONS.HASH_JOIN_PARTITIONED_HEIGHT :
+      125;
 
     // Create rectangle
     const rectId = context.idGenerator.generateId();
@@ -34,12 +40,6 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       roundnessType: 3,
     });
     context.elements.push(rect);
-
-    // Extract join mode from properties (e.g., mode=CollectLeft)
-    let joinMode = '';
-    if (node.properties && node.properties.mode) {
-      joinMode = node.properties.mode;
-    }
 
     // Create operator name text with join mode (centered, bold)
     const operatorText = joinMode ? `HashJoinExec: ${joinMode}` : 'HashJoinExec';
@@ -59,41 +59,45 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     });
     context.elements.push(operatorTextElement);
 
-    // Create orange-border ellipse (HashTable) inside the rectangle
+    // CollectLeft (and default): one shared HashTable, created before children
+    // so existing goldens keep element order. Partitioned tables are created
+    // after children, one per partition.
     const hashTableWidth = HASH_TABLE_DIMENSIONS.WIDTH;
     const hashTableHeight = HASH_TABLE_DIMENSIONS.HEIGHT;
     const hashTableX = x + nodeWidth / 2 - hashTableWidth / 2;
     const hashTableY = y + HASH_TABLE_DIMENSIONS.Y_OFFSET;
-    const hashTableId = context.idGenerator.generateId();
-    const hashTable = context.elementFactory.createEllipse({
-      id: hashTableId,
-      x: hashTableX,
-      y: hashTableY,
-      width: hashTableWidth,
-      height: hashTableHeight,
-      strokeColor: '#f08c00', // Orange border color
-      backgroundColor: 'transparent',
-      roundnessType: 2,
-    });
-    context.elements.push(hashTable);
+    let hashTableId = '';
+    if (!isPartitioned) {
+      hashTableId = context.idGenerator.generateId();
+      const hashTable = context.elementFactory.createEllipse({
+        id: hashTableId,
+        x: hashTableX,
+        y: hashTableY,
+        width: hashTableWidth,
+        height: hashTableHeight,
+        strokeColor: '#f08c00',
+        backgroundColor: 'transparent',
+        roundnessType: 2,
+      });
+      context.elements.push(hashTable);
 
-    // Create "HashTable" text label inside the ellipse
-    const hashTableText = context.elementFactory.createText({
-      id: context.idGenerator.generateId(),
-      x: hashTableX + hashTableWidth / 2 - 35, // Center the text
-      y: hashTableY + hashTableHeight / 2 - 9.2, // Center vertically
-      width: 70,
-      height: 18.4,
-      text: 'HashTable',
-      fontSize: 16,
-      fontFamily: FONT_FAMILIES.BOLD,
-      textAlign: 'center',
-      verticalAlign: 'middle',
-      strokeColor: '#f08c00', // Orange color to match border
-      autoResize: true, // Match original HashJoinExec implementation
-      lineHeight: 1.15, // Match original HashJoinExec implementation
-    });
-    context.elements.push(hashTableText);
+      const hashTableText = context.elementFactory.createText({
+        id: context.idGenerator.generateId(),
+        x: hashTableX + hashTableWidth / 2 - 35,
+        y: hashTableY + hashTableHeight / 2 - 9.2,
+        width: 70,
+        height: 18.4,
+        text: 'HashTable',
+        fontSize: 16,
+        fontFamily: FONT_FAMILIES.BOLD,
+        textAlign: 'center',
+        verticalAlign: 'middle',
+        strokeColor: '#f08c00',
+        autoResize: true,
+        lineHeight: 1.15,
+      });
+      context.elements.push(hashTableText);
+    }
 
     // Create details text showing join_type and on=
     const details: string[] = [];
@@ -149,224 +153,240 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     const buildSideInfo = context.generateChildNode(buildSideChild, buildSideX, childY, false);
     const probeSideInfo = context.generateChildNode(probeSideChild, probeSideX, childY, false);
 
-    // Calculate hash table ellipse center position
-    const hashTableCenterX = hashTableX + hashTableWidth / 2;
-    const hashTableCenterY = hashTableY + hashTableHeight / 2;
-
-    // Create arrows from build side to hash table ellipse edge
     const buildSideArrows = Math.max(1, buildSideInfo.inputArrowCount);
-    const buildSideTopArrowPositions: number[] = [];
-    if (buildSideArrows === 1) {
-      buildSideTopArrowPositions.push(buildSideX + buildSideInfo.width / 2);
-    } else {
-      const centerRegionWidth = buildSideInfo.width * 0.6;
-      const centerRegionLeft = buildSideX + buildSideInfo.width / 2 - centerRegionWidth / 2;
-      const centerRegionRight = buildSideX + buildSideInfo.width / 2 + centerRegionWidth / 2;
-      const spacing = (centerRegionRight - centerRegionLeft) / (buildSideArrows - 1);
-      for (let j = 0; j < buildSideArrows; j++) {
-        buildSideTopArrowPositions.push(centerRegionLeft + j * spacing);
-      }
-    }
+    const probeSideArrows = Math.max(1, probeSideInfo.inputArrowCount);
 
-    const buildSideTopY = childY;
-
-    for (let i = 0; i < buildSideArrows; i++) {
-      const arrowStartX = buildSideTopArrowPositions[i];
-      // Calculate intersection point on hash table ellipse edge
-      const [hashTableEdgeX, hashTableEdgeY] = context.geometryUtils.getEllipseEdgePoint(
-        arrowStartX,
-        buildSideTopY,
-        hashTableCenterX,
-        hashTableCenterY,
-        hashTableWidth,
-        hashTableHeight
+    if (isPartitioned) {
+      this.drawPartitionedHashTables(
+        context,
+        x,
+        y,
+        nodeWidth,
+        nodeHeight,
+        childY,
+        buildSideInfo,
+        probeSideInfo,
+        buildSideArrows,
+        probeSideArrows
       );
-      const arrowId = context.idGenerator.generateId();
-      const arrow = context.elementFactory.createArrow({
-        id: arrowId,
-        startX: arrowStartX,
-        startY: buildSideTopY,
-        endX: hashTableEdgeX,
-        endY: hashTableEdgeY,
-        childRectId: buildSideInfo.rectId,
-        parentRectId: hashTableId,
-        strokeColor: context.config.arrowColor,
-      });
-      context.elements.push(arrow);
-      this.bindArrowToElements(context, arrowId, [buildSideInfo.rectId, hashTableId]);
-    }
+    } else {
+      // Calculate hash table ellipse center position
+      const hashTableCenterX = hashTableX + hashTableWidth / 2;
+      const hashTableCenterY = hashTableY + hashTableHeight / 2;
 
-    // Display columns on arrows from build side (using build side's columns and sort order)
-    // Replicate original HashJoinExec logic for consistency
-    if (buildSideInfo.outputColumns.length > 0) {
-      const arrowMidY = (buildSideTopY + hashTableCenterY) / 2;
-      const leftmostArrowX =
+      // Create arrows from build side to hash table ellipse edge
+      const buildSideTopArrowPositions: number[] = [];
+      if (buildSideArrows === 1) {
+        buildSideTopArrowPositions.push(buildSideX + buildSideInfo.width / 2);
+      } else {
+        const centerRegionWidth = buildSideInfo.width * 0.6;
+        const centerRegionLeft = buildSideX + buildSideInfo.width / 2 - centerRegionWidth / 2;
+        const centerRegionRight = buildSideX + buildSideInfo.width / 2 + centerRegionWidth / 2;
+        const spacing = (centerRegionRight - centerRegionLeft) / (buildSideArrows - 1);
+        for (let j = 0; j < buildSideArrows; j++) {
+          buildSideTopArrowPositions.push(centerRegionLeft + j * spacing);
+        }
+      }
+
+      const buildSideTopY = childY;
+
+      for (let i = 0; i < buildSideArrows; i++) {
+        const arrowStartX = buildSideTopArrowPositions[i];
+        // Calculate intersection point on hash table ellipse edge
+        const [hashTableEdgeX, hashTableEdgeY] = context.geometryUtils.getEllipseEdgePoint(
+          arrowStartX,
+          buildSideTopY,
+          hashTableCenterX,
+          hashTableCenterY,
+          hashTableWidth,
+          hashTableHeight
+        );
+        const arrowId = context.idGenerator.generateId();
+        const arrow = context.elementFactory.createArrow({
+          id: arrowId,
+          startX: arrowStartX,
+          startY: buildSideTopY,
+          endX: hashTableEdgeX,
+          endY: hashTableEdgeY,
+          childRectId: buildSideInfo.rectId,
+          parentRectId: hashTableId,
+          strokeColor: context.config.arrowColor,
+        });
+        context.elements.push(arrow);
+        this.bindArrowToElements(context, arrowId, [buildSideInfo.rectId, hashTableId]);
+      }
+
+      // Display columns on arrows from build side (using build side's columns and sort order)
+      // Replicate original HashJoinExec logic for consistency
+      if (buildSideInfo.outputColumns.length > 0) {
+        const arrowMidY = (buildSideTopY + hashTableCenterY) / 2;
+        const leftmostArrowX =
         buildSideTopArrowPositions.length > 0 ?
           buildSideTopArrowPositions[0] :
           buildSideX + buildSideInfo.width / 2;
-      const leftOffset = -5; // Negative offset to position text to the left
-      const projectionTextX = leftmostArrowX + leftOffset;
+        const leftOffset = -5; // Negative offset to position text to the left
+        const projectionTextX = leftmostArrowX + leftOffset;
 
-      const orderedColumns = new Set(buildSideInfo.outputSortOrder);
-      const groupId = context.idGenerator.generateId();
-      const charWidth = 8; // Match original HashJoinExec implementation
-      const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
+        const orderedColumns = new Set(buildSideInfo.outputSortOrder);
+        const groupId = context.idGenerator.generateId();
+        const charWidth = 8; // Match original HashJoinExec implementation
+        const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
 
-      // Collect all groups first to determine total width and proper comma placement
-      const groups: Array<{ text: string; color: string; width: number }> = [];
-      let i = 0;
-      while (i < buildSideInfo.outputColumns.length) {
-        const column = buildSideInfo.outputColumns[i];
-        const isOrdered = orderedColumns.has(column);
-        const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
+        // Collect all groups first to determine total width and proper comma placement
+        const groups: Array<{ text: string; color: string; width: number }> = [];
+        let i = 0;
+        while (i < buildSideInfo.outputColumns.length) {
+          const column = buildSideInfo.outputColumns[i];
+          const isOrdered = orderedColumns.has(column);
+          const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
 
-        const groupParts: string[] = [column];
-        let j = i + 1;
-        while (j < buildSideInfo.outputColumns.length) {
-          const nextColumn = buildSideInfo.outputColumns[j];
-          const nextIsOrdered = orderedColumns.has(nextColumn);
-          const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
-          if (nextColor === color) {
-            groupParts.push(nextColumn);
-            j++;
-          } else {
-            break;
+          const groupParts: string[] = [column];
+          let j = i + 1;
+          while (j < buildSideInfo.outputColumns.length) {
+            const nextColumn = buildSideInfo.outputColumns[j];
+            const nextIsOrdered = orderedColumns.has(nextColumn);
+            const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
+            if (nextColor === color) {
+              groupParts.push(nextColumn);
+              j++;
+            } else {
+              break;
+            }
           }
+
+          const groupText = groupParts.join(', ');
+          const groupWidth = groupText.length * charWidth;
+          groups.push({ text: groupText, color, width: groupWidth });
+          i = j;
         }
 
-        const groupText = groupParts.join(', ');
-        const groupWidth = groupText.length * charWidth;
-        groups.push({ text: groupText, color, width: groupWidth });
-        i = j;
+        // Position from right to left, building text correctly
+        let currentX = projectionTextX;
+        for (let idx = groups.length - 1; idx >= 0; idx--) {
+          const group = groups[idx];
+          const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
+          const groupWidth = groupText.length * charWidth;
+          const groupTextId = context.idGenerator.generateId();
+          // Position text to the left of the arrow, so we need to adjust X position
+          const groupTextElement = context.elementFactory.createText({
+            id: groupTextId,
+            x: currentX - groupWidth, // Position to the left
+            y: arrowMidY - textHeight / 2,
+            width: groupWidth,
+            height: textHeight,
+            text: groupText,
+            fontSize: FONT_SIZES.COLUMN_LABEL,
+            fontFamily: FONT_FAMILIES.NORMAL,
+            textAlign: 'right', // Right align since text is to the left
+            verticalAlign: 'top',
+            strokeColor: group.color,
+          });
+          groupTextElement.groupIds = [groupId];
+          context.elements.push(groupTextElement);
+          currentX -= groupWidth;
+        }
       }
 
-      // Position from right to left, building text correctly
-      let currentX = projectionTextX;
-      for (let idx = groups.length - 1; idx >= 0; idx--) {
-        const group = groups[idx];
-        const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
-        const groupWidth = groupText.length * charWidth;
-        const groupTextId = context.idGenerator.generateId();
-        // Position text to the left of the arrow, so we need to adjust X position
-        const groupTextElement = context.elementFactory.createText({
-          id: groupTextId,
-          x: currentX - groupWidth, // Position to the left
-          y: arrowMidY - textHeight / 2,
-          width: groupWidth,
-          height: textHeight,
-          text: groupText,
-          fontSize: FONT_SIZES.COLUMN_LABEL,
-          fontFamily: FONT_FAMILIES.NORMAL,
-          textAlign: 'right', // Right align since text is to the left
-          verticalAlign: 'top',
-          strokeColor: group.color,
+      // Create arrows from probe side to HashJoinExec rectangle
+      const probeSideTopArrowPositions: number[] = [];
+      if (probeSideArrows === 1) {
+        probeSideTopArrowPositions.push(probeSideX + probeSideInfo.width / 2);
+      } else {
+        const centerRegionWidth = probeSideInfo.width * 0.6;
+        const centerRegionLeft = probeSideX + probeSideInfo.width / 2 - centerRegionWidth / 2;
+        const centerRegionRight = probeSideX + probeSideInfo.width / 2 + centerRegionWidth / 2;
+        const spacing = (centerRegionRight - centerRegionLeft) / (probeSideArrows - 1);
+        for (let j = 0; j < probeSideArrows; j++) {
+          probeSideTopArrowPositions.push(centerRegionLeft + j * spacing);
+        }
+      }
+
+      const probeSideTopY = childY;
+
+      for (let i = 0; i < probeSideArrows; i++) {
+        const arrowStartX = probeSideTopArrowPositions[i];
+        // Calculate intersection point on hash table ellipse edge
+        const [hashTableEdgeX, hashTableEdgeY] = context.geometryUtils.getEllipseEdgePoint(
+          arrowStartX,
+          probeSideTopY,
+          hashTableCenterX,
+          hashTableCenterY,
+          hashTableWidth,
+          hashTableHeight
+        );
+        const arrowId = context.idGenerator.generateId();
+        const arrow = context.elementFactory.createArrow({
+          id: arrowId,
+          startX: arrowStartX,
+          startY: probeSideTopY,
+          endX: hashTableEdgeX,
+          endY: hashTableEdgeY,
+          childRectId: probeSideInfo.rectId,
+          parentRectId: hashTableId,
+          strokeColor: context.config.arrowColor,
         });
-        groupTextElement.groupIds = [groupId];
-        context.elements.push(groupTextElement);
-        currentX -= groupWidth;
+        context.elements.push(arrow);
+        this.bindArrowToElements(context, arrowId, [probeSideInfo.rectId, hashTableId]);
       }
-    }
 
-    // Create arrows from probe side to HashJoinExec rectangle
-    const probeSideArrows = Math.max(1, probeSideInfo.inputArrowCount);
-    const probeSideTopArrowPositions: number[] = [];
-    if (probeSideArrows === 1) {
-      probeSideTopArrowPositions.push(probeSideX + probeSideInfo.width / 2);
-    } else {
-      const centerRegionWidth = probeSideInfo.width * 0.6;
-      const centerRegionLeft = probeSideX + probeSideInfo.width / 2 - centerRegionWidth / 2;
-      const centerRegionRight = probeSideX + probeSideInfo.width / 2 + centerRegionWidth / 2;
-      const spacing = (centerRegionRight - centerRegionLeft) / (probeSideArrows - 1);
-      for (let j = 0; j < probeSideArrows; j++) {
-        probeSideTopArrowPositions.push(centerRegionLeft + j * spacing);
-      }
-    }
-
-    const probeSideTopY = childY;
-
-    for (let i = 0; i < probeSideArrows; i++) {
-      const arrowStartX = probeSideTopArrowPositions[i];
-      // Calculate intersection point on hash table ellipse edge
-      const [hashTableEdgeX, hashTableEdgeY] = context.geometryUtils.getEllipseEdgePoint(
-        arrowStartX,
-        probeSideTopY,
-        hashTableCenterX,
-        hashTableCenterY,
-        hashTableWidth,
-        hashTableHeight
-      );
-      const arrowId = context.idGenerator.generateId();
-      const arrow = context.elementFactory.createArrow({
-        id: arrowId,
-        startX: arrowStartX,
-        startY: probeSideTopY,
-        endX: hashTableEdgeX,
-        endY: hashTableEdgeY,
-        childRectId: probeSideInfo.rectId,
-        parentRectId: hashTableId,
-        strokeColor: context.config.arrowColor,
-      });
-      context.elements.push(arrow);
-      this.bindArrowToElements(context, arrowId, [probeSideInfo.rectId, hashTableId]);
-    }
-
-    // Display columns on arrows from probe side (using probe side's columns and sort order)
-    // Replicate original HashJoinExec logic for consistency
-    if (probeSideInfo.outputColumns.length > 0) {
-      const arrowMidY = (probeSideTopY + hashTableCenterY) / 2;
-      const rightmostArrowX =
+      // Display columns on arrows from probe side (using probe side's columns and sort order)
+      // Replicate original HashJoinExec logic for consistency
+      if (probeSideInfo.outputColumns.length > 0) {
+        const arrowMidY = (probeSideTopY + hashTableCenterY) / 2;
+        const rightmostArrowX =
         probeSideTopArrowPositions.length > 0 ?
           probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1] :
           probeSideX + probeSideInfo.width / 2;
-      const rightOffset = 5;
-      const projectionTextX = rightmostArrowX + rightOffset;
+        const rightOffset = 5;
+        const projectionTextX = rightmostArrowX + rightOffset;
 
-      const orderedColumns = new Set(probeSideInfo.outputSortOrder);
-      const groupId = context.idGenerator.generateId();
-      let currentX = projectionTextX;
-      const charWidth = 8; // Match original HashJoinExec implementation
-      const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
+        const orderedColumns = new Set(probeSideInfo.outputSortOrder);
+        const groupId = context.idGenerator.generateId();
+        let currentX = projectionTextX;
+        const charWidth = 8; // Match original HashJoinExec implementation
+        const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
 
-      let i = 0;
-      while (i < probeSideInfo.outputColumns.length) {
-        const column = probeSideInfo.outputColumns[i];
-        const isOrdered = orderedColumns.has(column);
-        const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
+        let i = 0;
+        while (i < probeSideInfo.outputColumns.length) {
+          const column = probeSideInfo.outputColumns[i];
+          const isOrdered = orderedColumns.has(column);
+          const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
 
-        const groupParts: string[] = [column];
-        let j = i + 1;
-        while (j < probeSideInfo.outputColumns.length) {
-          const nextColumn = probeSideInfo.outputColumns[j];
-          const nextIsOrdered = orderedColumns.has(nextColumn);
-          const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
-          if (nextColor === color) {
-            groupParts.push(nextColumn);
-            j++;
-          } else {
-            break;
+          const groupParts: string[] = [column];
+          let j = i + 1;
+          while (j < probeSideInfo.outputColumns.length) {
+            const nextColumn = probeSideInfo.outputColumns[j];
+            const nextIsOrdered = orderedColumns.has(nextColumn);
+            const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
+            if (nextColor === color) {
+              groupParts.push(nextColumn);
+              j++;
+            } else {
+              break;
+            }
           }
-        }
 
-        const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
-        const groupTextId = context.idGenerator.generateId();
-        const groupWidth = groupText.length * charWidth;
-        const groupTextElement = context.elementFactory.createText({
-          id: groupTextId,
-          x: currentX,
-          y: arrowMidY - textHeight / 2,
-          width: groupWidth,
-          height: textHeight,
-          text: groupText,
-          fontSize: FONT_SIZES.COLUMN_LABEL,
-          fontFamily: FONT_FAMILIES.NORMAL,
-          textAlign: 'left',
-          verticalAlign: 'top',
-          strokeColor: color,
-        });
-        groupTextElement.groupIds = [groupId];
-        context.elements.push(groupTextElement);
-        currentX += groupWidth;
-        i = j;
+          const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
+          const groupTextId = context.idGenerator.generateId();
+          const groupWidth = groupText.length * charWidth;
+          const groupTextElement = context.elementFactory.createText({
+            id: groupTextId,
+            x: currentX,
+            y: arrowMidY - textHeight / 2,
+            width: groupWidth,
+            height: textHeight,
+            text: groupText,
+            fontSize: FONT_SIZES.COLUMN_LABEL,
+            fontFamily: FONT_FAMILIES.NORMAL,
+            textAlign: 'left',
+            verticalAlign: 'top',
+            strokeColor: color,
+          });
+          groupTextElement.groupIds = [groupId];
+          context.elements.push(groupTextElement);
+          currentX += groupWidth;
+          i = j;
+        }
       }
     }
 
@@ -411,5 +431,182 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       outputColumns,
       outputSortOrder,
     };
+  }
+
+  /**
+   * Partitioned hash join: one orange hash table per partition pair.
+   * Build stream i and probe stream i both hit table i.
+   */
+  private drawPartitionedHashTables(
+    context: GenerationContext,
+    x: number,
+    y: number,
+    nodeWidth: number,
+    nodeHeight: number,
+    childY: number,
+    buildSideInfo: NodeInfo,
+    probeSideInfo: NodeInfo,
+    buildSideArrows: number,
+    probeSideArrows: number
+  ): void {
+    const tableCount = Math.max(buildSideArrows, probeSideArrows);
+    const padding = 16;
+    const gap = 10;
+    const available = nodeWidth - padding * 2 - gap * Math.max(0, tableCount - 1);
+    const tableWidth = Math.min(HASH_TABLE_DIMENSIONS.WIDTH, available / tableCount);
+    const tableHeight = HASH_TABLE_DIMENSIONS.HEIGHT;
+    const tablesSpan = tableWidth * tableCount + gap * Math.max(0, tableCount - 1);
+    let tableX = x + (nodeWidth - tablesSpan) / 2;
+    const tableY = y + nodeHeight - tableHeight - 12;
+    const useFullLabel = tableWidth >= 100;
+    const label = useFullLabel ? 'HashTable' : 'HT';
+    const labelWidth = useFullLabel ? 70 : 22;
+
+    const tables: Array<{
+      id: string;
+      centerX: number;
+      centerY: number;
+      width: number;
+      height: number;
+      bottomX: number;
+      bottomY: number;
+    }> = [];
+
+    for (let i = 0; i < tableCount; i++) {
+      const id = context.idGenerator.generateId();
+      const centerX = tableX + tableWidth / 2;
+      const centerY = tableY + tableHeight / 2;
+      context.elements.push(
+        context.elementFactory.createEllipse({
+          id,
+          x: tableX,
+          y: tableY,
+          width: tableWidth,
+          height: tableHeight,
+          strokeColor: '#f08c00',
+          backgroundColor: 'transparent',
+          roundnessType: 2,
+        })
+      );
+      context.elements.push(
+        context.elementFactory.createText({
+          id: context.idGenerator.generateId(),
+          x: centerX - labelWidth / 2,
+          y: centerY - 9.2,
+          width: labelWidth,
+          height: 18.4,
+          text: label,
+          fontSize: FONT_SIZES.HASH_TABLE,
+          fontFamily: FONT_FAMILIES.BOLD,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+          strokeColor: '#f08c00',
+          autoResize: true,
+          lineHeight: 1.15,
+        })
+      );
+      tables.push({
+        id,
+        centerX,
+        centerY,
+        width: tableWidth,
+        height: tableHeight,
+        bottomX: centerX,
+        bottomY: tableY + tableHeight,
+      });
+      tableX += tableWidth + gap;
+    }
+
+    this.drawSideArrowsToPartitionTables(
+      context,
+      buildSideInfo,
+      buildSideArrows,
+      childY,
+      tables,
+      'left'
+    );
+    this.drawSideArrowsToPartitionTables(
+      context,
+      probeSideInfo,
+      probeSideArrows,
+      childY,
+      tables,
+      'right'
+    );
+  }
+
+  private drawSideArrowsToPartitionTables(
+    context: GenerationContext,
+    childInfo: NodeInfo,
+    arrowCount: number,
+    childY: number,
+    tables: Array<{
+      id: string;
+      centerX: number;
+      centerY: number;
+      width: number;
+      height: number;
+      bottomX: number;
+      bottomY: number;
+    }>,
+    side: 'left' | 'right'
+  ): void {
+    const centerWidth = childInfo.width * 0.6;
+    const startLeft = childInfo.x + childInfo.width / 2 - centerWidth / 2;
+    const startRight = startLeft + centerWidth;
+    const startPositions = context.arrowCalculator.distributeArrows(
+      arrowCount,
+      startLeft,
+      startRight
+    );
+
+    for (let i = 0; i < arrowCount; i++) {
+      const table = tables[Math.min(i, tables.length - 1)];
+      const arrowId = context.idGenerator.generateId();
+      context.elements.push(
+        context.elementFactory.createArrow({
+          id: arrowId,
+          startX: startPositions[i],
+          startY: childY,
+          endX: table.bottomX,
+          endY: table.bottomY,
+          childRectId: childInfo.rectId,
+          parentRectId: table.id,
+          strokeColor: context.config.arrowColor,
+        })
+      );
+      this.bindArrowToElements(context, arrowId, [childInfo.rectId, table.id]);
+    }
+
+    if (childInfo.outputColumns.length === 0) {
+      return;
+    }
+
+    const midTable = tables[Math.floor((tables.length - 1) / 2)];
+    const arrowMidY = (childY + midTable.centerY) / 2;
+    if (side === 'left') {
+      const leftmost = startPositions[0] ?? childInfo.x + childInfo.width / 2;
+      context.elements.push(
+        ...context.columnRenderer.renderLabelsLeft(
+          childInfo.outputColumns,
+          childInfo.outputSortOrder,
+          arrowMidY,
+          leftmost,
+          context.config.nodeColor
+        )
+      );
+    } else {
+      const rightmost =
+        startPositions[startPositions.length - 1] ?? childInfo.x + childInfo.width / 2;
+      context.elements.push(
+        ...context.columnRenderer.renderLabelsRight(
+          childInfo.outputColumns,
+          childInfo.outputSortOrder,
+          arrowMidY,
+          rightmost,
+          context.config.nodeColor
+        )
+      );
+    }
   }
 }
