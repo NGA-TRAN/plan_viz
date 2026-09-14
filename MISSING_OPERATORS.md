@@ -1,83 +1,45 @@
-# Missing DataFusion Physical Plan Operators
+# Missing DataFusion physical plan operators
 
-## Currently Implemented Operators
+This file is a short pointer. The living catalog and per-operator specs are
+in [`docs/operators/`](./docs/operators/README.md).
 
-1. **DataSourceExec** - Data source reading
-2. **FilterExec** - Row filtering
-3. **CoalesceBatchesExec** - Batch coalescing
-4. **CoalescePartitionsExec** - Partition coalescing
-5. **RepartitionExec** - Data repartitioning
-6. **AggregateExec** - Aggregation operations
-7. **ProjectionExec** - Column projection
-8. **SortExec** - Sorting operations
-9. **SortPreservingMergeExec** - Sort-preserving merge
-10. **HashJoinExec** - Hash join operations
-11. **SortMergeJoinExec** / **SortMergeJoin** - Sort-merge join operations
-12. **UnionExec** - Union operations
-13. **LocalLimitExec** - Local limit per partition
-14. **GlobalLimitExec** - Global limit across partitions
-15. **CrossJoinExec** - Cross join (Cartesian product)
+Compared against **datafusion-physical-plan 55.1.0**.
 
-## Missing Operators (Confirmed from DataFusion Documentation)
+## Implemented (19)
 
-Based on research from DataFusion's physical plan documentation at https://docs.rs/datafusion/latest/datafusion/physical_plan/, the following operators are **NOT yet** implemented in this project:
+DataSourceExec, FilterExec, CoalesceBatchesExec, CoalescePartitionsExec,
+RepartitionExec, AggregateExec, ProjectionExec, SortExec,
+SortPreservingMergeExec, HashJoinExec, SortMergeJoin / SortMergeJoinExec,
+UnionExec, LocalLimitExec, GlobalLimitExec, CrossJoinExec, WindowAggExec,
+BoundedWindowAggExec, NestedLoopJoinExec, UnnestExec.
 
+## Missing (specs ready for review)
 
-### Window Functions
-- **WindowAggExec** - Window aggregation functions
-- **BoundedWindowAggExec** - Bounded window aggregation functions
+**Wave A (implemented):** [WindowAggExec](docs/operators/window-agg-exec.md),
+[BoundedWindowAggExec](docs/operators/bounded-window-agg-exec.md),
+[NestedLoopJoinExec](docs/operators/nested-loop-join-exec.md),
+[UnnestExec](docs/operators/unnest-exec.md)
 
-### Join Operations
-- **NestedLoopJoinExec** - Nested loop join
-- **SymmetricHashJoinExec** - Symmetric hash join
-- **PiecewiseMergeJoinExec** - Piecewise merge join
+**Wave B:** [SymmetricHashJoinExec](docs/operators/symmetric-hash-join-exec.md),
+[PiecewiseMergeJoinExec](docs/operators/piecewise-merge-join-exec.md),
+[InterleaveExec](docs/operators/interleave-exec.md)
 
-### Set Operations
-- **IntersectExec** - Intersection operation (if exists)
-- **ExceptExec** - Set difference operation (if exists)
+**Wave C:** [AnalyzeExec](docs/operators/analyze-exec.md),
+[EmptyExec](docs/operators/empty-exec.md),
+[PlaceholderRowExec](docs/operators/placeholder-row-exec.md),
+[LazyMemoryExec](docs/operators/lazy-memory-exec.md)
 
-### Other Operations
-- **AnalyzeExec** - ANALYZE execution plan operator
-- **EmptyExec** - Empty relation with produce_one_row=false
-- **ExplainExec** - EXPLAIN execution plan operator
-- **UnnestExec** - Unnest columns (struct or list types)
-- **StreamingTableExec** - Streaming table operations
-- **LazyMemoryExec** - Lazy in-memory batches of data
-- **RecursiveQueryExec** - Recursive query execution plan
-- **WorkTableExec** - Work table for recursive queries
-- **PlaceholderRowExec** - Empty relation with produce_one_row=true
+**Wave D (later):** ExplainExec, StreamingTableExec, RecursiveQueryExec,
+WorkTableExec, BufferExec, CooperativeExec, ScalarSubqueryExec, FileSinkExec.
 
-## Operators That May Exist (Need Verification)
+## Not real physical operators
 
-These operators are common in query engines but need verification in DataFusion:
+`IntersectExec` / `ExceptExec` are rewritten to `HashJoinExec` (LeftSemi /
+LeftAnti). `TopKExec` is `SortExec` + `fetch`. `ParquetExec` / `CsvExec` /
+`JsonExec` folded into `DataSourceExec`. `DistinctExec` is `AggregateExec`.
+Custom ops use `customGenerators` (v0.1.15).
 
-- **TopKExec** - Top-K operations
-- **DeduplicateExec** - Remove duplicates
-- **DistinctExec** - Distinct operations
-- **ValuesExec** - Values/constant table
-- **ParquetExec** - Parquet file reading (may be part of DataSourceExec)
-- **CsvExec** - CSV file reading (may be part of DataSourceExec)
-- **JsonExec** - JSON file reading (may be part of DataSourceExec)
-- **FileSinkExec** - File writing operations
-- **CopyToExec** - Copy operations
-- **ExtensionExec** - Extension/custom operators
+## Workflow
 
-## Summary
-
-**Total Implemented:** 15 operators  
-**Total Missing (Confirmed):** 13+ operators  
-**Total Missing (Unverified):** ~10 operators
-
-## Next Steps
-
-1. ✅ Checked DataFusion documentation at https://docs.rs/datafusion/latest/datafusion/physical_plan/
-2. Test with various SQL queries to discover additional operators in practice
-3. Prioritize implementation based on common usage:
-   - **High Priority**: WindowAggExec, NestedLoopJoinExec
-   - **Medium Priority**: AnalyzeExec, ExplainExec, UnnestExec
-   - **Low Priority**: RecursiveQueryExec, WorkTableExec, PlaceholderRowExec
-
-## References
-
-- DataFusion Physical Plan Documentation: https://docs.rs/datafusion/latest/datafusion/physical_plan/
-- DataFusion GitHub Repository: https://github.com/apache/arrow-datafusion
+See [docs/operators/WORKFLOW.md](docs/operators/WORKFLOW.md). Do not use
+generic Spec Kit for one-operator additions.

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Wave A operators**: `WindowAggExec`, `BoundedWindowAggExec`, `NestedLoopJoinExec`, and `UnnestExec` with unit tests and golden integration fixtures
+- `WindowAggExec` fixture on already-sorted `DataSourceExec` (no `SortExec`)
+- Teal shared `Buffer` glyph on `NestedLoopJoinExec` (distinct from orange `HashTable`)
+
 ## [0.1.16] - 2026-07-25
 
 ### Fixed
