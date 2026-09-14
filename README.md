@@ -295,11 +295,11 @@ The project includes numerous example execution plans in the [`tests/`](tests/) 
 - Repartitioning (`repartition*.sql`)
 - Aggregation examples (`*aggregate*.sql`)
 - Projection (`*projection*.sql`)
-- Join operations (`join*.sql`, `join_sort_merge*.sql`, `join_nested_loop.sql`)
+- Join operations (`join*.sql`, `join_sort_merge*.sql`, `join_nested_loop.sql`, `join_symmetric_hash.sql`, `join_piecewise_merge.sql`)
 - Window functions (`window_agg*.sql`, `window_bounded*.sql`)
 - Unnest (`unnest_basic.sql`)
 - Sorting (`sort*.sql`)
-- Union (`union*.sql`)
+- Union / interleave (`union*.sql`, `interleave_2_inputs.sql`)
 - And many more!
 
 > **Note:** The `tests/` directory serves a dual purpose: test fixtures and examples

@@ -7,7 +7,7 @@ Unknown operators already render via `DefaultNodeGenerator` (red
 `unimplemented`). This catalog is the work queue to replace that fallback with
 real diagrams.
 
-## Already implemented (19)
+## Already implemented (22)
 
 | Operator | Generator |
 |---|---|
@@ -30,13 +30,16 @@ real diagrams.
 | `BoundedWindowAggExec` | `window-agg-node.generator.ts` |
 | `UnnestExec` | `unnest-node.generator.ts` |
 | `NestedLoopJoinExec` | `nested-loop-join-node.generator.ts` |
+| `SymmetricHashJoinExec` | `symmetric-hash-join-node.generator.ts` |
+| `PiecewiseMergeJoinExec` | `piecewise-merge-join-node.generator.ts` |
+| `InterleaveExec` | `interleave-node.generator.ts` |
 
 ## Missing — implement these
 
 Reviewed against DataFusion 55.1.0 source and docs.rs. Each missing operator
-has its own spec in this folder. Wave A is done.
+has its own spec in this folder. Wave A and Wave B are done.
 
-### Wave B — joins and set-like fan-in
+### Wave B — joins and set-like fan-in (implemented)
 
 | Operator | Spec | Children | Why |
 |---|---|---|---|
@@ -84,7 +87,7 @@ standalone physical `*Exec` nodes in DataFusion 55:
 ## How to review
 
 1. Read [WORKFLOW.md](./WORKFLOW.md).
-2. Read Wave A specs. Each file is independent.
+2. Wave A and Wave B are implemented. Review Wave C specs next.
 3. Reply with which specs are approved (or request visual changes).
 4. Implementation starts only after that approval.
 

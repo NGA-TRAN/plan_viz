@@ -32,6 +32,9 @@ import { GlobalLimitNodeGenerator } from './generators/global-limit-node.generat
 import { WindowAggNodeGenerator } from './generators/window-agg-node.generator';
 import { UnnestNodeGenerator } from './generators/unnest-node.generator';
 import { NestedLoopJoinNodeGenerator } from './generators/nested-loop-join-node.generator';
+import { InterleaveNodeGenerator } from './generators/interleave-node.generator';
+import { SymmetricHashJoinNodeGenerator } from './generators/symmetric-hash-join-node.generator';
+import { PiecewiseMergeJoinNodeGenerator } from './generators/piecewise-merge-join-node.generator';
 import { GenerationContext } from './types/generation-context.types';
 
 /**
@@ -194,5 +197,11 @@ export class ExcalidrawGenerator {
     );
     this.nodeGeneratorRegistry.register('UnnestExec', new UnnestNodeGenerator());
     this.nodeGeneratorRegistry.register('NestedLoopJoinExec', new NestedLoopJoinNodeGenerator());
+    this.nodeGeneratorRegistry.register('InterleaveExec', new InterleaveNodeGenerator());
+    this.nodeGeneratorRegistry.register('SymmetricHashJoinExec', new SymmetricHashJoinNodeGenerator());
+    this.nodeGeneratorRegistry.register(
+      'PiecewiseMergeJoinExec',
+      new PiecewiseMergeJoinNodeGenerator()
+    );
   }
 }

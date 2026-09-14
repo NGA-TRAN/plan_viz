@@ -5,13 +5,14 @@ in [`docs/operators/`](./docs/operators/README.md).
 
 Compared against **datafusion-physical-plan 55.1.0**.
 
-## Implemented (19)
+## Implemented (22)
 
 DataSourceExec, FilterExec, CoalesceBatchesExec, CoalescePartitionsExec,
 RepartitionExec, AggregateExec, ProjectionExec, SortExec,
 SortPreservingMergeExec, HashJoinExec, SortMergeJoin / SortMergeJoinExec,
 UnionExec, LocalLimitExec, GlobalLimitExec, CrossJoinExec, WindowAggExec,
-BoundedWindowAggExec, NestedLoopJoinExec, UnnestExec.
+BoundedWindowAggExec, NestedLoopJoinExec, UnnestExec, SymmetricHashJoinExec,
+PiecewiseMergeJoinExec, InterleaveExec.
 
 ## Missing (specs ready for review)
 
@@ -20,7 +21,7 @@ BoundedWindowAggExec, NestedLoopJoinExec, UnnestExec.
 [NestedLoopJoinExec](docs/operators/nested-loop-join-exec.md),
 [UnnestExec](docs/operators/unnest-exec.md)
 
-**Wave B:** [SymmetricHashJoinExec](docs/operators/symmetric-hash-join-exec.md),
+**Wave B (implemented):** [SymmetricHashJoinExec](docs/operators/symmetric-hash-join-exec.md),
 [PiecewiseMergeJoinExec](docs/operators/piecewise-merge-join-exec.md),
 [InterleaveExec](docs/operators/interleave-exec.md)
 

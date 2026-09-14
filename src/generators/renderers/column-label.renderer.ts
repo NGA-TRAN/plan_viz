@@ -133,18 +133,18 @@ export class ColumnLabelRenderer {
     nodeColor: string,
     offset: number = -5
   ): ExcalidrawText[] {
-    // For left alignment, we need to calculate total width first
-    const orderedColumns = new Set(sortOrder);
-    // const fontSize = FONT_SIZES.COLUMN_LABEL;
-    // let totalWidth = 0;
+    if (columns.length === 0) {
+      return [];
+    }
 
-    // Calculate total width
+    const orderedColumns = new Set(sortOrder);
+    const fontSize = FONT_SIZES.COLUMN_LABEL;
+    const groups: Array<{ text: string; color: string }> = [];
     let i = 0;
     while (i < columns.length) {
       const column = columns[i];
       const isOrdered = orderedColumns.has(column);
       const color = isOrdered ? COLORS.ORDERED_COLUMN : nodeColor;
-
       const groupParts: string[] = [column];
       let j = i + 1;
       while (j < columns.length) {
@@ -158,24 +158,44 @@ export class ColumnLabelRenderer {
           break;
         }
       }
-
-      // const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
-      // totalWidth += this.textMeasurement.measureText(groupText, fontSize);
+      groups.push({
+        text: i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', '),
+        color,
+      });
       i = j;
     }
 
-    // Start from the rightmost position and work backwards
-    const startX = leftmostArrowX + offset;
-    return this.renderLabels({
-      columns,
-      sortOrder,
-      position: {
-        x: startX,
-        y: arrowMidY,
-      },
-      alignment: 'right',
-      nodeColor,
-    });
+    const widths = groups.map((group) => this.textMeasurement.measureText(group.text, fontSize));
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+    const rightEdge = leftmostArrowX + offset;
+    let currentX = rightEdge - totalWidth;
+    const groupId = this.idGenerator.generateId();
+    const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
+    const elements: ExcalidrawText[] = [];
+
+    for (let g = 0; g < groups.length; g++) {
+      const groupTextElement = this.elementFactory.createText({
+        id: this.idGenerator.generateId(),
+        x: currentX,
+        y: arrowMidY - textHeight / 2,
+        width: widths[g],
+        height: textHeight,
+        text: groups[g].text,
+        fontSize,
+        fontFamily: FONT_FAMILIES.NORMAL,
+        textAlign: 'left',
+        verticalAlign: 'top',
+        strokeColor: groups[g].color,
+        containerId: null,
+        autoResize: false,
+        lineHeight: ELEMENT_DEFAULTS.LINE_HEIGHT,
+      });
+      groupTextElement.groupIds = [groupId];
+      elements.push(groupTextElement);
+      currentX += widths[g];
+    }
+
+    return elements;
   }
 }
 
