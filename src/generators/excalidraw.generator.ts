@@ -35,6 +35,13 @@ import { NestedLoopJoinNodeGenerator } from './generators/nested-loop-join-node.
 import { InterleaveNodeGenerator } from './generators/interleave-node.generator';
 import { SymmetricHashJoinNodeGenerator } from './generators/symmetric-hash-join-node.generator';
 import { PiecewiseMergeJoinNodeGenerator } from './generators/piecewise-merge-join-node.generator';
+import { AnalyzeNodeGenerator } from './generators/analyze-node.generator';
+import {
+  LeafNodeGenerator,
+  emptyLeafOptions,
+  placeholderLeafOptions,
+  memoryLeafOptions,
+} from './generators/leaf-node.generator';
 import { GenerationContext } from './types/generation-context.types';
 
 /**
@@ -203,5 +210,14 @@ export class ExcalidrawGenerator {
       'PiecewiseMergeJoinExec',
       new PiecewiseMergeJoinNodeGenerator()
     );
+    this.nodeGeneratorRegistry.register('AnalyzeExec', new AnalyzeNodeGenerator());
+    this.nodeGeneratorRegistry.register('EmptyExec', new LeafNodeGenerator(emptyLeafOptions()));
+    this.nodeGeneratorRegistry.register(
+      'PlaceholderRowExec',
+      new LeafNodeGenerator(placeholderLeafOptions())
+    );
+    const memory = new LeafNodeGenerator(memoryLeafOptions());
+    this.nodeGeneratorRegistry.register('LazyMemoryExec', memory);
+    this.nodeGeneratorRegistry.register('ValuesExec', memory);
   }
 }

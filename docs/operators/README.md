@@ -7,7 +7,7 @@ Unknown operators already render via `DefaultNodeGenerator` (red
 `unimplemented`). This catalog is the work queue to replace that fallback with
 real diagrams.
 
-## Already implemented (22)
+## Already implemented (26)
 
 | Operator | Generator |
 |---|---|
@@ -33,11 +33,15 @@ real diagrams.
 | `SymmetricHashJoinExec` | `symmetric-hash-join-node.generator.ts` |
 | `PiecewiseMergeJoinExec` | `piecewise-merge-join-node.generator.ts` |
 | `InterleaveExec` | `interleave-node.generator.ts` |
+| `AnalyzeExec` | `analyze-node.generator.ts` |
+| `EmptyExec` | `leaf-node.generator.ts` |
+| `PlaceholderRowExec` | `leaf-node.generator.ts` |
+| `LazyMemoryExec` / `ValuesExec` | `leaf-node.generator.ts` |
 
 ## Missing — implement these
 
 Reviewed against DataFusion 55.1.0 source and docs.rs. Each missing operator
-has its own spec in this folder. Wave A and Wave B are done.
+has its own spec in this folder. Waves A–C are done.
 
 ### Wave B — joins and set-like fan-in (implemented)
 
@@ -47,7 +51,7 @@ has its own spec in this folder. Wave A and Wave B are done.
 | `PiecewiseMergeJoinExec` | [piecewise-merge-join-exec.md](./piecewise-merge-join-exec.md) | 2 | Single range predicate |
 | `InterleaveExec` | [interleave-exec.md](./interleave-exec.md) | N | Hash-partition union sibling |
 
-### Wave C — leaves and wrappers
+### Wave C — leaves and wrappers (implemented)
 
 | Operator | Spec | Children | Why |
 |---|---|---|---|
@@ -81,13 +85,13 @@ standalone physical `*Exec` nodes in DataFusion 55:
 | `TopKExec` | `SortExec` with `fetch=N` (internal `TopK` helper, not an EXPLAIN name) |
 | `DeduplicateExec` / `DistinctExec` | `AggregateExec` |
 | `ParquetExec` / `CsvExec` / `JsonExec` | Folded into `DataSourceExec` |
-| `ValuesExec` | Legacy name; current plans use memory / datasource leaves |
+| `ValuesExec` | Legacy name; registered to the same generator as `LazyMemoryExec` |
 | `ExtensionExec` | User-defined; use `customGenerators` (already shipped in 0.1.15) |
 
 ## How to review
 
 1. Read [WORKFLOW.md](./WORKFLOW.md).
-2. Wave A and Wave B are implemented. Review Wave C specs next.
+2. Waves A–C are implemented. Review Wave D only if those operators start appearing.
 3. Reply with which specs are approved (or request visual changes).
 4. Implementation starts only after that approval.
 

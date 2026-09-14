@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Implemented |
 | Priority | P2 |
 | Wave | C |
 | Children | 0 |

@@ -5,14 +5,15 @@ in [`docs/operators/`](./docs/operators/README.md).
 
 Compared against **datafusion-physical-plan 55.1.0**.
 
-## Implemented (22)
+## Implemented (26)
 
 DataSourceExec, FilterExec, CoalesceBatchesExec, CoalescePartitionsExec,
 RepartitionExec, AggregateExec, ProjectionExec, SortExec,
 SortPreservingMergeExec, HashJoinExec, SortMergeJoin / SortMergeJoinExec,
 UnionExec, LocalLimitExec, GlobalLimitExec, CrossJoinExec, WindowAggExec,
 BoundedWindowAggExec, NestedLoopJoinExec, UnnestExec, SymmetricHashJoinExec,
-PiecewiseMergeJoinExec, InterleaveExec.
+PiecewiseMergeJoinExec, InterleaveExec, AnalyzeExec, EmptyExec,
+PlaceholderRowExec, LazyMemoryExec / ValuesExec.
 
 ## Missing (specs ready for review)
 
@@ -25,7 +26,7 @@ PiecewiseMergeJoinExec, InterleaveExec.
 [PiecewiseMergeJoinExec](docs/operators/piecewise-merge-join-exec.md),
 [InterleaveExec](docs/operators/interleave-exec.md)
 
-**Wave C:** [AnalyzeExec](docs/operators/analyze-exec.md),
+**Wave C (implemented):** [AnalyzeExec](docs/operators/analyze-exec.md),
 [EmptyExec](docs/operators/empty-exec.md),
 [PlaceholderRowExec](docs/operators/placeholder-row-exec.md),
 [LazyMemoryExec](docs/operators/lazy-memory-exec.md)
@@ -38,7 +39,8 @@ WorkTableExec, BufferExec, CooperativeExec, ScalarSubqueryExec, FileSinkExec.
 `IntersectExec` / `ExceptExec` are rewritten to `HashJoinExec` (LeftSemi /
 LeftAnti). `TopKExec` is `SortExec` + `fetch`. `ParquetExec` / `CsvExec` /
 `JsonExec` folded into `DataSourceExec`. `DistinctExec` is `AggregateExec`.
-Custom ops use `customGenerators` (v0.1.15).
+`ValuesExec` is registered to the `LazyMemoryExec` renderer. Custom ops use
+`customGenerators` (v0.1.15).
 
 ## Workflow
 

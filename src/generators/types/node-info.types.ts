@@ -21,5 +21,7 @@ export interface NodeInfo {
   outputColumns: string[];
   /** Output sort order (columns that are sorted) */
   outputSortOrder: string[];
+  /** When true, parents must not invent a stream (EmptyExec). */
+  emitsNoStreams?: boolean;
 }
 
