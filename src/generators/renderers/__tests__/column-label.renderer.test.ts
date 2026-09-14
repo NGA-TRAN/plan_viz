@@ -114,7 +114,15 @@ describe('ColumnLabelRenderer', () => {
         '#000000'
       );
       expect(result.length).toBeGreaterThan(0);
-      expect(result[0].textAlign).toBe('right');
+      expect(result[0].x + result[0].width).toBeLessThanOrEqual(100);
+    });
+
+    it('should keep mixed-color columns in order without overlap', () => {
+      const result = renderer.renderLabelsLeft(['ts', 'val'], ['ts'], 50, 100, '#000000');
+      expect(result).toHaveLength(2);
+      expect(result[0].text).toBe('ts');
+      expect(result[1].text).toBe(', val');
+      expect(result[0].x + result[0].width).toBeLessThanOrEqual(result[1].x + 0.01);
     });
 
     it('should handle columns with mixed colors (ordered and unordered)', () => {

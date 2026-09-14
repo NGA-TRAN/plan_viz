@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Wave B operators**: `SymmetricHashJoinExec` (two orange hash tables), `PiecewiseMergeJoinExec` (range merge, no hash table), and `InterleaveExec` (keeps one child's partition count, unlike Union)
 - **Wave A operators**: `WindowAggExec`, `BoundedWindowAggExec`, `NestedLoopJoinExec`, and `UnnestExec` with unit tests and golden integration fixtures
 - `WindowAggExec` fixture on already-sorted `DataSourceExec` (no `SortExec`)
 - Teal shared `Buffer` glyph on `NestedLoopJoinExec` (distinct from orange `HashTable`)
