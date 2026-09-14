@@ -1,7 +1,7 @@
 # DataFusion operator catalog
 
 Comparison of Apache DataFusion physical operators (`datafusion-physical-plan`
-**55.1.0**, September 2026) against plan-viz **0.1.16**.
+**55.1.0**, September 2026) against plan-viz **0.1.17**.
 
 Unknown operators already render via `DefaultNodeGenerator` (red
 `unimplemented`). This catalog is the work queue to replace that fallback with

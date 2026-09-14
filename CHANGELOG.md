@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-09-14
+
 ### Added
 - **Partitioned HashJoinExec**: one orange hash table per partition pair (`mode=Partitioned`), distinct from CollectLeft’s single table
 - **Wave C operators**: `AnalyzeExec`, `EmptyExec` (empty leaf, one tree edge), `PlaceholderRowExec` (one dummy row), and `LazyMemoryExec` / `ValuesExec` (in-memory partitions)
