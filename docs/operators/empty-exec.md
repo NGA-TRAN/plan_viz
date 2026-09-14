@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Implemented |
 | Priority | P2 |
 | Wave | C |
 | Children | 0 |
@@ -28,10 +28,10 @@ EmptyExec: produce_one_row=false
 
 ## Visualization
 
-- Leaf. **Zero** output arrows if it is the root; if it is a child of a join
-  or union, it contributes **0** input arrows to the parent (parent must
-  tolerate that — HashJoin already has children).
-- Details: `empty` or `produce_one_row=false`.
+- Leaf. Draw **one** arrow to the parent so the tree is readable (not a
+  floating box). Root still has no outgoing arrows.
+- Details: `empty` or `produce_one_row=false` — that is what means “no rows,”
+  not a missing edge.
 - No file-group ellipses.
 
 ## Tests

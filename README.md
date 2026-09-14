@@ -300,6 +300,7 @@ The project includes numerous example execution plans in the [`tests/`](tests/) 
 - Unnest (`unnest_basic.sql`)
 - Sorting (`sort*.sql`)
 - Union / interleave (`union*.sql`, `interleave_2_inputs.sql`)
+- Analyze / empty / placeholder / memory leaves (`analyze_basic.sql`, `empty_basic.sql`, `placeholder_row_basic.sql`, `memory_lazy_4.sql`)
 - And many more!
 
 > **Note:** The `tests/` directory serves a dual purpose: test fixtures and examples

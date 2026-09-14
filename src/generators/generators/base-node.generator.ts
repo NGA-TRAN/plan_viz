@@ -75,6 +75,10 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
         }
 
         // Create arrows from child to parent
+        if (childInfo.emitsNoStreams) {
+          maxChildY = Math.max(maxChildY, childInfo.y + childInfo.height);
+          continue;
+        }
         const numArrows = Math.max(1, childInfo.inputArrowCount);
         totalInputArrows += numArrows;
 
