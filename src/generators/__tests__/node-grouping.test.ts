@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { convertPlanToExcalidraw } from '../../index';
 import { ExcalidrawGenerator } from '../excalidraw.generator';
 import { TestHelpers } from './utils/test-helpers';
 import { NodeBuilder } from './builders/node.builder';
@@ -75,6 +78,41 @@ describe('Excalidraw node grouping', () => {
     expect(title?.groupIds.length).toBe(1);
     expect(dynamicFilter?.groupIds).toContain(title!.groupIds[0]);
     expect(fileLabel?.groupIds ?? []).not.toContain(title!.groupIds[0]);
+  });
+
+  it('keeps distinct fixedPoints when several arrows share a parent edge', () => {
+    const node = NodeBuilder.createFilterExec('value > 1', [
+      NodeBuilder.createDataSourceExec({
+        file_groups: '3 groups: [[a.parquet], [b.parquet], [c.parquet]]',
+        projection: '[value]',
+      }),
+    ]);
+    const result = generator.generate(node);
+    const filterTitle = TestHelpers.findElementByText(result.elements, 'FilterExec');
+    const arrows = (TestHelpers.getArrows(result.elements) as ExcalidrawArrow[]).filter(
+      (arrow) => arrow.endBinding?.elementId === filterTitle?.containerId
+    );
+    expect(arrows.length).toBeGreaterThan(1);
+    const endXs = arrows.map((arrow) => arrow.endBinding?.fixedPoint[0]);
+    expect(new Set(endXs).size).toBe(endXs.length);
+    expect(arrows.every((arrow) => arrow.endBinding?.mode === 'inside')).toBe(true);
+    expect(arrows.every((arrow) => (arrow.endBinding?.gap ?? 0) >= 1)).toBe(true);
+  });
+
+  it('keeps all four arrows on a widened unary parent after bind', () => {
+    const sql = fs.readFileSync(path.join(__dirname, '../../../tests/tpch_q3.sql'), 'utf-8');
+    const data = convertPlanToExcalidraw(sql);
+    const title = TestHelpers.findElementByText(data.elements, 'SortPreservingMergeExec');
+    const arrows = (TestHelpers.getArrows(data.elements) as ExcalidrawArrow[]).filter(
+      (arrow) => arrow.endBinding?.elementId === title?.containerId
+    );
+    expect(arrows).toHaveLength(4);
+    const endXs = arrows.map((arrow) => arrow.endBinding?.fixedPoint[0] ?? 0);
+    expect(endXs.every((nx) => nx > 0.1 && nx < 0.9)).toBe(true);
+    expect(new Set(endXs.map((nx) => nx.toFixed(2))).size).toBe(4);
+    expect(arrows.every((arrow) => Math.abs(arrow.endBinding?.focus ?? 99) <= 1)).toBe(true);
+    expect(arrows.every((arrow) => (arrow.endBinding?.gap ?? 99) <= 2)).toBe(true);
+    expect(arrows.every((arrow) => arrow.elbowed === true)).toBe(true);
   });
 
   it('attaches side column labels to the child node group', () => {

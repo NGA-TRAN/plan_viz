@@ -203,16 +203,22 @@ export class ElementFactory {
       startBinding: {
         elementId: options.childRectId,
         focus: 0,
-        gap: 0,
+        gap: 1,
+        fixedPoint: [0.5001, 0.0001],
+        mode: 'inside',
       },
       endBinding: {
         elementId: options.parentRectId,
         focus: 0,
-        gap: 0,
+        gap: 1,
+        fixedPoint: [0.5001, 0.9999],
+        mode: 'inside',
       },
       startArrowhead: null,
       endArrowhead: 'arrow',
-      elbowed: false,
+      // 0.18 only honors fixedPoint on elbow arrows; vertical tree edges
+      // stay a straight line and keep their attach points when a box moves.
+      elbowed: Math.abs(dx) < 0.5 || Math.abs(dy) < 0.5,
     };
   }
 
