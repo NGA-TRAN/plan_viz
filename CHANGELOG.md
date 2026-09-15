@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-09-15
+
 ### Fixed
 - Node box, title, in-box details, hash tables, and DynamicFilter share an Excalidraw group so they drag together; arrows stay bound and stretch; column labels on those arrows join the child node's group
 
