@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-09-15
+
 ### Added
 - TPC-H Q3 / Q5 / Q9 / Q21 physical-plan fixtures from Apache DataFusion (multi-join Partitioned HashJoin, TopK, LeftSemi / LeftAnti)
 
