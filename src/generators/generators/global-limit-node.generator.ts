@@ -119,13 +119,13 @@ export class GlobalLimitNodeGenerator extends BaseNodeGenerator {
     }
 
     // GlobalLimitExec: always has 1 output arrow
-    const outputArrowPositions = [x + nodeWidth / 2];
+    const outputArrowPositions = [childResult.fittedX + childResult.fittedWidth / 2];
     const outputArrowCount = 1;
 
     return {
-      x,
+      x: childResult.fittedX,
       y: childResult.maxChildY,
-      width: nodeWidth,
+      width: childResult.fittedWidth,
       height: nodeHeight,
       rectId,
       inputArrowCount: outputArrowCount,

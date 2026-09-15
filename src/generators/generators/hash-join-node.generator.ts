@@ -2,7 +2,13 @@ import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
 import { BaseNodeGenerator } from './base-node.generator';
-import { NODE_DIMENSIONS, FONT_SIZES, FONT_FAMILIES, TEXT_HEIGHTS, HASH_TABLE_DIMENSIONS } from '../constants';
+import {
+  NODE_DIMENSIONS,
+  FONT_SIZES,
+  FONT_FAMILIES,
+  TEXT_HEIGHTS,
+  HASH_TABLE_DIMENSIONS,
+} from '../constants';
 
 /**
  * HashJoinExec node generator
@@ -24,9 +30,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     const nodeWidth = isPartitioned ?
       NODE_DIMENSIONS.HASH_JOIN_PARTITIONED_WIDTH :
       NODE_DIMENSIONS.DATASOURCE_WIDTH;
-    const nodeHeight = isPartitioned ?
-      NODE_DIMENSIONS.HASH_JOIN_PARTITIONED_HEIGHT :
-      125;
+    const nodeHeight = isPartitioned ? NODE_DIMENSIONS.HASH_JOIN_PARTITIONED_HEIGHT : 125;
 
     // Create rectangle
     const rectId = context.idGenerator.generateId();
@@ -189,6 +193,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       }
 
       const buildSideTopY = childY;
+      let buildOuterEndX = hashTableCenterX;
+      let buildOuterEndY = hashTableCenterY;
 
       for (let i = 0; i < buildSideArrows; i++) {
         const arrowStartX = buildSideTopArrowPositions[i];
@@ -201,6 +207,10 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
           hashTableWidth,
           hashTableHeight
         );
+        if (i === 0) {
+          buildOuterEndX = hashTableEdgeX;
+          buildOuterEndY = hashTableEdgeY;
+        }
         const arrowId = context.idGenerator.generateId();
         const arrow = context.elementFactory.createArrow({
           id: arrowId,
@@ -216,76 +226,16 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         this.bindArrowToElements(context, arrowId, [buildSideInfo.rectId, hashTableId]);
       }
 
-      // Display columns on arrows from build side (using build side's columns and sort order)
-      // Replicate original HashJoinExec logic for consistency
-      if (buildSideInfo.outputColumns.length > 0) {
-        const arrowMidY = (buildSideTopY + hashTableCenterY) / 2;
-        const leftmostArrowX =
-        buildSideTopArrowPositions.length > 0 ?
-          buildSideTopArrowPositions[0] :
-          buildSideX + buildSideInfo.width / 2;
-        const leftOffset = -5; // Negative offset to position text to the left
-        const projectionTextX = leftmostArrowX + leftOffset;
-
-        const orderedColumns = new Set(buildSideInfo.outputSortOrder);
-        const groupId = context.idGenerator.generateId();
-        const charWidth = 8; // Match original HashJoinExec implementation
-        const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
-
-        // Collect all groups first to determine total width and proper comma placement
-        const groups: Array<{ text: string; color: string; width: number }> = [];
-        let i = 0;
-        while (i < buildSideInfo.outputColumns.length) {
-          const column = buildSideInfo.outputColumns[i];
-          const isOrdered = orderedColumns.has(column);
-          const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
-
-          const groupParts: string[] = [column];
-          let j = i + 1;
-          while (j < buildSideInfo.outputColumns.length) {
-            const nextColumn = buildSideInfo.outputColumns[j];
-            const nextIsOrdered = orderedColumns.has(nextColumn);
-            const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
-            if (nextColor === color) {
-              groupParts.push(nextColumn);
-              j++;
-            } else {
-              break;
-            }
-          }
-
-          const groupText = groupParts.join(', ');
-          const groupWidth = groupText.length * charWidth;
-          groups.push({ text: groupText, color, width: groupWidth });
-          i = j;
-        }
-
-        // Position from right to left, building text correctly
-        let currentX = projectionTextX;
-        for (let idx = groups.length - 1; idx >= 0; idx--) {
-          const group = groups[idx];
-          const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
-          const groupWidth = groupText.length * charWidth;
-          const groupTextId = context.idGenerator.generateId();
-          // Position text to the left of the arrow, so we need to adjust X position
-          const groupTextElement = context.elementFactory.createText({
-            id: groupTextId,
-            x: currentX - groupWidth, // Position to the left
-            y: arrowMidY - textHeight / 2,
-            width: groupWidth,
-            height: textHeight,
-            text: groupText,
-            fontSize: FONT_SIZES.COLUMN_LABEL,
-            fontFamily: FONT_FAMILIES.NORMAL,
-            textAlign: 'right', // Right align since text is to the left
-            verticalAlign: 'top',
-            strokeColor: group.color,
-          });
-          groupTextElement.groupIds = [groupId];
-          context.elements.push(groupTextElement);
-          currentX -= groupWidth;
-        }
-      }
+      this.placeJoinSideColumnLabels(
+        context,
+        buildSideInfo.outputColumns,
+        buildSideInfo.outputSortOrder,
+        'left',
+        buildSideTopArrowPositions[0] ?? buildSideX + buildSideInfo.width / 2,
+        buildSideTopY,
+        buildOuterEndX,
+        buildOuterEndY
+      );
 
       // Create arrows from probe side to HashJoinExec rectangle
       const probeSideTopArrowPositions: number[] = [];
@@ -302,6 +252,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       }
 
       const probeSideTopY = childY;
+      let probeOuterEndX = hashTableCenterX;
+      let probeOuterEndY = hashTableCenterY;
 
       for (let i = 0; i < probeSideArrows; i++) {
         const arrowStartX = probeSideTopArrowPositions[i];
@@ -314,6 +266,10 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
           hashTableWidth,
           hashTableHeight
         );
+        if (i === probeSideArrows - 1) {
+          probeOuterEndX = hashTableEdgeX;
+          probeOuterEndY = hashTableEdgeY;
+        }
         const arrowId = context.idGenerator.generateId();
         const arrow = context.elementFactory.createArrow({
           id: arrowId,
@@ -329,65 +285,17 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         this.bindArrowToElements(context, arrowId, [probeSideInfo.rectId, hashTableId]);
       }
 
-      // Display columns on arrows from probe side (using probe side's columns and sort order)
-      // Replicate original HashJoinExec logic for consistency
-      if (probeSideInfo.outputColumns.length > 0) {
-        const arrowMidY = (probeSideTopY + hashTableCenterY) / 2;
-        const rightmostArrowX =
-        probeSideTopArrowPositions.length > 0 ?
-          probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1] :
-          probeSideX + probeSideInfo.width / 2;
-        const rightOffset = 5;
-        const projectionTextX = rightmostArrowX + rightOffset;
-
-        const orderedColumns = new Set(probeSideInfo.outputSortOrder);
-        const groupId = context.idGenerator.generateId();
-        let currentX = projectionTextX;
-        const charWidth = 8; // Match original HashJoinExec implementation
-        const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
-
-        let i = 0;
-        while (i < probeSideInfo.outputColumns.length) {
-          const column = probeSideInfo.outputColumns[i];
-          const isOrdered = orderedColumns.has(column);
-          const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
-
-          const groupParts: string[] = [column];
-          let j = i + 1;
-          while (j < probeSideInfo.outputColumns.length) {
-            const nextColumn = probeSideInfo.outputColumns[j];
-            const nextIsOrdered = orderedColumns.has(nextColumn);
-            const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
-            if (nextColor === color) {
-              groupParts.push(nextColumn);
-              j++;
-            } else {
-              break;
-            }
-          }
-
-          const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
-          const groupTextId = context.idGenerator.generateId();
-          const groupWidth = groupText.length * charWidth;
-          const groupTextElement = context.elementFactory.createText({
-            id: groupTextId,
-            x: currentX,
-            y: arrowMidY - textHeight / 2,
-            width: groupWidth,
-            height: textHeight,
-            text: groupText,
-            fontSize: FONT_SIZES.COLUMN_LABEL,
-            fontFamily: FONT_FAMILIES.NORMAL,
-            textAlign: 'left',
-            verticalAlign: 'top',
-            strokeColor: color,
-          });
-          groupTextElement.groupIds = [groupId];
-          context.elements.push(groupTextElement);
-          currentX += groupWidth;
-          i = j;
-        }
-      }
+      this.placeJoinSideColumnLabels(
+        context,
+        probeSideInfo.outputColumns,
+        probeSideInfo.outputSortOrder,
+        'right',
+        probeSideTopArrowPositions[probeSideTopArrowPositions.length - 1] ??
+          probeSideX + probeSideInfo.width / 2,
+        probeSideTopY,
+        probeOuterEndX,
+        probeOuterEndY
+      );
     }
 
     // Extract output columns from projection property
@@ -578,35 +486,18 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [childInfo.rectId, table.id]);
     }
 
-    if (childInfo.outputColumns.length === 0) {
-      return;
-    }
-
-    const midTable = tables[Math.floor((tables.length - 1) / 2)];
-    const arrowMidY = (childY + midTable.centerY) / 2;
-    if (side === 'left') {
-      const leftmost = startPositions[0] ?? childInfo.x + childInfo.width / 2;
-      context.elements.push(
-        ...context.columnRenderer.renderLabelsLeft(
-          childInfo.outputColumns,
-          childInfo.outputSortOrder,
-          arrowMidY,
-          leftmost,
-          context.config.nodeColor
-        )
-      );
-    } else {
-      const rightmost =
-        startPositions[startPositions.length - 1] ?? childInfo.x + childInfo.width / 2;
-      context.elements.push(
-        ...context.columnRenderer.renderLabelsRight(
-          childInfo.outputColumns,
-          childInfo.outputSortOrder,
-          arrowMidY,
-          rightmost,
-          context.config.nodeColor
-        )
-      );
-    }
+    const outerIndex = side === 'left' ? 0 : startPositions.length - 1;
+    const outerStartX = startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2;
+    const outerTable = tables[Math.min(outerIndex, tables.length - 1)];
+    this.placeJoinSideColumnLabels(
+      context,
+      childInfo.outputColumns,
+      childInfo.outputSortOrder,
+      side,
+      outerStartX,
+      childY,
+      outerTable.bottomX,
+      outerTable.bottomY
+    );
   }
 }

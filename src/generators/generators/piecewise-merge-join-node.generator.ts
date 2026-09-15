@@ -97,7 +97,17 @@ export class PiecewiseMergeJoinNodeGenerator extends BaseNodeGenerator {
     const endLeft = x + nodeWidth / 2 - centerRegionWidth / 2;
     const endRight = endLeft + centerRegionWidth;
 
-    this.drawSideArrows(context, leftInfo, leftArrows, childY, parentBottomY, endLeft, endRight, rectId, 'left');
+    this.drawSideArrows(
+      context,
+      leftInfo,
+      leftArrows,
+      childY,
+      parentBottomY,
+      endLeft,
+      endRight,
+      rectId,
+      'left'
+    );
     this.drawSideArrows(
       context,
       rightInfo,
@@ -111,7 +121,9 @@ export class PiecewiseMergeJoinNodeGenerator extends BaseNodeGenerator {
     );
 
     const outputColumns = this.mergeColumns(leftInfo.outputColumns, rightInfo.outputColumns);
-    const joinKeys = node.properties?.on ? context.propertyParser.extractJoinKeys(node.properties.on) : [];
+    const joinKeys = node.properties?.on ?
+      context.propertyParser.extractJoinKeys(node.properties.on) :
+      [];
     const bothSortedOnKeys =
       joinKeys.length > 0 &&
       joinKeys.every(
@@ -173,35 +185,17 @@ export class PiecewiseMergeJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [childInfo.rectId, parentRectId]);
     }
 
-    if (childInfo.outputColumns.length === 0) {
-      return;
-    }
-
-    const arrowMidY = (childY + parentBottomY) / 2;
-    if (side === 'left') {
-      const leftmost = startPositions[0] ?? childInfo.x + childInfo.width / 2;
-      context.elements.push(
-        ...context.columnRenderer.renderLabelsLeft(
-          childInfo.outputColumns,
-          childInfo.outputSortOrder,
-          arrowMidY,
-          leftmost,
-          context.config.nodeColor
-        )
-      );
-    } else {
-      const rightmost =
-        startPositions[startPositions.length - 1] ?? childInfo.x + childInfo.width / 2;
-      context.elements.push(
-        ...context.columnRenderer.renderLabelsRight(
-          childInfo.outputColumns,
-          childInfo.outputSortOrder,
-          arrowMidY,
-          rightmost,
-          context.config.nodeColor
-        )
-      );
-    }
+    const outerIndex = side === 'left' ? 0 : startPositions.length - 1;
+    this.placeJoinSideColumnLabels(
+      context,
+      childInfo.outputColumns,
+      childInfo.outputSortOrder,
+      side,
+      startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2,
+      childY,
+      endPositions[outerIndex] ?? (endLeft + endRight) / 2,
+      parentBottomY
+    );
   }
 
   private mergeColumns(left: string[], right: string[]): string[] {

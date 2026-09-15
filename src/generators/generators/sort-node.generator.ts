@@ -164,14 +164,14 @@ export class SortNodeGenerator extends BaseNodeGenerator {
     const { positions: outputArrowPositions, fullCount: outputArrowCount } =
       context.arrowCalculator.calculateOutputArrowPositions(
         childResult.totalInputArrows,
-        x,
-        nodeWidth
+        childResult.fittedX,
+        childResult.fittedWidth
       );
 
     return {
-      x,
+      x: childResult.fittedX,
       y: childResult.maxChildY,
-      width: nodeWidth,
+      width: childResult.fittedWidth,
       height: nodeHeight,
       rectId,
       inputArrowCount: outputArrowCount,

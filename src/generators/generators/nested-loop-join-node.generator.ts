@@ -235,19 +235,23 @@ export class NestedLoopJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [childInfo.rectId, bufferId]);
     }
 
-    if (childInfo.outputColumns.length === 0) {
-      return;
-    }
-    const arrowMidY = (childY + bufferCenterY) / 2;
-    const leftmost = startPositions[0] ?? childInfo.x + childInfo.width / 2;
-    context.elements.push(
-      ...context.columnRenderer.renderLabelsLeft(
-        childInfo.outputColumns,
-        childInfo.outputSortOrder,
-        arrowMidY,
-        leftmost,
-        context.config.nodeColor
-      )
+    const [outerEndX, outerEndY] = context.geometryUtils.getEllipseEdgePoint(
+      startPositions[0] ?? childInfo.x + childInfo.width / 2,
+      childY,
+      bufferCenterX,
+      bufferCenterY,
+      bufferWidth,
+      bufferHeight
+    );
+    this.placeJoinSideColumnLabels(
+      context,
+      childInfo.outputColumns,
+      childInfo.outputSortOrder,
+      'left',
+      startPositions[0] ?? childInfo.x + childInfo.width / 2,
+      childY,
+      outerEndX,
+      outerEndY
     );
   }
 
@@ -288,21 +292,16 @@ export class NestedLoopJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [childInfo.rectId, parentRectId]);
     }
 
-    if (childInfo.outputColumns.length === 0) {
-      return;
-    }
-
-    const arrowMidY = (childY + parentBottomY) / 2;
-    const rightmost =
-      startPositions[startPositions.length - 1] ?? childInfo.x + childInfo.width / 2;
-    context.elements.push(
-      ...context.columnRenderer.renderLabelsRight(
-        childInfo.outputColumns,
-        childInfo.outputSortOrder,
-        arrowMidY,
-        rightmost,
-        context.config.nodeColor
-      )
+    const outerIndex = startPositions.length - 1;
+    this.placeJoinSideColumnLabels(
+      context,
+      childInfo.outputColumns,
+      childInfo.outputSortOrder,
+      'right',
+      startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2,
+      childY,
+      endPositions[outerIndex] ?? (endLeft + endRight) / 2,
+      parentBottomY
     );
   }
 

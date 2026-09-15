@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- TPC-H Q3 / Q5 / Q9 / Q21 physical-plan fixtures from Apache DataFusion (multi-join Partitioned HashJoin, TopK, LeftSemi / LeftAnti)
+
+### Fixed
+- Unary parents above a wider child (Partitioned / Symmetric HashJoin) grow to that child's width so partition arrows stay on the box
+- Two-input join incoming column labels sit left of the left-input arrows and right of the right-input arrows, offset off the stroke
+
 ## [0.1.17] - 2026-09-14
 
 ### Added

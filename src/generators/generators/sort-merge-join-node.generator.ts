@@ -39,7 +39,8 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
     context.elements.push(rect);
 
     // Create operator name text (centered, bold)
-    const operatorText = node.operator === 'SortMergeJoinExec' ? 'SortMergeJoinExec' : 'SortMergeJoin';
+    const operatorText =
+      node.operator === 'SortMergeJoinExec' ? 'SortMergeJoinExec' : 'SortMergeJoin';
     const operatorTextElement = context.elementFactory.createText({
       id: context.idGenerator.generateId(),
       x,
@@ -191,76 +192,16 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [leftSideInfo.rectId, rectId]);
     }
 
-    // Display columns on arrows from left side (using left side's columns and sort order)
-    // Replicate original SortMergeJoin logic for consistency
-    if (leftSideInfo.outputColumns.length > 0) {
-      const arrowMidY = (leftSideTopY + bottomEdgeY) / 2;
-      const leftmostArrowX =
-        leftSideTopArrowPositions.length > 0 ?
-          leftSideTopArrowPositions[0] :
-          leftSideX + leftSideInfo.width / 2;
-      const leftOffset = -5; // Negative offset to position text to the left
-      const projectionTextX = leftmostArrowX + leftOffset;
-
-      const orderedColumns = new Set(leftSideInfo.outputSortOrder);
-      const groupId = context.idGenerator.generateId();
-      const charWidth = 8; // Match original SortMergeJoin implementation
-      const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
-
-      // Collect all groups first to determine total width and proper comma placement
-      const groups: Array<{ text: string; color: string; width: number }> = [];
-      let i = 0;
-      while (i < leftSideInfo.outputColumns.length) {
-        const column = leftSideInfo.outputColumns[i];
-        const isOrdered = orderedColumns.has(column);
-        const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
-
-        const groupParts: string[] = [column];
-        let j = i + 1;
-        while (j < leftSideInfo.outputColumns.length) {
-          const nextColumn = leftSideInfo.outputColumns[j];
-          const nextIsOrdered = orderedColumns.has(nextColumn);
-          const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
-          if (nextColor === color) {
-            groupParts.push(nextColumn);
-            j++;
-          } else {
-            break;
-          }
-        }
-
-        const groupText = groupParts.join(', ');
-        const groupWidth = groupText.length * charWidth;
-        groups.push({ text: groupText, color, width: groupWidth });
-        i = j;
-      }
-
-      // Position from right to left, building text correctly
-      let currentX = projectionTextX;
-      for (let idx = groups.length - 1; idx >= 0; idx--) {
-        const group = groups[idx];
-        const groupText = idx < groups.length - 1 ? group.text + ', ' : group.text;
-        const groupWidth = groupText.length * charWidth;
-        const groupTextId = context.idGenerator.generateId();
-        // Position text to the left of the arrow, so we need to adjust X position
-        const groupTextElement = context.elementFactory.createText({
-          id: groupTextId,
-          x: currentX - groupWidth, // Position to the left
-          y: arrowMidY - textHeight / 2,
-          width: groupWidth,
-          height: textHeight,
-          text: groupText,
-          fontSize: FONT_SIZES.COLUMN_LABEL,
-          fontFamily: FONT_FAMILIES.NORMAL,
-          textAlign: 'right', // Right align since text is to the left
-          verticalAlign: 'top',
-          strokeColor: group.color,
-        });
-        groupTextElement.groupIds = [groupId];
-        context.elements.push(groupTextElement);
-        currentX -= groupWidth;
-      }
-    }
+    this.placeJoinSideColumnLabels(
+      context,
+      leftSideInfo.outputColumns,
+      leftSideInfo.outputSortOrder,
+      'left',
+      leftSideTopArrowPositions[0] ?? leftSideX + leftSideInfo.width / 2,
+      leftSideTopY,
+      bottomEdgeArrowPositions[0] ?? x + nodeWidth / 2,
+      bottomEdgeY
+    );
 
     // Create arrows from right side to SortMergeJoin rectangle bottom edge
     for (let i = 0; i < rightSideArrows; i++) {
@@ -281,65 +222,17 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [rightSideInfo.rectId, rectId]);
     }
 
-    // Display columns on arrows from right side (using right side's columns and sort order)
-    // Replicate original SortMergeJoin logic for consistency
-    if (rightSideInfo.outputColumns.length > 0) {
-      const arrowMidY = (rightSideTopY + bottomEdgeY) / 2;
-      const rightmostArrowX =
-        rightSideTopArrowPositions.length > 0 ?
-          rightSideTopArrowPositions[rightSideTopArrowPositions.length - 1] :
-          rightSideX + rightSideInfo.width / 2;
-      const rightOffset = 5;
-      const projectionTextX = rightmostArrowX + rightOffset;
-
-      const orderedColumns = new Set(rightSideInfo.outputSortOrder);
-      const groupId = context.idGenerator.generateId();
-      let currentX = projectionTextX;
-      const charWidth = 8; // Match original SortMergeJoin implementation
-      const textHeight = TEXT_HEIGHTS.COLUMN_LABEL;
-
-      let i = 0;
-      while (i < rightSideInfo.outputColumns.length) {
-        const column = rightSideInfo.outputColumns[i];
-        const isOrdered = orderedColumns.has(column);
-        const color = isOrdered ? '#1e90ff' : context.config.nodeColor;
-
-        const groupParts: string[] = [column];
-        let j = i + 1;
-        while (j < rightSideInfo.outputColumns.length) {
-          const nextColumn = rightSideInfo.outputColumns[j];
-          const nextIsOrdered = orderedColumns.has(nextColumn);
-          const nextColor = nextIsOrdered ? '#1e90ff' : context.config.nodeColor;
-          if (nextColor === color) {
-            groupParts.push(nextColumn);
-            j++;
-          } else {
-            break;
-          }
-        }
-
-        const groupText = i > 0 ? ', ' + groupParts.join(', ') : groupParts.join(', ');
-        const groupTextId = context.idGenerator.generateId();
-        const groupWidth = groupText.length * charWidth;
-        const groupTextElement = context.elementFactory.createText({
-          id: groupTextId,
-          x: currentX,
-          y: arrowMidY - textHeight / 2,
-          width: groupWidth,
-          height: textHeight,
-          text: groupText,
-          fontSize: FONT_SIZES.COLUMN_LABEL,
-          fontFamily: FONT_FAMILIES.NORMAL,
-          textAlign: 'left',
-          verticalAlign: 'top',
-          strokeColor: color,
-        });
-        groupTextElement.groupIds = [groupId];
-        context.elements.push(groupTextElement);
-        currentX += groupWidth;
-        i = j;
-      }
-    }
+    this.placeJoinSideColumnLabels(
+      context,
+      rightSideInfo.outputColumns,
+      rightSideInfo.outputSortOrder,
+      'right',
+      rightSideTopArrowPositions[rightSideTopArrowPositions.length - 1] ??
+        rightSideX + rightSideInfo.width / 2,
+      rightSideTopY,
+      bottomEdgeArrowPositions[bottomEdgeArrowPositions.length - 1] ?? x + nodeWidth / 2,
+      bottomEdgeY
+    );
 
     // SortMergeJoin output columns = all columns from both sides
     // Combine columns from left and right inputs
