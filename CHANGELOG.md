@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-09-15
+
 ### Fixed
 - Arrow bindings use Excalidraw's `focus` + `gap >= 1` (and a per-edge `fixedPoint`) so dragging a box keeps each arrow on its outline instead of snapping ends to the box center or collapsing many arrows onto one
 - Rebind arrows after a unary parent grows to a wider child, so the rightmost of 4 arrows stays on the box instead of being stored as past the old right edge
