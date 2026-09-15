@@ -26,24 +26,32 @@ describe('IdGenerator', () => {
       const index1 = generator.generateIndex();
       const index2 = generator.generateIndex();
       expect(index1).not.toBe(index2);
-      expect(index1).toMatch(/^c0g[0-9A-F]+$/);
+      expect(index1).toMatch(/^c[0-9A-F]{3}$/);
     });
 
-    it('should generate indices in hexadecimal format', () => {
+    it('should generate 4-character indexes so Excalidraw accepts them', () => {
       const index = generator.generateIndex();
-      expect(index).toMatch(/^c0g[0-9A-F]+$/);
+      expect(index).toMatch(/^c[0-9A-F]{3}$/);
+      expect(index).toHaveLength(4);
     });
 
     it('should increment indices sequentially', () => {
-      const index1 = generator.generateIndex(); // First call
-      const index2 = generator.generateIndex(); // Second call
-      // Extract the hex part and compare
-      const hex1 = parseInt(index1.replace('c0g', ''), 16);
-      const hex2 = parseInt(index2.replace('c0g', ''), 16);
+      const index1 = generator.generateIndex();
+      const index2 = generator.generateIndex();
+      const hex1 = parseInt(index1.slice(1), 16);
+      const hex2 = parseInt(index2.slice(1), 16);
       expect(hex2).toBe(hex1 + 1);
-      // Use variables to avoid unused variable warnings
-      expect(index1).toBeDefined();
-      expect(index2).toBeDefined();
+    });
+
+    it('should not emit keys Excalidraw rejects after 16 elements', () => {
+      const indexes: string[] = [];
+      for (let i = 0; i < 300; i++) {
+        indexes.push(generator.generateIndex());
+      }
+      expect(indexes[0]).toBe('c000');
+      expect(indexes[16]).toBe('c010');
+      expect(indexes.every((index) => index.length === 4)).toBe(true);
+      expect(indexes.some((index) => index === 'c0g10' || index === 'c0gF0')).toBe(false);
     });
   });
 
@@ -74,7 +82,7 @@ describe('IdGenerator', () => {
       expect(id2).toBeDefined();
       expect(index2).toBeDefined();
       expect(id2).toMatch(/^element-\d+-0$/); // Counter should be 0 after reset
-      expect(index2).toMatch(/^c0g0$/); // Index should be 0 after reset
+      expect(index2).toMatch(/^c000$/);
     });
   });
 });

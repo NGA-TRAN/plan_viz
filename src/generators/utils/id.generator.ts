@@ -20,13 +20,17 @@ export class IdGenerator {
   }
 
   /**
-   * Generates a unique index for Excalidraw elements
-   * Format: c0g{hex} where hex is a hexadecimal counter (uppercase for A-F)
+   * Generates a unique index for Excalidraw elements.
+   *
+   * Excalidraw fractional-indexing treats a leading `c` as an integer of
+   * length 4. Keys must be exactly that long and must not grow a fractional
+   * part that ends in `0` (`c0g10`, `c0gF0` throw `invalid order key` on
+   * large plans). Fixed-width `c000`–`cFFF` stays in the integer part.
    */
   generateIndex(): string {
-    const hex = this.indexCounter.toString(16).toUpperCase();
+    const hex = this.indexCounter.toString(16).toUpperCase().padStart(3, '0');
     this.indexCounter++;
-    return `c0g${hex}`;
+    return `c${hex}`;
   }
 
   /**
