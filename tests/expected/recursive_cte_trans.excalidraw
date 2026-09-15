@@ -321,16 +321,26 @@
       "startBinding": {
         "elementId": "element-1704067200000-7",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-5",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-11",
@@ -888,16 +898,26 @@
       "startBinding": {
         "elementId": "element-1704067200000-24",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-20",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-29",
@@ -1229,16 +1249,26 @@
       "startBinding": {
         "elementId": "element-1704067200000-35",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-33",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-39",
@@ -1324,16 +1354,26 @@
       "startBinding": {
         "elementId": "element-1704067200000-33",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-29",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-42",
@@ -1742,13 +1782,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-20",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.7820304897826793,
+        "gap": 1,
+        "fixedPoint": [
+          0.2,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-43",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.589260287444043,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -1796,13 +1846,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-20",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.5853131749460044,
+        "gap": 1,
+        "fixedPoint": [
+          0.4,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-45",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.6148207921457862,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -1850,13 +1910,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-20",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.4068843777581642,
+        "gap": 1,
+        "fixedPoint": [
+          0.6,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-47",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.6373863893285101,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -1904,13 +1974,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-20",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.24430700028113594,
+        "gap": 1,
+        "fixedPoint": [
+          0.8,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-49",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.6574543155664531,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -1958,13 +2038,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-29",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.24430700028113583,
+        "gap": 1,
+        "fixedPoint": [
+          0.2,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-43",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.6574543155664531,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -2012,13 +2102,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-29",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.406884377758165,
+        "gap": 1,
+        "fixedPoint": [
+          0.4,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-45",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.6373863893285101,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -2066,13 +2166,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-29",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.5853131749460044,
+        "gap": 1,
+        "fixedPoint": [
+          0.6,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-47",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.6148207921457862,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -2120,13 +2230,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-29",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.7820304897826796,
+        "gap": 1,
+        "fixedPoint": [
+          0.8,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-49",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.589260287444042,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -2215,17 +2335,27 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-16",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.5999999999999999,
+        "gap": 1,
+        "fixedPoint": [
+          0.2,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-13",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.6000000000000001,
+        "gap": 1,
+        "fixedPoint": [
+          0.2,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-62",
@@ -2269,17 +2399,27 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-16",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.19999999999999996,
+        "gap": 1,
+        "fixedPoint": [
+          0.4,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-13",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.20000000000000004,
+        "gap": 1,
+        "fixedPoint": [
+          0.4,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-63",
@@ -2323,17 +2463,27 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-16",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.19999999999999996,
+        "gap": 1,
+        "fixedPoint": [
+          0.6,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-13",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.20000000000000004,
+        "gap": 1,
+        "fixedPoint": [
+          0.6,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-64",
@@ -2377,17 +2527,27 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-16",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.5999999999999999,
+        "gap": 1,
+        "fixedPoint": [
+          0.8,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-13",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.6000000000000001,
+        "gap": 1,
+        "fixedPoint": [
+          0.8,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-66",
@@ -2472,13 +2632,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-5",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.5384615384615383,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-1",
-        "focus": 0,
-        "gap": 0
+        "focus": -0.5932203389830506,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
@@ -2567,13 +2737,23 @@
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "element-1704067200000-13",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.43850267379679164,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-1",
-        "focus": 0,
-        "gap": 0
+        "focus": 0.6307692307692306,
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",

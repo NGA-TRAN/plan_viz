@@ -240,16 +240,26 @@
       "startBinding": {
         "elementId": "element-1704067200000-4",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.0001
+        ],
+        "mode": "inside"
       },
       "endBinding": {
         "elementId": "element-1704067200000-1",
         "focus": 0,
-        "gap": 0
+        "gap": 1,
+        "fixedPoint": [
+          0.5001,
+          0.9999
+        ],
+        "mode": "inside"
       },
       "startArrowhead": null,
       "endArrowhead": "arrow",
-      "elbowed": false
+      "elbowed": true
     },
     {
       "id": "element-1704067200000-9",

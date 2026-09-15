@@ -1,9 +1,10 @@
 import { ExecutionPlanNode } from '../../types/execution-plan.types';
-import { ExcalidrawText } from '../../types/excalidraw.types';
+import { ExcalidrawArrow, ExcalidrawText } from '../../types/excalidraw.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
 import { NodeGeneratorStrategy } from './node-generator.strategy';
 import { SPACING, TEXT_HEIGHTS, FONT_SIZES, FONT_FAMILIES } from '../constants';
+import { arrowEndpoint, bindingAt } from '../utils/arrow-binding';
 import { DetailTextBuilder } from '../builders/detail-text.builder';
 
 /**
@@ -201,7 +202,33 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       }
     }
 
+    this.rebindArrowsTouching(context, [parentRectId]);
+
     return { x, width };
+  }
+
+  /**
+   * Recalculate bindings after a bound box is moved or resized.
+   * Arrows are created before unary parents grow to match a wider child,
+   * so the rightmost of 4 arrows was stored as "past the old right edge".
+   */
+  private rebindArrowsTouching(context: GenerationContext, elementIds: string[]): void {
+    const idSet = new Set(elementIds);
+    for (const element of context.elements) {
+      if (element.type !== 'arrow') {
+        continue;
+      }
+      const arrow = element as ExcalidrawArrow;
+      const startId = arrow.startBinding?.elementId;
+      const endId = arrow.endBinding?.elementId;
+      if (!startId || !endId) {
+        continue;
+      }
+      if (!idSet.has(startId) && !idSet.has(endId)) {
+        continue;
+      }
+      this.bindArrowToElements(context, arrow.id, [startId, endId]);
+    }
   }
 
   /**
@@ -256,6 +283,30 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       const alreadyBound = element.boundElements.some((binding) => binding.id === arrowId);
       if (!alreadyBound) {
         element.boundElements.push({ id: arrowId, type: 'arrow' });
+      }
+    }
+
+    const arrow = context.elements.find((element) => element.id === arrowId);
+    if (!arrow || arrow.type !== 'arrow') {
+      return;
+    }
+    const boundArrow = arrow as ExcalidrawArrow;
+    const start = arrowEndpoint(boundArrow, 'start');
+    const end = arrowEndpoint(boundArrow, 'end');
+    if (boundArrow.startBinding) {
+      const startEl = context.elements.find(
+        (element) => element.id === boundArrow.startBinding?.elementId
+      );
+      if (startEl) {
+        boundArrow.startBinding = bindingAt(startEl, start.x, start.y, end.x, end.y);
+      }
+    }
+    if (boundArrow.endBinding) {
+      const endEl = context.elements.find(
+        (element) => element.id === boundArrow.endBinding?.elementId
+      );
+      if (endEl) {
+        boundArrow.endBinding = bindingAt(endEl, end.x, end.y, start.x, start.y);
       }
     }
   }

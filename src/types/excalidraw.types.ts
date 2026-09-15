@@ -45,14 +45,27 @@ export interface ExcalidrawRectangle extends ExcalidrawElementBase {
 }
 
 /**
+ * Arrow binding. `focus`/`gap` are the classic Excalidraw fields;
+ * `fixedPoint` + `mode` are what newer Excalidraw uses so a drag keeps
+ * each arrow on its attach point. 0.18 straight arrows use `focus`/`gap`.
+ */
+export interface ArrowBinding {
+  elementId: string;
+  focus: number;
+  gap: number;
+  fixedPoint: [number, number];
+  mode: 'orbit' | 'inside';
+}
+
+/**
  * Arrow element in Excalidraw
  */
 export interface ExcalidrawArrow extends ExcalidrawElementBase {
   type: 'arrow';
   points: number[][];
   lastCommittedPoint: number[] | null;
-  startBinding: { elementId: string; focus: number; gap: number } | null;
-  endBinding: { elementId: string; focus: number; gap: number } | null;
+  startBinding: ArrowBinding | null;
+  endBinding: ArrowBinding | null;
   startArrowhead: string | null;
   endArrowhead: string | null;
   elbowed?: boolean;
