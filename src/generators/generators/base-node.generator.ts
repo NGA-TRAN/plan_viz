@@ -48,6 +48,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     allInputArrowPositions: number[];
     firstChildInfo: NodeInfo | null;
     childrenInfo: NodeInfo[];
+    fittedX: number;
+    fittedWidth: number;
   } {
     let maxChildY = parentY + parentHeight + context.config.verticalSpacing;
     let totalInputArrows = 0;
@@ -62,7 +64,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       for (let i = 0; i < node.children.length; i++) {
         const child = node.children[i];
         // Adjust vertical spacing to make arrows 3/5 of original length
-        const adjustedVerticalSpacing = context.config.verticalSpacing * SPACING.ARROW_VERTICAL_RATIO;
+        const adjustedVerticalSpacing =
+          context.config.verticalSpacing * SPACING.ARROW_VERTICAL_RATIO;
         const childY = parentY + parentHeight + adjustedVerticalSpacing;
 
         // Generate child elements recursively (children are not root)
@@ -132,13 +135,72 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       }
     }
 
+    const fitted = this.fitUnaryParentToWiderChild(
+      context,
+      parentRectId,
+      parentX,
+      parentY,
+      parentHeight,
+      parentWidth,
+      firstChildInfo
+    );
+
     return {
       maxChildY,
       totalInputArrows,
       allInputArrowPositions,
       firstChildInfo,
       childrenInfo,
+      fittedX: fitted.x,
+      fittedWidth: fitted.width,
     };
+  }
+
+  /**
+   * When a unary parent sits on a wider child (Partitioned HashJoin, Symmetric
+   * HashJoin), grow the parent to the child's width and center it on that box
+   * so incoming arrows stay on the bottom edge.
+   */
+  private fitUnaryParentToWiderChild(
+    context: GenerationContext,
+    parentRectId: string,
+    parentX: number,
+    parentY: number,
+    parentHeight: number,
+    parentWidth: number,
+    firstChildInfo: NodeInfo | null
+  ): { x: number; width: number } {
+    if (!firstChildInfo || firstChildInfo.width <= parentWidth) {
+      return { x: parentX, width: parentWidth };
+    }
+
+    const width = firstChildInfo.width;
+    const x = firstChildInfo.x + (firstChildInfo.width - width) / 2;
+
+    for (const element of context.elements) {
+      const isParentRect = element.id === parentRectId;
+      const insideParentBox =
+        element.y >= parentY &&
+        element.y < parentY + parentHeight &&
+        element.x >= parentX - 0.5 &&
+        element.x + element.width <= parentX + parentWidth + 0.5;
+
+      if (!isParentRect && !insideParentBox) {
+        continue;
+      }
+
+      const inset = element.x - parentX;
+      element.x = x + inset;
+      if (Math.abs(element.width - parentWidth) < 1) {
+        element.width = width;
+      } else if (Math.abs(element.width - (parentWidth - 20)) < 1) {
+        element.width = width - 20;
+      } else {
+        element.width += width - parentWidth;
+      }
+    }
+
+    return { x, width };
   }
 
   /**
@@ -211,8 +273,12 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     context: GenerationContext
   ): void {
     // Use ArrowPositionCalculator for ellipsis position calculation
-    const ellipsisResult = context.arrowCalculator.calculateEllipsisPositions(numArrows, arrowPositions);
-    const { adjustedPositions, showEllipsis, firstArrowsCount, lastArrowsCount, ellipsisX } = ellipsisResult;
+    const ellipsisResult = context.arrowCalculator.calculateEllipsisPositions(
+      numArrows,
+      arrowPositions
+    );
+    const { adjustedPositions, showEllipsis, firstArrowsCount, lastArrowsCount, ellipsisX } =
+      ellipsisResult;
 
     // Create first set of arrows
     for (let j = 0; j < firstArrowsCount; j++) {
@@ -275,8 +341,10 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     if (columns && columns.length > 0) {
       const arrowMidY = (childTop + parentBottom) / 2;
       // Use adjusted positions if ellipsis is shown, otherwise use original positions
-      const positionsToUse = showEllipsis && adjustedPositions.length > 0 ? adjustedPositions : arrowPositions;
-      const rightmostArrowX = positionsToUse.length > 0 ? positionsToUse[positionsToUse.length - 1] : childTop;
+      const positionsToUse =
+        showEllipsis && adjustedPositions.length > 0 ? adjustedPositions : arrowPositions;
+      const rightmostArrowX =
+        positionsToUse.length > 0 ? positionsToUse[positionsToUse.length - 1] : childTop;
 
       const labels = context.columnRenderer.renderLabelsRight(
         columns,
@@ -315,6 +383,54 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       containerId: rectId,
       strokeColor: context.config.nodeColor,
     });
+  }
+
+  /**
+   * Column labels for a two-input join: left of the left-input arrows,
+   * right of the right-input arrows, offset off the stroke so the text
+   * does not sit on the diagonal.
+   */
+  protected placeJoinSideColumnLabels(
+    context: GenerationContext,
+    columns: string[],
+    sortOrder: string[],
+    side: 'left' | 'right',
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number
+  ): void {
+    if (columns.length === 0) {
+      return;
+    }
+    const labelY = startY + (endY - startY) * 0.28;
+    const travel = endY - startY;
+    const t = travel === 0 ? 0 : (labelY - startY) / travel;
+    const arrowX = startX + t * (endX - startX);
+    const gap = 14;
+    if (side === 'left') {
+      context.elements.push(
+        ...context.columnRenderer.renderLabelsLeft(
+          columns,
+          sortOrder,
+          labelY,
+          arrowX,
+          context.config.nodeColor,
+          -gap
+        )
+      );
+    } else {
+      context.elements.push(
+        ...context.columnRenderer.renderLabelsRight(
+          columns,
+          sortOrder,
+          labelY,
+          arrowX,
+          context.config.nodeColor,
+          gap
+        )
+      );
+    }
   }
 
   /**

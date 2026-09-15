@@ -213,14 +213,18 @@ export class RepartitionNodeGenerator extends BaseNodeGenerator {
     const { positions: outputArrowPositions, fullCount: outputArrowFullCount } =
       isRoot || countToUse === 0 ?
         { positions: [], fullCount: 0 } :
-        context.arrowCalculator.calculateOutputArrowPositions(countToUse, x, nodeWidth);
+        context.arrowCalculator.calculateOutputArrowPositions(
+          countToUse,
+          childResult.fittedX,
+          childResult.fittedWidth
+        );
 
     // Root nodes (first line of physical_plan) don't have output arrows
     // For RepartitionExec, return outputArrowCount as inputArrowCount so parent knows how many arrows to create
     return {
-      x,
+      x: childResult.fittedX,
       y: childResult.maxChildY,
-      width: nodeWidth,
+      width: childResult.fittedWidth,
       height: nodeHeight,
       rectId,
       inputArrowCount: isRoot ? 0 : outputArrowFullCount,

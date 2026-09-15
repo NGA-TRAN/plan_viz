@@ -153,12 +153,12 @@ export class SortPreservingMergeNodeGenerator extends BaseNodeGenerator {
 
     // SortPreservingMergeExec: always outputs 1 arrow regardless of input arrows
     // Return 1 arrow at the center position
-    const outputArrowPosition = x + nodeWidth / 2;
+    const outputArrowPosition = childResult.fittedX + childResult.fittedWidth / 2;
 
     return {
-      x,
+      x: childResult.fittedX,
       y: childResult.maxChildY,
-      width: nodeWidth,
+      width: childResult.fittedWidth,
       height: nodeHeight,
       rectId,
       inputArrowCount: 1,

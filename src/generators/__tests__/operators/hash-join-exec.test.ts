@@ -287,6 +287,60 @@ describe('ExcalidrawGenerator - HashJoinExec', () => {
         expect(ends[0].y).toBeCloseTo(table.y + table.height);
       }
     });
+
+    it('should widen a unary parent so Partitioned join arrows stay on the box', () => {
+      const left = {
+        ...NodeBuilder.createRepartitionExec('Hash([id@0], 4)', [
+          NodeBuilder.createDataSourceExec({
+            file_groups: '2 groups: [[l1.parquet], [l2.parquet]]',
+            projection: '[id]',
+          }),
+        ]),
+        level: 2,
+      };
+      const right = {
+        ...NodeBuilder.createRepartitionExec('Hash([id@0], 4)', [
+          NodeBuilder.createDataSourceExec({
+            file_groups: '2 groups: [[r1.parquet], [r2.parquet]]',
+            projection: '[id]',
+          }),
+        ]),
+        level: 2,
+      };
+      const join = {
+        ...NodeBuilder.createHashJoinExec(
+          {
+            mode: 'Partitioned',
+            join_type: 'Inner',
+            on: '[(id@0, id@0)]',
+          },
+          [left, right]
+        ),
+        level: 1,
+      };
+      const node = NodeBuilder.createAggregateExec(
+        'SinglePartitioned',
+        '[id@0 as id]',
+        '[count(Int64(1))]',
+        [join]
+      );
+
+      const result = generator.generate(node);
+      const boxes = TestHelpers.getRectangles(result.elements).sort((a, b) => a.y - b.y);
+      const aggregateBox = boxes[0];
+      const joinBox = boxes[1];
+      expect(aggregateBox.width).toBe(joinBox.width);
+      expect(aggregateBox.x).toBeCloseTo(joinBox.x);
+
+      const arrows = TestHelpers.getArrows(result.elements) as ExcalidrawArrow[];
+      const incoming = arrows.filter((arrow) => arrow.endBinding?.elementId === aggregateBox.id);
+      expect(incoming.length).toBeGreaterThanOrEqual(2);
+      for (const arrow of incoming) {
+        const endX = arrow.x + arrow.points[1][0];
+        expect(endX).toBeGreaterThanOrEqual(aggregateBox.x - 1);
+        expect(endX).toBeLessThanOrEqual(aggregateBox.x + aggregateBox.width + 1);
+      }
+    });
   });
 });
 

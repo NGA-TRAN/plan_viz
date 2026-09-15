@@ -204,6 +204,10 @@ export class SymmetricHashJoinNodeGenerator extends BaseNodeGenerator {
       startRight
     );
 
+    const outerIndex = side === 'left' ? 0 : startPositions.length - 1;
+    let outerEndX = table.centerX;
+    let outerEndY = table.centerY;
+
     for (let i = 0; i < arrowCount; i++) {
       const [endX, endY] = context.geometryUtils.getEllipseEdgePoint(
         startPositions[i],
@@ -213,6 +217,10 @@ export class SymmetricHashJoinNodeGenerator extends BaseNodeGenerator {
         table.width,
         table.height
       );
+      if (i === outerIndex) {
+        outerEndX = endX;
+        outerEndY = endY;
+      }
       const arrowId = context.idGenerator.generateId();
       context.elements.push(
         context.elementFactory.createArrow({
@@ -229,35 +237,16 @@ export class SymmetricHashJoinNodeGenerator extends BaseNodeGenerator {
       this.bindArrowToElements(context, arrowId, [childInfo.rectId, table.id]);
     }
 
-    if (childInfo.outputColumns.length === 0) {
-      return;
-    }
-
-    const arrowMidY = (childY + table.centerY) / 2;
-    if (side === 'left') {
-      const leftmost = startPositions[0] ?? childInfo.x + childInfo.width / 2;
-      context.elements.push(
-        ...context.columnRenderer.renderLabelsLeft(
-          childInfo.outputColumns,
-          childInfo.outputSortOrder,
-          arrowMidY,
-          leftmost,
-          context.config.nodeColor
-        )
-      );
-    } else {
-      const rightmost =
-        startPositions[startPositions.length - 1] ?? childInfo.x + childInfo.width / 2;
-      context.elements.push(
-        ...context.columnRenderer.renderLabelsRight(
-          childInfo.outputColumns,
-          childInfo.outputSortOrder,
-          arrowMidY,
-          rightmost,
-          context.config.nodeColor
-        )
-      );
-    }
+    this.placeJoinSideColumnLabels(
+      context,
+      childInfo.outputColumns,
+      childInfo.outputSortOrder,
+      side,
+      startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2,
+      childY,
+      outerEndX,
+      outerEndY
+    );
   }
 
   private mergeColumns(left: string[], right: string[]): string[] {
