@@ -3,6 +3,7 @@ import { ElementFactory } from '../factories/element.factory';
 import { TextMeasurement } from '../utils/text-measurement';
 import { IdGenerator } from '../utils/id.generator';
 import { COLORS, FONT_SIZES, TEXT_HEIGHTS, FONT_FAMILIES, ELEMENT_DEFAULTS } from '../constants';
+import { addGroupId } from '../utils/node-group';
 
 export interface ColumnLabelOptions {
   columns: string[];
@@ -10,6 +11,8 @@ export interface ColumnLabelOptions {
   position: { x: number; y: number };
   alignment: 'left' | 'right';
   nodeColor: string;
+  /** Child node group so labels drag with that box */
+  attachGroupId?: string;
 }
 
 /**
@@ -28,7 +31,7 @@ export class ColumnLabelRenderer {
    * Ordered columns are colored blue, others use the default node color
    */
   renderLabels(options: ColumnLabelOptions): ExcalidrawText[] {
-    const { columns, sortOrder, position, alignment, nodeColor } = options;
+    const { columns, sortOrder, position, alignment, nodeColor, attachGroupId } = options;
     if (columns.length === 0) {
       return [];
     }
@@ -83,8 +86,10 @@ export class ColumnLabelRenderer {
         lineHeight: ELEMENT_DEFAULTS.LINE_HEIGHT,
       });
 
-      // Add group ID for grouping related text elements
       groupTextElement.groupIds = [groupId];
+      if (attachGroupId) {
+        addGroupId(groupTextElement, attachGroupId);
+      }
       elements.push(groupTextElement);
 
       if (alignment === 'left') {
@@ -108,7 +113,8 @@ export class ColumnLabelRenderer {
     arrowMidY: number,
     rightmostArrowX: number,
     nodeColor: string,
-    offset: number = 5
+    offset: number = 5,
+    attachGroupId?: string
   ): ExcalidrawText[] {
     return this.renderLabels({
       columns,
@@ -119,6 +125,7 @@ export class ColumnLabelRenderer {
       },
       alignment: 'left',
       nodeColor,
+      attachGroupId,
     });
   }
 
@@ -131,7 +138,8 @@ export class ColumnLabelRenderer {
     arrowMidY: number,
     leftmostArrowX: number,
     nodeColor: string,
-    offset: number = -5
+    offset: number = -5,
+    attachGroupId?: string
   ): ExcalidrawText[] {
     if (columns.length === 0) {
       return [];
@@ -191,6 +199,9 @@ export class ColumnLabelRenderer {
         lineHeight: ELEMENT_DEFAULTS.LINE_HEIGHT,
       });
       groupTextElement.groupIds = [groupId];
+      if (attachGroupId) {
+        addGroupId(groupTextElement, attachGroupId);
+      }
       elements.push(groupTextElement);
       currentX += widths[g];
     }

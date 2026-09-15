@@ -157,7 +157,8 @@ export class RecursiveQueryNodeGenerator extends BaseNodeGenerator {
       startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2,
       childY,
       endPositions[outerIndex] ?? (endLeft + endRight) / 2,
-      parentBottomY
+      parentBottomY,
+      childInfo.groupId
     );
   }
 }
