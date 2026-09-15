@@ -28,7 +28,12 @@
       "version": 7,
       "versionNonce": 1001,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-4",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200001,
       "link": null,
       "locked": false
@@ -96,7 +101,12 @@
       "version": 43,
       "versionNonce": 1005,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-4",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200003,
       "link": null,
       "locked": false

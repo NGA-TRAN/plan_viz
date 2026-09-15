@@ -28,7 +28,12 @@
       "version": 7,
       "versionNonce": 1001,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-32",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200001,
       "link": null,
       "locked": false
@@ -172,7 +177,20 @@
       "version": 7,
       "versionNonce": 1009,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-27",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-28",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-32",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200005,
       "link": null,
       "locked": false
@@ -278,7 +296,24 @@
       "version": 7,
       "versionNonce": 1015,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-22",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-23",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-27",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-28",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200008,
       "link": null,
       "locked": false
@@ -422,7 +457,24 @@
       "version": 7,
       "versionNonce": 1023,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-17",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-18",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-22",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-23",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200012,
       "link": null,
       "locked": false
@@ -490,7 +542,12 @@
       "version": 43,
       "versionNonce": 1027,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-17",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200014,
       "link": null,
       "locked": false
@@ -558,7 +615,12 @@
       "version": 43,
       "versionNonce": 1031,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-18",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200016,
       "link": null,
       "locked": false

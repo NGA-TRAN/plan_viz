@@ -296,12 +296,13 @@ The project includes numerous example execution plans in the [`tests/`](tests/) 
 - Aggregation examples (`*aggregate*.sql`)
 - Projection (`*projection*.sql`)
 - Join operations (`join*.sql`, `join_hash_collectLeft.sql`, `join_hash_partitioned.sql`, `join_sort_merge*.sql`, `join_nested_loop.sql`, `join_symmetric_hash.sql`, `join_piecewise_merge.sql`)
-- TPC-H physical plans from Apache DataFusion (`tpch_q3.sql`, `tpch_q5.sql`, `tpch_q9.sql`, `tpch_q21.sql`)
-- Window functions (`window_agg*.sql`, `window_bounded*.sql`)
+- TPC-H physical plans from Apache DataFusion (`tpch_q3.sql`, `tpch_q5.sql`, `tpch_q9.sql`, `tpch_q11.sql`, `tpch_q21.sql`)
+- Window functions (`window_agg*.sql`, `window_bounded*.sql`, `window_streaming_unbounded.sql`)
 - Unnest (`unnest_basic.sql`)
 - Sorting (`sort*.sql`)
 - Union / interleave (`union*.sql`, `interleave_2_inputs.sql`)
 - Analyze / empty / placeholder / memory leaves (`analyze_basic.sql`, `empty_basic.sql`, `placeholder_row_basic.sql`, `memory_lazy_4.sql`)
+- Wave D (`explain_basic.sql`, `streaming_basic.sql`, `work_table_basic.sql`, `buffer_basic.sql`, `cooperative_basic.sql`, `sink_basic.sql`, `recursive_basic.sql`, `recursive_cte_trans.sql`, `scalar_subquery_basic.sql`, `subquery_two_scalars.sql`, `subquery_nested.sql`)
 - And many more!
 
 > **Note:** The `tests/` directory serves a dual purpose: test fixtures and examples
@@ -401,7 +402,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 ## Roadmap
 
 - [X] Interactive web interface: [plan-visualizer](https://nga-tran.github.io/plan-visualizer) — try it out!
-- [ ] Support for additional DataFusion operators (see [operator catalog](./docs/operators/README.md))
+- [X] Support for additional DataFusion operators (Waves A–D; see [operator catalog](./docs/operators/README.md))
 - [ ] Enhanced options for custom styling
 - [ ] Performance optimizations for large plans
 

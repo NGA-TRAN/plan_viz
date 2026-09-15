@@ -28,7 +28,20 @@
       "version": 7,
       "versionNonce": 1001,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-15",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-16",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-17",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200001,
       "link": null,
       "locked": false
@@ -96,7 +109,12 @@
       "version": 43,
       "versionNonce": 1005,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-15",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200003,
       "link": null,
       "locked": false
@@ -300,7 +318,12 @@
       "version": 7,
       "versionNonce": 1017,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-16",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200009,
       "link": null,
       "locked": false
@@ -504,7 +527,12 @@
       "version": 7,
       "versionNonce": 1029,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-17",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200015,
       "link": null,
       "locked": false

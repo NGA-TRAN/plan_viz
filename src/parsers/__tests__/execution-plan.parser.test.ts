@@ -186,6 +186,28 @@ describe('ExecutionPlanParser', () => {
       expect(result.root?.properties?.file_type).toBe('parquet');
     });
 
+    it('should keep EXPLAIN continuation lines that contain + in expressions', () => {
+      const sqlExplainText = `EXPLAIN SELECT (SELECT max(v) + (SELECT min(v) FROM t) FROM t);
++---------------+----------------------------------------------------------------------------------+
+| plan_type     | plan                                                                             |
++---------------+----------------------------------------------------------------------------------+
+| physical_plan | ScalarSubqueryExec: subqueries=1                                                 |
+|               |    ProjectionExec: expr=[scalar_subquery(<pending>) as max(v) + min(v)]          |
+|               |      PlaceholderRowExec                                                          |
+|               |    ScalarSubqueryExec: subqueries=1                                              |
+|               |      AggregateExec: mode=Single, gby=[], aggr=[min(v)]                           |
+|               |        DataSourceExec: partitions=1, partition_sizes=[1]                         |
++---------------+----------------------------------------------------------------------------------+`;
+
+      const result = parser.parse(sqlExplainText);
+
+      expect(result.root?.operator).toBe('ScalarSubqueryExec');
+      expect(result.root?.children).toHaveLength(2);
+      expect(result.root?.children[0].operator).toBe('ProjectionExec');
+      expect(result.root?.children[1].operator).toBe('ScalarSubqueryExec');
+      expect(result.root?.children[1].children).toHaveLength(1);
+    });
+
     it('should handle continuation lines with non-empty trimmed text', () => {
       const sqlExplainText = `EXPLAIN SELECT * FROM table;
 +---------------+------------------------------------------------------------------------------------------------------------------------------------+

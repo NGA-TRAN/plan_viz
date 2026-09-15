@@ -7,7 +7,7 @@ Unknown operators already render via `DefaultNodeGenerator` (red
 `unimplemented`). This catalog is the work queue to replace that fallback with
 real diagrams.
 
-## Already implemented (26)
+## Already implemented (34)
 
 | Operator | Generator |
 |---|---|
@@ -37,11 +37,18 @@ real diagrams.
 | `EmptyExec` | `leaf-node.generator.ts` |
 | `PlaceholderRowExec` | `leaf-node.generator.ts` |
 | `LazyMemoryExec` / `ValuesExec` | `leaf-node.generator.ts` |
+| `ExplainExec` | `leaf-node.generator.ts` |
+| `StreamingTableExec` | `leaf-node.generator.ts` |
+| `WorkTableExec` | `leaf-node.generator.ts` |
+| `BufferExec` | `wrapper-node.generator.ts` |
+| `CooperativeExec` | `wrapper-node.generator.ts` |
+| `DataSinkExec` / `FileSinkExec` | `wrapper-node.generator.ts` |
+| `RecursiveQueryExec` | `recursive-query-node.generator.ts` |
+| `ScalarSubqueryExec` | `scalar-subquery-node.generator.ts` |
 
 ## Missing — implement these
 
-Reviewed against DataFusion 55.1.0 source and docs.rs. Each missing operator
-has its own spec in this folder. Waves A–C are done.
+Reviewed against DataFusion 55.1.0 source and docs.rs. Waves A–D are done.
 
 ### Wave B — joins and set-like fan-in (implemented)
 
@@ -60,18 +67,18 @@ has its own spec in this folder. Waves A–C are done.
 | `PlaceholderRowExec` | [placeholder-row-exec.md](./placeholder-row-exec.md) | 0 | `SELECT` without `FROM` |
 | `LazyMemoryExec` | [lazy-memory-exec.md](./lazy-memory-exec.md) | 0 | In-memory / VALUES-like |
 
-### Wave D — rare / experimental (spec later, do not start)
+### Wave D — rare / experimental (implemented)
 
-| Operator | Notes |
-|---|---|
-| `ExplainExec` | Meta-plan; almost never in user EXPLAIN of a query |
-| `StreamingTableExec` | Streaming source; similar to DataSource |
-| `RecursiveQueryExec` | Recursive CTE |
-| `WorkTableExec` | Work table for recursive CTE |
-| `BufferExec` | Experimental prefetch buffer |
-| `CooperativeExec` | Scheduler wrapper; pass-through |
-| `ScalarSubqueryExec` | Uncorrelated scalar subquery host |
-| `FileSinkExec` / copy sinks | In datasource crate, write path |
+| Operator | Spec | Children | Why |
+|---|---|---|---|
+| `ExplainExec` | [explain-exec.md](./explain-exec.md) | 0 | `EXPLAIN` result leaf |
+| `StreamingTableExec` | [streaming-table-exec.md](./streaming-table-exec.md) | 0 | Streaming source |
+| `WorkTableExec` | [work-table-exec.md](./work-table-exec.md) | 0 | Recursive CTE work table |
+| `BufferExec` | [buffer-exec.md](./buffer-exec.md) | 1 | Prefetch buffer |
+| `CooperativeExec` | [cooperative-exec.md](./cooperative-exec.md) | 1 | Scheduler wrapper |
+| `DataSinkExec` / `FileSinkExec` | [data-sink-exec.md](./data-sink-exec.md) | 1 | Write path |
+| `RecursiveQueryExec` | [recursive-query-exec.md](./recursive-query-exec.md) | 2 | Recursive CTE |
+| `ScalarSubqueryExec` | [scalar-subquery-exec.md](./scalar-subquery-exec.md) | N | Uncorrelated scalar subqueries |
 
 ## Not operators (do not implement)
 
@@ -91,7 +98,7 @@ standalone physical `*Exec` nodes in DataFusion 55:
 ## How to review
 
 1. Read [WORKFLOW.md](./WORKFLOW.md).
-2. Waves A–C are implemented. Review Wave D only if those operators start appearing.
+2. Waves A–D are implemented. Review only if new DataFusion operators appear.
 3. Reply with which specs are approved (or request visual changes).
 4. Implementation starts only after that approval.
 

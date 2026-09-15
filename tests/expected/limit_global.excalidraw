@@ -28,7 +28,12 @@
       "version": 7,
       "versionNonce": 1001,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-9",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200001,
       "link": null,
       "locked": false
@@ -134,7 +139,16 @@
       "version": 7,
       "versionNonce": 1007,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-8",
+          "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-9",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200004,
       "link": null,
       "locked": false
@@ -240,7 +254,12 @@
       "version": 7,
       "versionNonce": 1013,
       "isDeleted": false,
-      "boundElements": [],
+      "boundElements": [
+        {
+          "id": "element-1704067200000-8",
+          "type": "arrow"
+        }
+      ],
       "updated": 1704067200007,
       "link": null,
       "locked": false

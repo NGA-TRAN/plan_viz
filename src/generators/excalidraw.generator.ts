@@ -41,7 +41,18 @@ import {
   emptyLeafOptions,
   placeholderLeafOptions,
   memoryLeafOptions,
+  explainLeafOptions,
+  workTableLeafOptions,
+  streamingTableLeafOptions,
 } from './generators/leaf-node.generator';
+import {
+  WrapperNodeGenerator,
+  bufferWrapperOptions,
+  cooperativeWrapperOptions,
+  dataSinkWrapperOptions,
+} from './generators/wrapper-node.generator';
+import { RecursiveQueryNodeGenerator } from './generators/recursive-query-node.generator';
+import { ScalarSubqueryNodeGenerator } from './generators/scalar-subquery-node.generator';
 import { GenerationContext } from './types/generation-context.types';
 
 /**
@@ -81,7 +92,11 @@ export class ExcalidrawGenerator {
     this.elementFactory = new ElementFactory(this.idGenerator, this.config);
     this.arrowCalculator = new ArrowPositionCalculator();
     this.propertyParser = new PropertyParser();
-    this.columnRenderer = new ColumnLabelRenderer(this.elementFactory, this.textMeasurement, this.idGenerator);
+    this.columnRenderer = new ColumnLabelRenderer(
+      this.elementFactory,
+      this.textMeasurement,
+      this.idGenerator
+    );
     this.geometryUtils = new GeometryUtils();
 
     // Initialize node generator registry
@@ -170,10 +185,11 @@ export class ExcalidrawGenerator {
 
     // Use default generator for unimplemented operators
     const context = this.createGenerationContext(elements);
-    const defaultGenerator = this.nodeGeneratorRegistry.getGenerator('default') as DefaultNodeGenerator;
+    const defaultGenerator = this.nodeGeneratorRegistry.getGenerator(
+      'default'
+    ) as DefaultNodeGenerator;
     return defaultGenerator.generate(node, x, y, isRoot, context);
   }
-
 
   /**
    * Registers all node generators with the registry
@@ -181,14 +197,20 @@ export class ExcalidrawGenerator {
    */
   private registerNodeGenerators(): void {
     this.nodeGeneratorRegistry.register('default', new DefaultNodeGenerator());
-    this.nodeGeneratorRegistry.register('CoalescePartitionsExec', new CoalescePartitionsNodeGenerator());
+    this.nodeGeneratorRegistry.register(
+      'CoalescePartitionsExec',
+      new CoalescePartitionsNodeGenerator()
+    );
     this.nodeGeneratorRegistry.register('CoalesceBatchesExec', new CoalesceBatchesNodeGenerator());
     this.nodeGeneratorRegistry.register('FilterExec', new FilterNodeGenerator());
     this.nodeGeneratorRegistry.register('RepartitionExec', new RepartitionNodeGenerator());
     this.nodeGeneratorRegistry.register('AggregateExec', new AggregateNodeGenerator());
     this.nodeGeneratorRegistry.register('ProjectionExec', new ProjectionNodeGenerator());
     this.nodeGeneratorRegistry.register('SortExec', new SortNodeGenerator());
-    this.nodeGeneratorRegistry.register('SortPreservingMergeExec', new SortPreservingMergeNodeGenerator());
+    this.nodeGeneratorRegistry.register(
+      'SortPreservingMergeExec',
+      new SortPreservingMergeNodeGenerator()
+    );
     this.nodeGeneratorRegistry.register('HashJoinExec', new HashJoinNodeGenerator());
     this.nodeGeneratorRegistry.register('SortMergeJoin', new SortMergeJoinNodeGenerator());
     this.nodeGeneratorRegistry.register('SortMergeJoinExec', new SortMergeJoinNodeGenerator());
@@ -197,7 +219,10 @@ export class ExcalidrawGenerator {
     this.nodeGeneratorRegistry.register('DataSourceExec', new DataSourceNodeGenerator());
     this.nodeGeneratorRegistry.register('LocalLimitExec', new LocalLimitNodeGenerator());
     this.nodeGeneratorRegistry.register('GlobalLimitExec', new GlobalLimitNodeGenerator());
-    this.nodeGeneratorRegistry.register('WindowAggExec', new WindowAggNodeGenerator('WindowAggExec'));
+    this.nodeGeneratorRegistry.register(
+      'WindowAggExec',
+      new WindowAggNodeGenerator('WindowAggExec')
+    );
     this.nodeGeneratorRegistry.register(
       'BoundedWindowAggExec',
       new WindowAggNodeGenerator('BoundedWindowAggExec')
@@ -205,7 +230,10 @@ export class ExcalidrawGenerator {
     this.nodeGeneratorRegistry.register('UnnestExec', new UnnestNodeGenerator());
     this.nodeGeneratorRegistry.register('NestedLoopJoinExec', new NestedLoopJoinNodeGenerator());
     this.nodeGeneratorRegistry.register('InterleaveExec', new InterleaveNodeGenerator());
-    this.nodeGeneratorRegistry.register('SymmetricHashJoinExec', new SymmetricHashJoinNodeGenerator());
+    this.nodeGeneratorRegistry.register(
+      'SymmetricHashJoinExec',
+      new SymmetricHashJoinNodeGenerator()
+    );
     this.nodeGeneratorRegistry.register(
       'PiecewiseMergeJoinExec',
       new PiecewiseMergeJoinNodeGenerator()
@@ -219,5 +247,27 @@ export class ExcalidrawGenerator {
     const memory = new LeafNodeGenerator(memoryLeafOptions());
     this.nodeGeneratorRegistry.register('LazyMemoryExec', memory);
     this.nodeGeneratorRegistry.register('ValuesExec', memory);
+    this.nodeGeneratorRegistry.register('ExplainExec', new LeafNodeGenerator(explainLeafOptions()));
+    this.nodeGeneratorRegistry.register(
+      'WorkTableExec',
+      new LeafNodeGenerator(workTableLeafOptions())
+    );
+    this.nodeGeneratorRegistry.register(
+      'StreamingTableExec',
+      new LeafNodeGenerator(streamingTableLeafOptions())
+    );
+    this.nodeGeneratorRegistry.register(
+      'BufferExec',
+      new WrapperNodeGenerator(bufferWrapperOptions())
+    );
+    this.nodeGeneratorRegistry.register(
+      'CooperativeExec',
+      new WrapperNodeGenerator(cooperativeWrapperOptions())
+    );
+    const sink = new WrapperNodeGenerator(dataSinkWrapperOptions());
+    this.nodeGeneratorRegistry.register('DataSinkExec', sink);
+    this.nodeGeneratorRegistry.register('FileSinkExec', sink);
+    this.nodeGeneratorRegistry.register('RecursiveQueryExec', new RecursiveQueryNodeGenerator());
+    this.nodeGeneratorRegistry.register('ScalarSubqueryExec', new ScalarSubqueryNodeGenerator());
   }
 }
