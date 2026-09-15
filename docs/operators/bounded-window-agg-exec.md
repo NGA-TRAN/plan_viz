@@ -48,6 +48,7 @@ Unit — `src/generators/__tests__/operators/bounded-window-agg-exec.test.ts`:
 Integration:
 
 - `tests/window_bounded_basic.sql` + matching expected file
+- Real plan: `tests/window_streaming_unbounded.sql` (`window.slt` stacked windows over `StreamingTableExec`)
 
 ## Verify
 

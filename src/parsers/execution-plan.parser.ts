@@ -94,8 +94,7 @@ export class ExecutionPlanParser {
           // If next line starts with | but doesn't contain another column header or separator, it's continuation
           if (
             nextLineTrimmed.startsWith('|') &&
-            !nextLineTrimmed.includes('plan_type') &&
-            !nextLineTrimmed.includes('+')
+            !nextLineTrimmed.includes('plan_type')
           ) {
             const nextParts = nextLine.split('|');
             if (nextParts.length >= 3) {

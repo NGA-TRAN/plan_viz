@@ -1,6 +1,7 @@
 /**
  * Convert a DataFusion sqllogictest EXPLAIN snapshot into a plan-viz fixture.
- * Usage: npx tsx scripts/import-datafusion-slt.ts <slt.part> <tests/name.sql>
+ * Usage: npx tsx scripts/import-datafusion-slt.ts <slt> <tests/name.sql> [match]
+ * Optional `match` picks the EXPLAIN whose SQL or physical plan contains that text.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -8,7 +9,7 @@ import { convertPlanToExcalidraw } from '../src/index';
 
 function shortenPaths(text: string): string {
   return text.replace(
-    /WORKSPACE_ROOT\/(?:datafusion\/sqllogictest\/test_files\/tpch\/data|testing\/data\/csv)\//g,
+    /WORKSPACE_ROOT\/(?:datafusion\/sqllogictest\/test_files\/tpch\/data|testing\/data\/csv|datafusion\/core\/tests\/data\/recursive_cte)\//g,
     ''
   );
 }
@@ -27,12 +28,30 @@ function sltPhysicalPlanToIndent(physicalBlock: string): string[] {
     });
 }
 
-function extractSltExplain(content: string): { sql: string; physical: string[] } {
-  const queryMatch = content.match(/query TT\s+explain\s+([\s\S]*?)\n----/i);
+function scopeToMatch(content: string, match?: string): string {
+  if (!match) {
+    return content;
+  }
+  const idx = content.indexOf(match);
+  if (idx < 0) {
+    throw new Error(`Could not find match text: ${match}`);
+  }
+  const start = content.lastIndexOf('query TT', idx);
+  if (start < 0) {
+    throw new Error(`Could not find query TT before match: ${match}`);
+  }
+  return content.slice(start);
+}
+
+function extractSltExplain(content: string, match?: string): { sql: string; physical: string[] } {
+  const scoped = scopeToMatch(content, match);
+  const queryMatch = scoped.match(/query TT\s+explain\s+([\s\S]*?)\n----/i);
   if (!queryMatch) {
     throw new Error('Could not find `explain ... ----` block');
   }
-  const physicalMatch = content.match(/\nphysical_plan\n([\s\S]*?)(?:\n(?:logical_plan|query |statement |include |#)|$)/);
+  const physicalMatch = scoped.match(
+    /\nphysical_plan\n([\s\S]*?)(?:\n(?:logical_plan|query |statement |include |#)|$)/
+  );
   if (!physicalMatch) {
     throw new Error('Could not find physical_plan block');
   }
@@ -55,27 +74,23 @@ function toExplainTable(sql: string, physical: string[]): string {
   const body = rows
     .map((row) => `| ${cell(row.type, typeWidth)} | ${cell(row.plan, planWidth)} |`)
     .join('\n');
-  return [
-    'EXPLAIN',
-    sql.replace(/;\s*$/, ''),
-    ';',
-    rule,
-    header,
-    rule,
-    body,
-    rule,
-    '',
-  ].join('\n');
+  return ['EXPLAIN', sql.replace(/;\s*$/, ''), ';', rule, header, rule, body, rule, ''].join('\n');
 }
 
-const [, , sltPath, sqlOut] = process.argv;
+const [, , sltPath, sqlOut, match] = process.argv;
 if (!sltPath || !sqlOut) {
-  console.error('Usage: npx tsx scripts/import-datafusion-slt.ts <slt.part> <tests/name.sql>');
+  console.error('Usage: npx tsx scripts/import-datafusion-slt.ts <slt> <tests/name.sql> [match]');
   process.exit(1);
 }
 
-const extracted = extractSltExplain(fs.readFileSync(sltPath, 'utf8'));
-const fixture = toExplainTable(extracted.sql, extracted.physical);
+const extracted = extractSltExplain(fs.readFileSync(sltPath, 'utf8'), match);
+let sourceRel = sltPath;
+const datafusionRoot = sltPath.indexOf('arrow-datafusion/');
+if (datafusionRoot >= 0) {
+  sourceRel = sltPath.slice(datafusionRoot + 'arrow-datafusion/'.length);
+}
+const fixture =
+  `-- Source: Apache DataFusion ${sourceRel}\n` + toExplainTable(extracted.sql, extracted.physical);
 fs.mkdirSync(path.dirname(sqlOut), { recursive: true });
 fs.writeFileSync(sqlOut, fixture);
 

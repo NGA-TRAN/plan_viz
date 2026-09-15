@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Wave D operators**: `ExplainExec`, `StreamingTableExec`, `RecursiveQueryExec`, `WorkTableExec`, `BufferExec`, `CooperativeExec`, `ScalarSubqueryExec`, and `DataSinkExec` / `FileSinkExec`
+- TPC-H Q11 (`ScalarSubqueryExec` over Partitioned HashJoin + TopK) and DataFusion `cte.slt` recursive join (`RecursiveQueryExec` + `WorkTableExec`) fixtures
+- DataFusion `subquery.slt` (`subqueries=2` and nested `ScalarSubqueryExec`) and `window.slt` (`StreamingTableExec` + stacked `BoundedWindowAggExec`) fixtures
+
+### Fixed
+- `ScalarSubqueryExec` children are packed by full subtree width so wide inputs (e.g. TPC-H Q11 HashJoins) do not overlap
+- EXPLAIN table parser no longer stops at continuation lines whose expressions contain `+`
+
 ## [0.1.18] - 2026-09-15
 
 ### Added

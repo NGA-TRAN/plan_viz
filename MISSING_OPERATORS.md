@@ -5,7 +5,7 @@ in [`docs/operators/`](./docs/operators/README.md).
 
 Compared against **datafusion-physical-plan 55.1.0**.
 
-## Implemented (26)
+## Implemented (34)
 
 DataSourceExec, FilterExec, CoalesceBatchesExec, CoalescePartitionsExec,
 RepartitionExec, AggregateExec, ProjectionExec, SortExec,
@@ -13,7 +13,9 @@ SortPreservingMergeExec, HashJoinExec, SortMergeJoin / SortMergeJoinExec,
 UnionExec, LocalLimitExec, GlobalLimitExec, CrossJoinExec, WindowAggExec,
 BoundedWindowAggExec, NestedLoopJoinExec, UnnestExec, SymmetricHashJoinExec,
 PiecewiseMergeJoinExec, InterleaveExec, AnalyzeExec, EmptyExec,
-PlaceholderRowExec, LazyMemoryExec / ValuesExec.
+PlaceholderRowExec, LazyMemoryExec / ValuesExec, ExplainExec,
+StreamingTableExec, WorkTableExec, BufferExec, CooperativeExec,
+DataSinkExec / FileSinkExec, RecursiveQueryExec, ScalarSubqueryExec.
 
 ## Missing (specs ready for review)
 
@@ -31,8 +33,14 @@ PlaceholderRowExec, LazyMemoryExec / ValuesExec.
 [PlaceholderRowExec](docs/operators/placeholder-row-exec.md),
 [LazyMemoryExec](docs/operators/lazy-memory-exec.md)
 
-**Wave D (later):** ExplainExec, StreamingTableExec, RecursiveQueryExec,
-WorkTableExec, BufferExec, CooperativeExec, ScalarSubqueryExec, FileSinkExec.
+**Wave D (implemented):** [ExplainExec](docs/operators/explain-exec.md),
+[StreamingTableExec](docs/operators/streaming-table-exec.md),
+[WorkTableExec](docs/operators/work-table-exec.md),
+[BufferExec](docs/operators/buffer-exec.md),
+[CooperativeExec](docs/operators/cooperative-exec.md),
+[DataSinkExec](docs/operators/data-sink-exec.md),
+[RecursiveQueryExec](docs/operators/recursive-query-exec.md),
+[ScalarSubqueryExec](docs/operators/scalar-subquery-exec.md)
 
 ## Not real physical operators
 

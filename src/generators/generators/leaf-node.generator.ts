@@ -27,7 +27,9 @@ export class LeafNodeGenerator extends BaseNodeGenerator {
   ): NodeInfo {
     const details = this.options.details(node);
     const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
-    const nodeHeight = NODE_DIMENSIONS.DEFAULT_HEIGHT;
+    const detailsTop = 35;
+    const detailsHeight = details.length * TEXT_HEIGHTS.DETAILS_LINE;
+    const nodeHeight = Math.max(NODE_DIMENSIONS.DEFAULT_HEIGHT, detailsTop + detailsHeight + 10);
 
     const rectId = context.idGenerator.generateId();
     context.elements.push(
@@ -140,5 +142,54 @@ export function memoryLeafOptions(): LeafNodeOptions {
       const parsed = parseInt(raw.replace(/[^\d]/g, ''), 10);
       return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     },
+  };
+}
+
+export function explainLeafOptions(): LeafNodeOptions {
+  return {
+    details: () => [],
+    outputArrows: () => 1,
+  };
+}
+
+export function workTableLeafOptions(): LeafNodeOptions {
+  return {
+    details: (node) => (node.properties?.name ? [`name=${node.properties.name}`] : []),
+    outputArrows: () => 1,
+  };
+}
+
+function parsePartitionCount(raw: string | undefined): number {
+  if (!raw) {
+    return 1;
+  }
+  const arrayMatch = raw.match(/\[([^\]]*)\]/);
+  if (arrayMatch) {
+    const count = arrayMatch[1].split(',').filter((part) => part.trim().length > 0).length;
+    return count > 0 ? count : 1;
+  }
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+export function streamingTableLeafOptions(): LeafNodeOptions {
+  return {
+    details: (node) => {
+      const lines: string[] = [];
+      if (node.properties?.partition_sizes) {
+        lines.push(`partition_sizes=${node.properties.partition_sizes}`);
+      }
+      if (node.properties?.projection) {
+        lines.push(`projection=${node.properties.projection}`);
+      }
+      if (node.properties?.infinite_source) {
+        lines.push(`infinite_source=${node.properties.infinite_source}`);
+      }
+      if (node.properties?.fetch) {
+        lines.push(`fetch=${node.properties.fetch}`);
+      }
+      return lines;
+    },
+    outputArrows: (node) => parsePartitionCount(node.properties?.partition_sizes),
   };
 }
