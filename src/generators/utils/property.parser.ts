@@ -42,12 +42,7 @@ export class PropertyParser {
         braceDepth--;
         currentItem += char;
         pos++;
-      } else if (
-        char === ',' &&
-        parenDepth === 0 &&
-        bracketDepth === 0 &&
-        braceDepth === 0
-      ) {
+      } else if (char === ',' && parenDepth === 0 && bracketDepth === 0 && braceDepth === 0) {
         // Comma outside nested structures means end of this item
         items.push(currentItem.trim());
         currentItem = '';
@@ -142,6 +137,21 @@ export class PropertyParser {
     }
 
     return groups;
+  }
+
+  /**
+   * Declared file-group / partition count from `N group(s)`.
+   * DataFusion may list only a prefix and end with `...`; use the number, not
+   * the listed arrays. Falls back to how many groups were actually parsed.
+   */
+  parseFileGroupCount(properties?: Record<string, string>): number {
+    const listed = this.parseFileGroups(properties).length;
+    if (!properties || !properties.file_groups) {
+      return listed;
+    }
+    const match = properties.file_groups.match(/(\d+)\s+groups?/);
+    const declared = match ? parseInt(match[1], 10) : 0;
+    return Math.max(declared, listed);
   }
 
   /**
@@ -354,4 +364,3 @@ export class PropertyParser {
     };
   }
 }
-

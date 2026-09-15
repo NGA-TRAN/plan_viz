@@ -78,6 +78,40 @@ describe('PropertyParser', () => {
       const result = parser.parseFileGroups(properties);
       expect(result).toEqual([['f1.parquet']]);
     });
+
+    it('should keep listed groups when DataFusion truncates with ellipsis', () => {
+      const properties = {
+        file_groups:
+          '{25 groups: [[a.parquet], [b.parquet], [c.parquet], [d.parquet], [e.parquet], ...]}',
+      };
+      expect(parser.parseFileGroups(properties)).toEqual([
+        ['a.parquet'],
+        ['b.parquet'],
+        ['c.parquet'],
+        ['d.parquet'],
+        ['e.parquet'],
+      ]);
+      expect(parser.parseFileGroupCount(properties)).toBe(25);
+    });
+
+    it('should count declared groups when truncated lists have multiple files', () => {
+      const properties = {
+        file_groups:
+          '{25 groups: [[a/data.parquet, b/data.parquet, c/data.parquet], [d/data.parquet, e/data.parquet, f/data.parquet], [g/data.parquet, h/data.parquet, i/data.parquet], [j/data.parquet, k/data.parquet, l/data.parquet], [m/data.parquet, n/data.parquet, o/data.parquet], ...]}',
+      };
+      const groups = parser.parseFileGroups(properties);
+      expect(groups).toHaveLength(5);
+      expect(groups[0]).toHaveLength(3);
+      expect(groups[4]).toEqual(['m/data.parquet', 'n/data.parquet', 'o/data.parquet']);
+      expect(parser.parseFileGroupCount(properties)).toBe(25);
+    });
+
+    it('should use listed length when the count prefix is missing', () => {
+      const properties = {
+        file_groups: '{groups: [[f1.parquet], [f2.parquet]]}',
+      };
+      expect(parser.parseFileGroupCount(properties)).toBe(2);
+    });
   });
 
   describe('extractColumns', () => {
@@ -181,4 +215,3 @@ describe('PropertyParser', () => {
     });
   });
 });
-

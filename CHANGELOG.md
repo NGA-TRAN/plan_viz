@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `DataSourceExec` uses the declared `N groups` count when DataFusion truncates the file list, and shows `2 + … + 2` arrows
+
 ## [0.1.19] - 2026-09-15
 
 ### Added
