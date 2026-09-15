@@ -2,7 +2,14 @@ import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
 import { BaseNodeGenerator } from './base-node.generator';
-import { NODE_DIMENSIONS, FONT_SIZES, FONT_FAMILIES, TEXT_HEIGHTS, DYNAMIC_FILTER_DIMENSIONS } from '../constants';
+import {
+  NODE_DIMENSIONS,
+  FONT_SIZES,
+  FONT_FAMILIES,
+  TEXT_HEIGHTS,
+  DYNAMIC_FILTER_DIMENSIONS,
+  ARROW_CONSTANTS,
+} from '../constants';
 
 /**
  * DataSourceExec node generator
@@ -109,8 +116,23 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       }
     }
 
-    // Parse file groups and create ellipses for each file
-    const fileGroups = context.propertyParser.parseFileGroups(node.properties);
+    // Parse file groups and create ellipses for each file.
+    // DataFusion may print `25 groups: [[a], [b], ..., ...]` — use the declared
+    // count for streams, and only draw 2 + ... + 2 of the listed groups.
+    const listedGroups = context.propertyParser.parseFileGroups(node.properties);
+    const streamCount = context.propertyParser.parseFileGroupCount(node.properties);
+    const collapseGroups = streamCount > listedGroups.length;
+    let fileGroups = listedGroups;
+    if (
+      collapseGroups &&
+      listedGroups.length >
+        ARROW_CONSTANTS.ARROWS_BEFORE_ELLIPSIS + ARROW_CONSTANTS.ARROWS_AFTER_ELLIPSIS
+    ) {
+      fileGroups = [
+        ...listedGroups.slice(0, ARROW_CONSTANTS.ARROWS_BEFORE_ELLIPSIS),
+        ...listedGroups.slice(-ARROW_CONSTANTS.ARROWS_AFTER_ELLIPSIS),
+      ];
+    }
     const ellipseInfo: Array<{ id: string; centerX: number; centerY: number; groupIndex: number }> =
       [];
     const groupRects: Array<{
@@ -130,7 +152,9 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       const baseEllipseY = y + nodeHeight + 75;
 
       // Calculate total width needed for all groups (each group is one ellipse width)
-      const totalWidth = fileGroups.length * ellipseSize + (fileGroups.length - 1) * groupSpacing;
+      const extraDotSlot = collapseGroups ? 1 : 0;
+      const slotCount = fileGroups.length + extraDotSlot;
+      const totalWidth = slotCount * ellipseSize + (slotCount - 1) * groupSpacing;
       let currentGroupX = x + (nodeWidth - totalWidth) / 2;
 
       // Find the maximum height needed (for the group with most files)
@@ -140,6 +164,24 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
 
       // Create ellipses for each file group
       for (let groupIndex = 0; groupIndex < fileGroups.length; groupIndex++) {
+        if (extraDotSlot && groupIndex === ARROW_CONSTANTS.ARROWS_BEFORE_ELLIPSIS) {
+          const dotsText = context.elementFactory.createText({
+            id: context.idGenerator.generateId(),
+            x: currentGroupX + ellipseSize / 2 - 10,
+            y: baseEllipseY + maxGroupHeight / 2 - 10,
+            width: 20,
+            height: 20,
+            text: '...',
+            fontSize: FONT_SIZES.DETAILS,
+            fontFamily: FONT_FAMILIES.NORMAL,
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            strokeColor: context.config.nodeColor,
+            autoResize: true,
+          });
+          context.elements.push(dotsText);
+          currentGroupX += ellipseSize + groupSpacing;
+        }
         const group = fileGroups[groupIndex];
         const groupEllipseIds: string[] = [];
         let groupMinY = baseEllipseY;
@@ -319,7 +361,13 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
 
       let arrowEndPositions: number[];
       const totalGroups = fileGroups.length;
-      if (allFit && totalGroups > 0) {
+      if (collapseGroups) {
+        arrowEndPositions = context.arrowCalculator.calculateOutputArrowPositions(
+          streamCount,
+          x,
+          nodeWidth
+        ).positions;
+      } else if (allFit && totalGroups > 0) {
         // All arrows can be vertical - use group center x positions
         arrowEndPositions = groupCenterXs;
       } else {
@@ -384,6 +432,33 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
         });
         context.elements.push(arrow);
         this.bindArrowToElements(context, arrowId, [arrowStartElementId, rectId]);
+      }
+
+      if (collapseGroups && arrowEndPositions.length >= 2) {
+        let firstGroupTopY = baseEllipseY;
+        if (groupRects.length > 0) {
+          firstGroupTopY = groupRects[0].minY;
+        } else if (ellipseInfo.length > 0) {
+          firstGroupTopY = ellipseInfo[0].centerY - 30;
+        }
+        const midIndex = Math.floor(arrowEndPositions.length / 2);
+        const ellipsisX = (arrowEndPositions[midIndex - 1] + arrowEndPositions[midIndex]) / 2;
+        const arrowMidY = (rectangleBottom + firstGroupTopY) / 2;
+        context.elements.push(
+          context.elementFactory.createText({
+            id: context.idGenerator.generateId(),
+            x: ellipsisX - 10,
+            y: arrowMidY - 10,
+            width: 20,
+            height: 20,
+            text: '...',
+            fontSize: FONT_SIZES.DETAILS,
+            fontFamily: FONT_FAMILIES.NORMAL,
+            textAlign: 'center',
+            verticalAlign: 'top',
+            strokeColor: context.config.nodeColor,
+          })
+        );
       }
 
       // Create projection text element at the middle of the edges (arrows)
@@ -497,8 +572,8 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       }
     }
 
-    // Count input arrows (number of file groups)
-    const inputArrowCount = fileGroups.length > 0 ? fileGroups.length : 0;
+    // Count streams from the declared group count (not just the listed prefix)
+    const inputArrowCount = streamCount > 0 ? streamCount : 0;
 
     // Return input arrow positions (the X positions where arrows connect to this node from below)
     // These are the arrow end positions on this node's bottom edge
@@ -512,7 +587,9 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       const projectionMatch = node.properties.projection.match(/\[([^\]]+)\]/);
       if (projectionMatch) {
         const projectionText = projectionMatch[1];
-        outputColumns.push(...context.propertyParser.parseCommaSeparated(projectionText).map((col) => col.trim()));
+        outputColumns.push(
+          ...context.propertyParser.parseCommaSeparated(projectionText).map((col) => col.trim())
+        );
       }
     }
 
