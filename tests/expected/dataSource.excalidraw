@@ -4,7 +4,7 @@
   "source": "https://excalidraw.com",
   "elements": [
     {
-      "id": "element-1704067200000-0",
+      "id": "element-1704067200000-1",
       "type": "rectangle",
       "x": 0,
       "y": 0,
@@ -18,7 +18,9 @@
       "strokeStyle": "solid",
       "roughness": 0,
       "opacity": 100,
-      "groupIds": [],
+      "groupIds": [
+        "element-1704067200000-0"
+      ],
       "frameId": null,
       "index": "c0g0",
       "roundness": {
@@ -30,16 +32,16 @@
       "isDeleted": false,
       "boundElements": [
         {
-          "id": "element-1704067200000-4",
+          "id": "element-1704067200000-5",
           "type": "arrow"
         }
       ],
-      "updated": 1704067200001,
+      "updated": 1704067200002,
       "link": null,
       "locked": false
     },
     {
-      "id": "element-1704067200000-1",
+      "id": "element-1704067200000-2",
       "type": "text",
       "x": 0,
       "y": 5,
@@ -53,7 +55,9 @@
       "strokeStyle": "solid",
       "roughness": 0,
       "opacity": 100,
-      "groupIds": [],
+      "groupIds": [
+        "element-1704067200000-0"
+      ],
       "frameId": null,
       "index": "c0g1",
       "roundness": null,
@@ -62,7 +66,7 @@
       "versionNonce": 1003,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1704067200002,
+      "updated": 1704067200003,
       "link": null,
       "locked": false,
       "text": "DataSourceExec",
@@ -71,13 +75,13 @@
       "textAlign": "center",
       "verticalAlign": "top",
       "baseline": 20,
-      "containerId": "element-1704067200000-0",
+      "containerId": "element-1704067200000-1",
       "originalText": "DataSourceExec",
       "autoResize": false,
       "lineHeight": 1.25
     },
     {
-      "id": "element-1704067200000-2",
+      "id": "element-1704067200000-3",
       "type": "ellipse",
       "x": 120,
       "y": 175,
@@ -103,16 +107,16 @@
       "isDeleted": false,
       "boundElements": [
         {
-          "id": "element-1704067200000-4",
+          "id": "element-1704067200000-5",
           "type": "arrow"
         }
       ],
-      "updated": 1704067200003,
+      "updated": 1704067200004,
       "link": null,
       "locked": false
     },
     {
-      "id": "element-1704067200000-3",
+      "id": "element-1704067200000-4",
       "type": "text",
       "x": 140,
       "y": 190,
@@ -135,7 +139,7 @@
       "versionNonce": 1007,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1704067200004,
+      "updated": 1704067200005,
       "link": null,
       "locked": false,
       "text": "d_1",
@@ -144,13 +148,13 @@
       "textAlign": "center",
       "verticalAlign": "middle",
       "baseline": 20,
-      "containerId": "element-1704067200000-2",
+      "containerId": "element-1704067200000-3",
       "originalText": "d_1",
       "autoResize": true,
       "lineHeight": 1.15
     },
     {
-      "id": "element-1704067200000-4",
+      "id": "element-1704067200000-5",
       "type": "arrow",
       "x": 150,
       "y": 175,
@@ -175,7 +179,7 @@
       "versionNonce": 1009,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1704067200005,
+      "updated": 1704067200006,
       "link": null,
       "locked": false,
       "points": [
@@ -190,12 +194,12 @@
       ],
       "lastCommittedPoint": null,
       "startBinding": {
-        "elementId": "element-1704067200000-2",
+        "elementId": "element-1704067200000-3",
         "focus": 0,
         "gap": 0
       },
       "endBinding": {
-        "elementId": "element-1704067200000-0",
+        "elementId": "element-1704067200000-1",
         "focus": 0,
         "gap": 0
       },
@@ -204,7 +208,7 @@
       "elbowed": false
     },
     {
-      "id": "element-1704067200000-6",
+      "id": "element-1704067200000-7",
       "type": "text",
       "x": 155,
       "y": 128.75,
@@ -219,7 +223,8 @@
       "roughness": 0,
       "opacity": 100,
       "groupIds": [
-        "element-1704067200000-5"
+        "element-1704067200000-6",
+        "element-1704067200000-0"
       ],
       "frameId": null,
       "index": "c0g5",
@@ -229,7 +234,7 @@
       "versionNonce": 1011,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1704067200007,
+      "updated": 1704067200008,
       "link": null,
       "locked": false,
       "text": "d_dkey, env, service, host",

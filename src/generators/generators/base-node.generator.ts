@@ -127,7 +127,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
           parentRectId,
           childInfo.outputColumns,
           childInfo.outputSortOrder,
-          context
+          context,
+          childInfo.groupId
         );
 
         // Track the maximum Y position for next child
@@ -215,7 +216,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     parentRectId: string,
     columns: string[],
     sortOrder: string[],
-    context: GenerationContext
+    context: GenerationContext,
+    childGroupId?: string
   ): void {
     // This will be implemented using ArrowPositionCalculator and ColumnLabelRenderer
     // For now, delegate to a helper method that will be refactored
@@ -229,7 +231,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
       parentRectId,
       columns,
       sortOrder,
-      context
+      context,
+      childGroupId
     );
   }
 
@@ -270,7 +273,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     parentRectId: string,
     columns: string[],
     sortOrder: string[],
-    context: GenerationContext
+    context: GenerationContext,
+    childGroupId?: string
   ): void {
     // Use ArrowPositionCalculator for ellipsis position calculation
     const ellipsisResult = context.arrowCalculator.calculateEllipsisPositions(
@@ -352,7 +356,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
         arrowMidY,
         rightmostArrowX,
         context.config.nodeColor,
-        5 // rightOffset
+        5, // rightOffset
+        childGroupId
       );
       context.elements.push(...labels);
     }
@@ -398,7 +403,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
     startX: number,
     startY: number,
     endX: number,
-    endY: number
+    endY: number,
+    attachGroupId?: string
   ): void {
     if (columns.length === 0) {
       return;
@@ -416,7 +422,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
           labelY,
           arrowX,
           context.config.nodeColor,
-          -gap
+          -gap,
+          attachGroupId
         )
       );
     } else {
@@ -427,7 +434,8 @@ export abstract class BaseNodeGenerator implements NodeGeneratorStrategy {
           labelY,
           arrowX,
           context.config.nodeColor,
-          gap
+          gap,
+          attachGroupId
         )
       );
     }

@@ -200,7 +200,8 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
       leftSideTopArrowPositions[0] ?? leftSideX + leftSideInfo.width / 2,
       leftSideTopY,
       bottomEdgeArrowPositions[0] ?? x + nodeWidth / 2,
-      bottomEdgeY
+      bottomEdgeY,
+      leftSideInfo.groupId
     );
 
     // Create arrows from right side to SortMergeJoin rectangle bottom edge
@@ -231,7 +232,8 @@ export class SortMergeJoinNodeGenerator extends BaseNodeGenerator {
         rightSideX + rightSideInfo.width / 2,
       rightSideTopY,
       bottomEdgeArrowPositions[bottomEdgeArrowPositions.length - 1] ?? x + nodeWidth / 2,
-      bottomEdgeY
+      bottomEdgeY,
+      rightSideInfo.groupId
     );
 
     // SortMergeJoin output columns = all columns from both sides

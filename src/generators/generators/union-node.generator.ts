@@ -297,7 +297,7 @@ export class UnionNodeGenerator extends BaseNodeGenerator {
               verticalAlign: 'top',
               strokeColor: color,
             });
-            groupTextElement.groupIds = [groupId];
+            groupTextElement.groupIds = childInfo.groupId ? [groupId, childInfo.groupId] : [groupId];
             context.elements.push(groupTextElement);
             currentX += groupWidth;
 

@@ -562,7 +562,7 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
               verticalAlign: 'top',
               strokeColor: color,
             });
-            groupTextElement.groupIds = [groupId];
+            groupTextElement.groupIds = context.nodeGroupId ? [groupId, context.nodeGroupId] : [groupId];
             context.elements.push(groupTextElement);
             currentX += groupWidth;
 

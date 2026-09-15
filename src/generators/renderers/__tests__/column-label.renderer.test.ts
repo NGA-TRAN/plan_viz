@@ -53,6 +53,18 @@ describe('ColumnLabelRenderer', () => {
       expect(result[0].type).toBe('text');
     });
 
+    it('should attach an extra node group id when provided', () => {
+      const result = renderer.renderLabels({
+        columns: ['col1'],
+        sortOrder: [],
+        position: { x: 0, y: 0 },
+        alignment: 'left',
+        nodeColor: '#000000',
+        attachGroupId: 'node-group',
+      });
+      expect(result[0].groupIds).toContain('node-group');
+    });
+
     it('should color ordered columns blue', () => {
       const result = renderer.renderLabels({
         columns: ['col1', 'col2'],

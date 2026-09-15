@@ -32,6 +32,8 @@ export interface GenerationContext {
   config: ResolvedExcalidrawConfig;
   /** Elements array to add generated elements to */
   elements: ExcalidrawElement[];
+  /** Group id for the node currently being generated */
+  nodeGroupId?: string;
   /** Recursive generator function for processing child nodes */
   generateChildNode: (
     child: ExecutionPlanNode,

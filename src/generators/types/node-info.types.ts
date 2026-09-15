@@ -13,6 +13,8 @@ export interface NodeInfo {
   height: number;
   /** ID of the rectangle element */
   rectId: string;
+  /** Excalidraw group for the box and its in-box visuals */
+  groupId?: string;
   /** Number of input arrows this node expects */
   inputArrowCount: number;
   /** X positions where input arrows connect to this node */

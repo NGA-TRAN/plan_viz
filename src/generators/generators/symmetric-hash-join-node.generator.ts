@@ -245,7 +245,8 @@ export class SymmetricHashJoinNodeGenerator extends BaseNodeGenerator {
       startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2,
       childY,
       outerEndX,
-      outerEndY
+      outerEndY,
+      childInfo.groupId
     );
   }
 

@@ -171,7 +171,8 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
       leftStartPositions[0] ?? leftInfo.x + leftInfo.width / 2,
       childY,
       leftEndPositions[0] ?? x,
-      parentBottomY
+      parentBottomY,
+      leftInfo.groupId
     );
 
     // Draw arrows from right child
@@ -199,7 +200,8 @@ export class CrossJoinNodeGenerator extends BaseNodeGenerator {
       rightStartPositions[rightStartPositions.length - 1] ?? rightInfo.x + rightInfo.width / 2,
       childY,
       rightEndPositions[rightEndPositions.length - 1] ?? x + nodeWidth,
-      parentBottomY
+      parentBottomY,
+      rightInfo.groupId
     );
 
     // Merge columns from both sides

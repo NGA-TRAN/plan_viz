@@ -251,7 +251,8 @@ export class NestedLoopJoinNodeGenerator extends BaseNodeGenerator {
       startPositions[0] ?? childInfo.x + childInfo.width / 2,
       childY,
       outerEndX,
-      outerEndY
+      outerEndY,
+      childInfo.groupId
     );
   }
 
@@ -301,7 +302,8 @@ export class NestedLoopJoinNodeGenerator extends BaseNodeGenerator {
       startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2,
       childY,
       endPositions[outerIndex] ?? (endLeft + endRight) / 2,
-      parentBottomY
+      parentBottomY,
+      childInfo.groupId
     );
   }
 

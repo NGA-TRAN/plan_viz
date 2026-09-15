@@ -54,6 +54,8 @@ import {
 import { RecursiveQueryNodeGenerator } from './generators/recursive-query-node.generator';
 import { ScalarSubqueryNodeGenerator } from './generators/scalar-subquery-node.generator';
 import { GenerationContext } from './types/generation-context.types';
+import { NodeInfo } from './types/node-info.types';
+import { groupNodeVisuals } from './utils/node-group';
 
 /**
  * Generator for Excalidraw JSON from execution plan nodes
@@ -165,30 +167,18 @@ export class ExcalidrawGenerator {
     y: number,
     elements: ExcalidrawElement[],
     isRoot: boolean = false
-  ): {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    rectId: string;
-    inputArrowCount: number;
-    inputArrowPositions: number[];
-    outputColumns: string[];
-    outputSortOrder: string[];
-  } {
-    // Use registered generators
-    if (this.nodeGeneratorRegistry.hasGenerator(node.operator)) {
-      const context = this.createGenerationContext(elements);
-      const generator = this.nodeGeneratorRegistry.getGenerator(node.operator);
-      return generator.generate(node, x, y, isRoot, context);
-    }
-
-    // Use default generator for unimplemented operators
+  ): NodeInfo {
+    const groupId = this.idGenerator.generateId();
     const context = this.createGenerationContext(elements);
-    const defaultGenerator = this.nodeGeneratorRegistry.getGenerator(
-      'default'
-    ) as DefaultNodeGenerator;
-    return defaultGenerator.generate(node, x, y, isRoot, context);
+    context.nodeGroupId = groupId;
+
+    const generator = this.nodeGeneratorRegistry.hasGenerator(node.operator) ?
+      this.nodeGeneratorRegistry.getGenerator(node.operator) :
+      this.nodeGeneratorRegistry.getGenerator('default');
+    const info = generator.generate(node, x, y, isRoot, context);
+    groupNodeVisuals(elements, info.rectId, groupId);
+    info.groupId = groupId;
+    return info;
   }
 
   /**

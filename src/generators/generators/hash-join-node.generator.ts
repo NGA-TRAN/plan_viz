@@ -234,7 +234,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         buildSideTopArrowPositions[0] ?? buildSideX + buildSideInfo.width / 2,
         buildSideTopY,
         buildOuterEndX,
-        buildOuterEndY
+        buildOuterEndY,
+        buildSideInfo.groupId
       );
 
       // Create arrows from probe side to HashJoinExec rectangle
@@ -294,7 +295,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
           probeSideX + probeSideInfo.width / 2,
         probeSideTopY,
         probeOuterEndX,
-        probeOuterEndY
+        probeOuterEndY,
+        probeSideInfo.groupId
       );
     }
 
@@ -497,7 +499,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       outerStartX,
       childY,
       outerTable.bottomX,
-      outerTable.bottomY
+      outerTable.bottomY,
+      childInfo.groupId
     );
   }
 }
