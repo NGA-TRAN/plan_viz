@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-09-15
+
 ### Added
 - **Wave D operators**: `ExplainExec`, `StreamingTableExec`, `RecursiveQueryExec`, `WorkTableExec`, `BufferExec`, `CooperativeExec`, `ScalarSubqueryExec`, and `DataSinkExec` / `FileSinkExec`
 - TPC-H Q11 (`ScalarSubqueryExec` over Partitioned HashJoin + TopK) and DataFusion `cte.slt` recursive join (`RecursiveQueryExec` + `WorkTableExec`) fixtures
