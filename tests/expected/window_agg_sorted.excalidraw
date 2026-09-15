@@ -22,7 +22,7 @@
         "element-1704067200000-0"
       ],
       "frameId": null,
-      "index": "c0g0",
+      "index": "c000",
       "roundness": {
         "type": 3
       },
@@ -71,7 +71,7 @@
         "element-1704067200000-0"
       ],
       "frameId": null,
-      "index": "c0g1",
+      "index": "c001",
       "roundness": null,
       "seed": 1002,
       "version": 3,
@@ -111,7 +111,7 @@
         "element-1704067200000-0"
       ],
       "frameId": null,
-      "index": "c0g2",
+      "index": "c002",
       "roundness": null,
       "seed": 1004,
       "version": 1,
@@ -151,7 +151,7 @@
         "element-1704067200000-0"
       ],
       "frameId": null,
-      "index": "c0g3",
+      "index": "c003",
       "roundness": null,
       "seed": 1006,
       "version": 1,
@@ -191,7 +191,7 @@
         "element-1704067200000-5"
       ],
       "frameId": null,
-      "index": "c0g4",
+      "index": "c004",
       "roundness": {
         "type": 3
       },
@@ -256,7 +256,7 @@
         "element-1704067200000-5"
       ],
       "frameId": null,
-      "index": "c0g5",
+      "index": "c005",
       "roundness": null,
       "seed": 1010,
       "version": 3,
@@ -294,7 +294,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g6",
+      "index": "c006",
       "roundness": {
         "type": 2
       },
@@ -329,7 +329,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g7",
+      "index": "c007",
       "roundness": null,
       "seed": 1014,
       "version": 43,
@@ -367,7 +367,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g8",
+      "index": "c008",
       "roundness": {
         "type": 2
       },
@@ -402,7 +402,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g9",
+      "index": "c009",
       "roundness": null,
       "seed": 1018,
       "version": 43,
@@ -440,7 +440,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0gA",
+      "index": "c00A",
       "roundness": {
         "type": 2
       },
@@ -475,7 +475,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0gB",
+      "index": "c00B",
       "roundness": null,
       "seed": 1022,
       "version": 43,
@@ -513,7 +513,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0gC",
+      "index": "c00C",
       "roundness": {
         "type": 2
       },
@@ -548,7 +548,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0gD",
+      "index": "c00D",
       "roundness": null,
       "seed": 1026,
       "version": 43,
@@ -586,7 +586,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0gE",
+      "index": "c00E",
       "roundness": {
         "type": 2
       },
@@ -650,7 +650,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0gF",
+      "index": "c00F",
       "roundness": {
         "type": 2
       },
@@ -714,7 +714,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g10",
+      "index": "c010",
       "roundness": {
         "type": 2
       },
@@ -778,7 +778,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g11",
+      "index": "c011",
       "roundness": {
         "type": 2
       },
@@ -845,7 +845,7 @@
         "element-1704067200000-5"
       ],
       "frameId": null,
-      "index": "c0g12",
+      "index": "c012",
       "roundness": null,
       "seed": 1036,
       "version": 1,
@@ -886,7 +886,7 @@
         "element-1704067200000-5"
       ],
       "frameId": null,
-      "index": "c0g13",
+      "index": "c013",
       "roundness": null,
       "seed": 1038,
       "version": 1,
@@ -924,7 +924,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g14",
+      "index": "c014",
       "roundness": {
         "type": 2
       },
@@ -988,7 +988,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g15",
+      "index": "c015",
       "roundness": {
         "type": 2
       },
@@ -1052,7 +1052,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g16",
+      "index": "c016",
       "roundness": {
         "type": 2
       },
@@ -1116,7 +1116,7 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "index": "c0g17",
+      "index": "c017",
       "roundness": {
         "type": 2
       },
@@ -1183,7 +1183,7 @@
         "element-1704067200000-5"
       ],
       "frameId": null,
-      "index": "c0g18",
+      "index": "c018",
       "roundness": null,
       "seed": 1048,
       "version": 1,
@@ -1224,7 +1224,7 @@
         "element-1704067200000-5"
       ],
       "frameId": null,
-      "index": "c0g19",
+      "index": "c019",
       "roundness": null,
       "seed": 1050,
       "version": 1,
