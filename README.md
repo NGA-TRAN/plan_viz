@@ -403,6 +403,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 - [X] Interactive web interface: [plan-visualizer](https://nga-tran.github.io/plan-visualizer) — try it out!
 - [X] Support for additional DataFusion operators (Waves A–D; see [operator catalog](./docs/operators/README.md))
+- [ ] Support [Distributed Datafusion](https://github.com/datafusion-contrib/datafusion-distributed) physical plans
 - [ ] Enhanced options for custom styling
 - [ ] Performance optimizations for large plans
 
