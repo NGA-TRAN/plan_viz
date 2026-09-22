@@ -56,6 +56,7 @@ import { ScalarSubqueryNodeGenerator } from './generators/scalar-subquery-node.g
 import { GenerationContext } from './types/generation-context.types';
 import { NodeInfo } from './types/node-info.types';
 import { groupNodeVisuals } from './utils/node-group';
+import { bindTextToContainers } from './utils/text-binding';
 
 /**
  * Generator for Excalidraw JSON from execution plan nodes
@@ -122,6 +123,8 @@ export class ExcalidrawGenerator {
       // Root node is the first line of physical_plan - it should not have output arrows
       this.generateNodeElements(root, 0, 0, elements, true);
     }
+
+    bindTextToContainers(elements);
 
     return {
       type: 'excalidraw',
