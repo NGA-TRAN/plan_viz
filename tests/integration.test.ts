@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { convertPlanToExcalidraw } from '../src/index';
 import { ExcalidrawData } from '../src/types/excalidraw.types';
+import { assertTextBindings } from '../src/generators/__tests__/utils/text-binding-assertions';
 
 /**
  * Normalizes Excalidraw JSON by removing non-deterministic fields
@@ -90,6 +91,9 @@ describe('Examples Integration Tests', () => {
 
     // Generate excalidraw from SQL
     const generatedData = convertPlanToExcalidraw(sqlContent);
+
+    // Check binding references before normalization removes them.
+    assertTextBindings(generatedData.elements);
 
     // Normalize both for comparison
     const normalizedExpected = normalizeExcalidraw(expectedData);
