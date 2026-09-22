@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.23] - 2026-09-22
+
 ### Fixed
 - Complete text bindings for all operator labels (including aliases, fallback and custom generators), file labels, and DynamicFilter ellipses so Excalidraw PNG exports retain their text ([#64](https://github.com/NGA-TRAN/plan_viz/issues/64)).
 
