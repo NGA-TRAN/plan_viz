@@ -1,3 +1,4 @@
+import { visiblePartitions } from '../utils/visible-partitions';
 import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
@@ -46,7 +47,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     context.elements.push(rect);
 
     // Create operator name text with join mode (centered, bold)
-    const operatorText = joinMode ? `HashJoinExec: ${joinMode}` : 'HashJoinExec';
+    const operatorText = joinMode ? node.operator + ': ' + joinMode : node.operator;
     const operatorTextElement = context.elementFactory.createText({
       id: context.idGenerator.generateId(),
       x,
@@ -157,8 +158,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     const buildSideInfo = context.generateChildNode(buildSideChild, buildSideX, childY, false);
     const probeSideInfo = context.generateChildNode(probeSideChild, probeSideX, childY, false);
 
-    const buildSideArrows = Math.max(1, buildSideInfo.inputArrowCount);
-    const probeSideArrows = Math.max(1, probeSideInfo.inputArrowCount);
+    const buildSideArrows = buildSideInfo.inputArrowCount > 8 ? 4 : Math.max(1, buildSideInfo.inputArrowCount);
+    const probeSideArrows = probeSideInfo.inputArrowCount > 8 ? 4 : Math.max(1, probeSideInfo.inputArrowCount);
 
     if (isPartitioned) {
       this.drawPartitionedHashTables(
@@ -170,8 +171,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         childY,
         buildSideInfo,
         probeSideInfo,
-        buildSideArrows,
-        probeSideArrows
+        Math.max(1, buildSideInfo.inputArrowCount),
+        Math.max(1, probeSideInfo.inputArrowCount)
       );
     } else {
       // Calculate hash table ellipse center position
@@ -301,26 +302,12 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     }
 
     // Extract output columns from projection property
-    const outputColumns: string[] = [];
-    if (node.properties && node.properties.projection) {
-      const projectionMatch = node.properties.projection.match(/\[([^\]]+)\]/);
-      if (projectionMatch) {
-        const projectionText = projectionMatch[1];
-        outputColumns.push(
-          ...context.propertyParser.parseCommaSeparated(projectionText).map((col) => {
-            const trimmed = col.trim();
-            // Extract column name before @ symbol
-            const columnMatch = trimmed.match(/^([^@]+)/);
-            return columnMatch ? columnMatch[1].trim() : trimmed;
-          })
-        );
-      }
-    }
+    const outputColumns = context.propertyParser.extractProjectionColumns(node.properties?.projection ?? '');
 
     // HashJoinExec: output arrows = probe side input arrows
     // Output sort order = probe side sort order
     const outputSortOrder = [...probeSideInfo.outputSortOrder];
-    const outputArrowCount = probeSideArrows;
+    const outputArrowCount = Math.max(1, probeSideInfo.inputArrowCount);
     const { positions: outputArrowPositions, fullCount: outputArrowFullCount } =
       context.arrowCalculator.calculateOutputArrowPositions(outputArrowCount, x, nodeWidth);
 
@@ -359,9 +346,13 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     buildSideArrows: number,
     probeSideArrows: number
   ): void {
-    const tableCount = Math.max(buildSideArrows, probeSideArrows);
+    const logicalCount = Math.max(buildSideArrows, probeSideArrows);
+    const partitionIndices = [...new Set([
+      ...visiblePartitions(buildSideArrows), ...visiblePartitions(probeSideArrows),
+    ])].sort((a, b) => a - b);
+    const tableCount = partitionIndices.length;
     const padding = 16;
-    const gap = 10;
+    const gap = logicalCount > 8 ? 22 : 10;
     const available = nodeWidth - padding * 2 - gap * Math.max(0, tableCount - 1);
     const tableWidth = Math.min(HASH_TABLE_DIMENSIONS.WIDTH, available / tableCount);
     const tableHeight = HASH_TABLE_DIMENSIONS.HEIGHT;
@@ -374,6 +365,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
 
     const tables: Array<{
       id: string;
+      partitionIndex: number;
       centerX: number;
       centerY: number;
       width: number;
@@ -405,8 +397,8 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
           y: centerY - 9.2,
           width: labelWidth,
           height: 18.4,
-          text: label,
-          fontSize: FONT_SIZES.HASH_TABLE,
+          text: logicalCount > 8 ? 'HT ' + (partitionIndices[i] + 1) : label,
+          fontSize: logicalCount > 8 ? 12 : FONT_SIZES.HASH_TABLE,
           fontFamily: FONT_FAMILIES.BOLD,
           textAlign: 'center',
           verticalAlign: 'middle',
@@ -417,6 +409,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       );
       tables.push({
         id,
+        partitionIndex: partitionIndices[i],
         centerX,
         centerY,
         width: tableWidth,
@@ -427,6 +420,13 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
       tableX += tableWidth + gap;
     }
 
+    if (logicalCount > 8) {
+      context.elements.push(context.elementFactory.createText({
+        id: context.idGenerator.generateId(), x: x + 10, y: y + 75,
+        width: nodeWidth - 20, height: 18, text: '… (' + logicalCount + ' partitions)', fontSize: 12,
+        fontFamily: FONT_FAMILIES.NORMAL, textAlign: 'center', verticalAlign: 'top', strokeColor: context.config.nodeColor,
+      }));
+    }
     this.drawSideArrowsToPartitionTables(
       context,
       buildSideInfo,
@@ -452,6 +452,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     childY: number,
     tables: Array<{
       id: string;
+      partitionIndex: number;
       centerX: number;
       centerY: number;
       width: number;
@@ -461,17 +462,18 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
     }>,
     side: 'left' | 'right'
   ): void {
+    const indices = visiblePartitions(arrowCount);
     const centerWidth = childInfo.width * 0.6;
     const startLeft = childInfo.x + childInfo.width / 2 - centerWidth / 2;
     const startRight = startLeft + centerWidth;
     const startPositions = context.arrowCalculator.distributeArrows(
-      arrowCount,
+      indices.length,
       startLeft,
       startRight
     );
 
-    for (let i = 0; i < arrowCount; i++) {
-      const table = tables[Math.min(i, tables.length - 1)];
+    for (let i = 0; i < startPositions.length; i++) {
+      const table = tables.find((candidate) => candidate.partitionIndex === indices[i])!;
       const arrowId = context.idGenerator.generateId();
       context.elements.push(
         context.elementFactory.createArrow({
@@ -490,7 +492,7 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
 
     const outerIndex = side === 'left' ? 0 : startPositions.length - 1;
     const outerStartX = startPositions[outerIndex] ?? childInfo.x + childInfo.width / 2;
-    const outerTable = tables[Math.min(outerIndex, tables.length - 1)];
+    const outerTable = tables.find((candidate) => candidate.partitionIndex === indices[outerIndex])!;
     this.placeJoinSideColumnLabels(
       context,
       childInfo.outputColumns,

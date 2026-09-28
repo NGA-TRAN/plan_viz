@@ -150,6 +150,35 @@ const excalidrawJson = convertPlanToExcalidraw(executionPlan, {
 
 Custom generators implement `NodeGeneratorStrategy`. They are registered after built-in generators, so registering the same operator key as a built-in replaces the built-in renderer for that conversion.
 
+### Unfamiliar operators and inline wrappers
+
+Unregistered operators can reuse the file-source, aggregate, repartition, or hash-join renderer when their properties and number of children match that renderer's contract. Their original names remain on the diagram. Exact registrations, including `customGenerators`, take precedence. Ambiguous operators get a neutral box with property summaries and their input connections.
+
+Inline wrappers share a composite box with the inner operator:
+
+```text
+BudgetGuardExec(rows<=10000): HashJoinExec: mode=CollectLeft, join_type=Inner, on=[(id@0, id@0)]
+  MeadowScanExec: file_groups={1 group: [[context.dat]]}, projection=[id]
+  BufferExec: capacity=_
+    BrookScanExec: file_groups={2 groups: [[points_1.dat], [points_2.dat]]}, projection=[id, value]
+```
+
+Use two spaces for each tree level, as in ordinary physical plans. Wrapper arguments stay separate from the inner properties. Long labels use bounded summaries; the parsed plan retains the full values. Large sources and partitioned hash joins show representative first/last partitions while preserving the actual stream count. Valid `output_partitioning` takes precedence over file-group count for source outputs.
+
+`BufferExec` preserves known input metadata and displays `capacity=_` literally. Aggregate summaries show `SinglePartitioned` and `PartiallySorted` explicitly. Column names such as `@host` keep their leading `@`.
+
+Distributed plans, stage references, and network shuffles remain unsupported and produce an explicit error. The library accepts a single physical plan, not a mixed snapshot file.
+
+To audit an external snapshot corpus without copying it into this repository:
+
+```sh
+npm run build
+node scripts/audit-corpus.cjs /path/to/snapshots --out /path/to/report.json
+```
+
+The audit separates physical-plan sections from distributed/worker plans, logical plans, and result tables, then checks geometry, text bounds, and bindings. Add `--render-dir /path/to/scenes` to save generated Excalidraw files. Synthetic regression fixtures use invented operator names and the same two-space indentation.
+
+
 ### As a CLI
 
 **After package installation `npm install plan-viz`:**

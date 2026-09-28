@@ -1,3 +1,5 @@
+import { compactExpression } from '../utils/adaptive-layout';
+import { listContent, expressionAlias, withoutColumnIndex } from '../../parsers/plan-text';
 import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
@@ -21,8 +23,10 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
     const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
     // Check if ordering_mode=Sorted is present to determine height
     const hasOrderingModeSorted = node.properties?.ordering_mode === 'Sorted';
+    const hasPartialOrdering = !!node.properties?.ordering_mode?.startsWith('PartiallySorted(');
+    const hasOrdering = hasOrderingModeSorted || hasPartialOrdering;
     // Increase height when ordering_mode is present to accommodate the third line
-    const nodeHeight = hasOrderingModeSorted ? 100 : NODE_DIMENSIONS.DEFAULT_HEIGHT;
+    const nodeHeight = hasOrdering ? 100 : NODE_DIMENSIONS.DEFAULT_HEIGHT;
 
     // Create rectangle
     const rectId = context.idGenerator.generateId();
@@ -39,7 +43,7 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
 
     // Create operator name text (centered, bold)
     // If ordering_mode=Sorted is present, change label to "AggregateExec - Pipeline"
-    const operatorLabel = hasOrderingModeSorted ? 'AggregateExec - Pipeline' : 'AggregateExec';
+    const operatorLabel = hasOrderingModeSorted ? node.operator + ' - Pipeline' : node.operator;
     const operatorText = context.elementFactory.createText({
       id: context.idGenerator.generateId(),
       x,
@@ -68,26 +72,11 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
 
       if (node.properties.gby) {
         // Extract column names from gby using PropertyParser
-        const gbyMatch = node.properties.gby.match(/\[([^\]]+)\]/);
+        const gbyMatch = node.properties.gby.startsWith('[') ? ['', listContent(node.properties.gby)] : null;
         if (gbyMatch) {
           const gbyContent = gbyMatch[1];
-          const columns = context.propertyParser.parseCommaSeparated(gbyContent).map((col) => {
-            const trimmed = col.trim();
-            // Check if it's a function call (e.g., date_bin(...))
-            const functionMatch = trimmed.match(/^(\w+)\s*\(/);
-            if (functionMatch) {
-              // Return just the function name, not the content inside
-              return functionMatch[1];
-            }
-            // Try to extract column name after "as" keyword first
-            const asMatch = trimmed.match(/\s+as\s+([^\s@]+)/i);
-            if (asMatch) {
-              return asMatch[1].trim();
-            }
-            // Otherwise, extract column name before @ symbol
-            const columnMatch = trimmed.match(/^([^@]+)/);
-            return columnMatch ? columnMatch[1].trim() : trimmed;
-          });
+          const columns = context.propertyParser.parseCommaSeparated(gbyContent)
+            .map((col) => compactExpression(context.propertyParser.extractColumnName(col)));
           parts.push(`gby=[${columns.join(', ')}]`);
         } else {
           // Fallback: use original gby if format doesn't match
@@ -96,7 +85,8 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
       }
 
       if (node.properties.aggr) {
-        parts.push(`aggr=${node.properties.aggr}`);
+        const aggregates = context.propertyParser.parseCommaSeparated(listContent(node.properties.aggr));
+        parts.push('aggr=[' + aggregates.map((expression) => expressionAlias(expression) ?? compactExpression(expression)).join(', ') + ']');
       }
 
       // Add limit information if present
@@ -129,7 +119,7 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
     if (detailBuilder.getLineCount() > 0) {
       // Adjust Y position based on whether ordering_mode is present
       // When ordering_mode is present, we need more space, so position detail text higher
-      const detailTextY = hasOrderingModeSorted ? y + nodeHeight - 55 : y + nodeHeight - 35;
+      const detailTextY = hasOrdering ? y + nodeHeight - 55 : y + nodeHeight - 35;
       const lineHeight = TEXT_HEIGHTS.DETAILS_LINE;
       const detailLines = detailBuilder.build(x + 10, detailTextY, nodeWidth - 20);
 
@@ -142,14 +132,14 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
     }
 
     // If ordering_mode=Sorted is present, add it as a separate detail text below
-    if (hasOrderingModeSorted) {
+    if (hasOrdering) {
       const orderingText = context.elementFactory.createText({
         id: context.idGenerator.generateId(),
         x: x + 10,
         y: y + nodeHeight - 20, // Position at bottom with padding
         width: nodeWidth - 20,
         height: 20,
-        text: 'ordering_mode=Sorted',
+        text: 'ordering_mode=' + node.properties!.ordering_mode,
         fontSize: FONT_SIZES.DETAILS,
         fontFamily: FONT_FAMILIES.NORMAL,
         textAlign: 'center',
@@ -166,7 +156,7 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
 
     // Extract columns from aggr property
     if (node.properties?.aggr) {
-      const aggrMatch = node.properties.aggr.match(/\[([^\]]+)\]/);
+      const aggrMatch = node.properties.aggr.startsWith('[') ? ['', listContent(node.properties.aggr)] : null;
       if (aggrMatch) {
         const aggrContent = aggrMatch[1];
         // Parse comma-separated aggregation expressions
@@ -176,6 +166,11 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
           // Examples: max(j.env) -> env, max(j.value) -> value, avg(a.max_bin_val) -> max_bin_val
           // Pattern: function_name(qualifier.column) or function_name(column)
           // Try qualifier.column first (e.g., j.env -> env)
+          const alias = expressionAlias(trimmed);
+          if (alias) {
+            aggrOutputColumns.push(alias);
+            return;
+          }
           const qualifierMatch = trimmed.match(/\([^)]*\.(\w+)\)/);
           if (qualifierMatch) {
             aggrOutputColumns.push(qualifierMatch[1]);
@@ -192,7 +187,7 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
 
     // Extract columns from gby property
     if (node.properties?.gby) {
-      const gbyMatch = node.properties.gby.match(/\[([^\]]+)\]/);
+      const gbyMatch = node.properties.gby.startsWith('[') ? ['', listContent(node.properties.gby)] : null;
       if (gbyMatch) {
         const gbyContent = gbyMatch[1];
         context.propertyParser.parseCommaSeparated(gbyContent).forEach((col) => {
@@ -201,7 +196,8 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
           const functionMatch = trimmed.match(/^(\w+)\s*\(/);
           if (functionMatch) {
             const functionName = functionMatch[1];
-            gbyOutputColumns.push(functionName);
+            const outputName = expressionAlias(trimmed) ?? functionName;
+            gbyOutputColumns.push(outputName);
 
             // For date_bin function, extract input column name (timestamp column)
             if (functionName === 'date_bin') {
@@ -231,23 +227,13 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
                   const timestampArg = args[args.length - 1];
                   const columnMatch = timestampArg.match(/(\w+)@\d+/);
                   if (columnMatch) {
-                    dateBinInputColumns.set(functionName, columnMatch[1]);
+                    dateBinInputColumns.set(outputName, columnMatch[1]);
                   }
                 }
               }
             }
           } else {
-            // Regular column: try to extract column name after "as" keyword first
-            const asMatch = trimmed.match(/\s+as\s+([^\s@]+)/i);
-            if (asMatch) {
-              gbyOutputColumns.push(asMatch[1].trim());
-            } else {
-              // Otherwise, extract column name before @ symbol
-              const columnMatch = trimmed.match(/^([^@]+)/);
-              if (columnMatch) {
-                gbyOutputColumns.push(columnMatch[1].trim());
-              }
-            }
+            gbyOutputColumns.push(expressionAlias(trimmed) ?? withoutColumnIndex(trimmed));
           }
         });
       }
@@ -295,6 +281,13 @@ export class AggregateNodeGenerator extends BaseNodeGenerator {
           }
         }
       });
+    }
+
+    if (hasPartialOrdering) {
+      const groupColumns = context.propertyParser.parseCommaSeparated(listContent(node.properties?.gby ?? ''))
+        .map((col) => context.propertyParser.extractColumnName(col));
+      const indices = node.properties!.ordering_mode.match(/\d+/g) ?? [];
+      outputSortOrder = indices.map(Number).filter((index) => index < groupColumns.length).map((index) => groupColumns[index]);
     }
 
     // AggregateExec: output arrows = input arrows (same as FilterExec)

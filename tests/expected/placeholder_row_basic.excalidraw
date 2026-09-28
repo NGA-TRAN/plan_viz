@@ -34,6 +34,10 @@
         {
           "id": "element-1704067200000-8",
           "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-2",
+          "type": "text"
         }
       ],
       "updated": 1704067200002,
@@ -109,14 +113,14 @@
       "updated": 1704067200004,
       "link": null,
       "locked": false,
-      "text": "Int64",
+      "text": "\"?column?\"",
       "fontSize": 14,
       "fontFamily": 6,
       "textAlign": "center",
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "Int64",
+      "originalText": "\"?column?\"",
       "autoResize": false,
       "lineHeight": 1.25
     },
@@ -151,6 +155,10 @@
         {
           "id": "element-1704067200000-8",
           "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-6",
+          "type": "text"
         }
       ],
       "updated": 1704067200006,

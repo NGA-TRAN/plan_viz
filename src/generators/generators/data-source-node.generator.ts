@@ -2,6 +2,8 @@ import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
 import { BaseNodeGenerator } from './base-node.generator';
+import { visiblePartitions } from '../utils/visible-partitions';
+import { textWidth, wrapLabel } from '../utils/adaptive-layout';
 import {
   NODE_DIMENSIONS,
   FONT_SIZES,
@@ -49,7 +51,7 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       y: y + 5,
       width: nodeWidth,
       height: TEXT_HEIGHTS.OPERATOR,
-      text: 'DataSourceExec',
+      text: node.operator,
       fontSize: FONT_SIZES.OPERATOR,
       fontFamily: FONT_FAMILIES.BOLD,
       textAlign: 'center',
@@ -121,18 +123,8 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
     // count for streams, and only draw 2 + ... + 2 of the listed groups.
     const listedGroups = context.propertyParser.parseFileGroups(node.properties);
     const streamCount = context.propertyParser.parseFileGroupCount(node.properties);
-    const collapseGroups = streamCount > listedGroups.length;
-    let fileGroups = listedGroups;
-    if (
-      collapseGroups &&
-      listedGroups.length >
-        ARROW_CONSTANTS.ARROWS_BEFORE_ELLIPSIS + ARROW_CONSTANTS.ARROWS_AFTER_ELLIPSIS
-    ) {
-      fileGroups = [
-        ...listedGroups.slice(0, ARROW_CONSTANTS.ARROWS_BEFORE_ELLIPSIS),
-        ...listedGroups.slice(-ARROW_CONSTANTS.ARROWS_AFTER_ELLIPSIS),
-      ];
-    }
+    const collapseGroups = streamCount > listedGroups.length || streamCount > ARROW_CONSTANTS.MAX_ARROWS_FOR_ELLIPSIS;
+    const fileGroups = visiblePartitions(listedGroups.length, collapseGroups).map((index) => listedGroups[index]);
     const ellipseInfo: Array<{ id: string; centerX: number; centerY: number; groupIndex: number }> =
       [];
     const groupRects: Array<{
@@ -258,15 +250,20 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
           const fileName = group[fileIndex];
           // Extract just the filename (basename) from the path, then remove extension
           const basename = fileName.split('/').pop() || fileName; // Get last part of path
-          const fileNameWithoutExtension = basename.replace(/\.[^.]*$/, ''); // Remove extension
+          const fileNameWithoutExtension = basename.replace(/:[0-9]+\.\.[0-9]+$/, '').replace(/\.[^.]*$/, '');
+          const longName = textWidth(fileNameWithoutExtension, FONT_SIZES.ELLIPSE_TEXT) > 56;
+          const label = longName ? (fileNameWithoutExtension.length <= 10 ?
+            wrapLabel(fileNameWithoutExtension, 42, 12, 2) :
+            fileNameWithoutExtension.slice(0, 4) + '\n' + (listedGroups.indexOf(group) + 1) + '.' + (fileIndex + 1)) :
+            fileNameWithoutExtension;
           const ellipseText = context.elementFactory.createText({
             id: context.idGenerator.generateId(),
-            x: ellipseX + ellipseSize / 2 - 10,
+            x: ellipseX + 9,
             y: ellipseY + ellipseSize / 2 - 15,
-            width: 20,
+            width: 42,
             height: 30,
-            text: fileNameWithoutExtension,
-            fontSize: FONT_SIZES.ELLIPSE_TEXT,
+            text: label,
+            fontSize: longName ? 12 : Math.min(FONT_SIZES.ELLIPSE_TEXT, 42 / (fileNameWithoutExtension.length * 0.62 || 1)),
             fontFamily: FONT_FAMILIES.BOLD,
             textAlign: 'center',
             verticalAlign: 'middle',
@@ -481,24 +478,10 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
 
           // Parse projection columns
           const projectionText = projectionMatch[1];
-          const projectionColumns = context.propertyParser.parseCommaSeparated(projectionText);
+          const projectionColumns = context.propertyParser.extractProjectionColumns('[' + projectionText + ']');
 
           // Parse output_ordering to extract column names if present
-          const orderedColumns: Set<string> = new Set();
-          if (node.properties.output_ordering) {
-            // Extract column names from output_ordering format: [f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST]
-            const orderingMatch = node.properties.output_ordering.match(/\[([^\]]+)\]/);
-            if (orderingMatch) {
-              const orderingParts = context.propertyParser.parseCommaSeparated(orderingMatch[1]);
-              for (const part of orderingParts) {
-                // Extract column name before @ symbol
-                const columnMatch = part.trim().match(/^([^@]+)/);
-                if (columnMatch) {
-                  orderedColumns.add(columnMatch[1].trim());
-                }
-              }
-            }
-          }
+          const orderedColumns = new Set(context.propertyParser.extractSortOrder(node.properties.output_ordering ?? ''));
 
           // Position text to the right of the rightmost arrow to avoid overlap
           // Calculate the rightmost arrow position (center of rightmost group)
@@ -581,31 +564,30 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
     const inputArrowPositions: number[] =
       fileGroups.length > 0 && storedArrowEndPositions ? [...storedArrowEndPositions] : [];
 
-    // Extract output columns from projection property
-    const outputColumns: string[] = [];
-    if (node.properties && node.properties.projection) {
-      const projectionMatch = node.properties.projection.match(/\[([^\]]+)\]/);
-      if (projectionMatch) {
-        const projectionText = projectionMatch[1];
-        outputColumns.push(
-          ...context.propertyParser.parseCommaSeparated(projectionText).map((col) => col.trim())
-        );
-      }
-    }
-
-    // Extract output sort order from output_ordering property
-    const outputSortOrder: string[] = [];
-    if (node.properties && node.properties.output_ordering) {
-      const orderingMatch = node.properties.output_ordering.match(/\[([^\]]+)\]/);
-      if (orderingMatch) {
-        const orderingParts = context.propertyParser.parseCommaSeparated(orderingMatch[1]);
-        for (const part of orderingParts) {
-          const columnMatch = part.trim().match(/^([^@]+)/);
-          if (columnMatch) {
-            outputSortOrder.push(columnMatch[1].trim());
-          }
+    const outputColumns = context.propertyParser.extractProjectionColumns(node.properties?.projection ?? '');
+    const outputSortOrder = context.propertyParser.extractSortOrder(node.properties?.output_ordering ?? '');
+    const partitioning = node.properties?.output_partitioning ?? '';
+    const explicitCount = partitioning.match(/^(?:Hash\(\[.*\],\s*|RoundRobinBatch\(|UnknownPartitioning\()([0-9]+)\)$/);
+    const outputCount = explicitCount && Number(explicitCount[1]) > 0 ? Number(explicitCount[1]) : inputArrowCount;
+    const outputPositions = context.arrowCalculator.calculateOutputArrowPositions(outputCount, x, nodeWidth).positions;
+    // Extra source properties remain visible as bounded details.
+    const extras = Object.entries(node.properties ?? {}).filter(([key]) =>
+      !['file_groups', 'projection', 'output_ordering', 'limit'].includes(key) &&
+      !(key === 'predicate' && node.properties![key].includes('DynamicFilter')));
+    if (extras.length || collapseGroups) {
+      const summary = ['file groups: ' + streamCount, ...extras.map(([key, value]) => {
+        if (key === 'output_partitioning' && explicitCount) {
+          const family = value.slice(0, value.indexOf('('));
+          return 'output: ' + family + ', ' + outputCount + ' partitions';
         }
-      }
+        return key.replace(/_/g, ' ') + ': ' + value;
+      })].join('\n');
+      context.elements.push(context.elementFactory.createText({
+        id: context.idGenerator.generateId(), x: x + 10, y: y + 35, width: nodeWidth - 20,
+        height: summary.split('\n').length * 18, text: summary,
+        fontSize: FONT_SIZES.DETAILS, fontFamily: FONT_FAMILIES.NORMAL,
+        textAlign: 'center', verticalAlign: 'top', strokeColor: context.config.nodeColor,
+      }));
     }
 
     return {
@@ -614,8 +596,8 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       width: nodeWidth,
       height: nodeHeight,
       rectId,
-      inputArrowCount,
-      inputArrowPositions,
+      inputArrowCount: outputCount,
+      inputArrowPositions: explicitCount ? outputPositions : inputArrowPositions,
       outputColumns,
       outputSortOrder,
     };

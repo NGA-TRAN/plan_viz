@@ -41,7 +41,7 @@ export class RepartitionNodeGenerator extends BaseNodeGenerator {
       y: y + 5,
       width: nodeWidth,
       height: TEXT_HEIGHTS.OPERATOR,
-      text: 'RepartitionExec',
+      text: node.operator,
       fontSize: FONT_SIZES.OPERATOR,
       fontFamily: FONT_FAMILIES.BOLD,
       textAlign: 'center',

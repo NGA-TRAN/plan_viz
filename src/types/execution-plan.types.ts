@@ -1,7 +1,15 @@
 /**
  * Represents a node in the Apache Data Fusion physical execution plan tree
  */
+export interface OperatorWrapper {
+  operator: string;
+  argumentsText?: string;
+  rawText: string;
+}
+
 export interface ExecutionPlanNode {
+  /** Inline decorators, outermost first; children still belong to the inner operator. */
+  wrappers?: OperatorWrapper[];
   /** The operator type (e.g., ProjectionExec, FilterExec) */
   operator: string;
   /** Optional properties/metadata for the operator */

@@ -57,6 +57,8 @@ import { GenerationContext } from './types/generation-context.types';
 import { NodeInfo } from './types/node-info.types';
 import { groupNodeVisuals } from './utils/node-group';
 import { bindTextToContainers } from './utils/text-binding';
+import { resolveOperator } from './generators/operator-resolver';
+import { LayoutRecord, layoutAdaptiveTree, wrapLabel, textWidth } from './utils/adaptive-layout';
 
 /**
  * Generator for Excalidraw JSON from execution plan nodes
@@ -64,6 +66,8 @@ import { bindTextToContainers } from './utils/text-binding';
  * Follows Single Responsibility Principle - coordinates generation without implementing details
  */
 export class ExcalidrawGenerator {
+  private records = new Map<ExecutionPlanNode, LayoutRecord>();
+  private needsAdaptiveLayout = false;
   private readonly config: ResolvedExcalidrawConfig;
   private readonly idGenerator: IdGenerator;
   private readonly textMeasurement: TextMeasurement;
@@ -118,12 +122,17 @@ export class ExcalidrawGenerator {
    */
   public generate(root: ExecutionPlanNode | null): ExcalidrawData {
     const elements: ExcalidrawElement[] = [];
+    this.records = new Map();
+    this.needsAdaptiveLayout = false;
 
     if (root) {
       // Root node is the first line of physical_plan - it should not have output arrows
       this.generateNodeElements(root, 0, 0, elements, true);
     }
 
+    if (root && this.needsAdaptiveLayout) {
+      layoutAdaptiveTree(this.records.get(root)!, elements, this.config.verticalSpacing, this.config.horizontalSpacing);
+    }
     bindTextToContainers(elements);
 
     return {
@@ -175,12 +184,72 @@ export class ExcalidrawGenerator {
     const context = this.createGenerationContext(elements);
     context.nodeGroupId = groupId;
 
-    const generator = this.nodeGeneratorRegistry.hasGenerator(node.operator) ?
-      this.nodeGeneratorRegistry.getGenerator(node.operator) :
-      this.nodeGeneratorRegistry.getGenerator('default');
-    const info = generator.generate(node, x, y, isRoot, context);
-    groupNodeVisuals(elements, info.rectId, groupId);
+    const start = elements.length;
+    // An exact outer registration may intentionally implement the whole decorator.
+    const outerOverride = node.wrappers?.findIndex((wrapper) => this.nodeGeneratorRegistry.hasGenerator(wrapper.operator)) ?? -1;
+    const effectiveNode = outerOverride >= 0 ? {
+      ...node, operator: node.wrappers![outerOverride].operator,
+      properties: { expression: node.wrappers![outerOverride].argumentsText ?? '' },
+      wrappers: node.wrappers!.slice(0, outerOverride),
+    } : node;
+    const resolution = resolveOperator(effectiveNode, this.nodeGeneratorRegistry);
+    const info = resolution.generator.generate(effectiveNode, x, y, isRoot, context);
+    const bodyId = info.rectId;
+    const children = node.children.map((child) => this.records.get(child)).filter((child): child is LayoutRecord => !!child);
+    const childElements = new Set(children.flatMap(function collect(child): ExcalidrawElement[] {
+      return [...child.own, ...child.children.flatMap(collect)];
+    }));
+    const own = elements.slice(start).filter((e) => !childElements.has(e));
+    groupNodeVisuals(own, info.rectId, groupId);
     info.groupId = groupId;
+    const headers: string[] = [];
+    const wrappers = effectiveNode.wrappers ?? [];
+    if (wrappers.length) {
+      const body = elements.find((e) => e.id === bodyId)!;
+      const panels = wrappers.map((wrapper) => {
+        const text = wrapLabel(wrapper.operator + (wrapper.argumentsText ? '\n' + wrapper.argumentsText : ''),
+          body.width - 24, this.config.detailsFontSize);
+        return { text, height: text.split('\n').length * this.config.detailsFontSize * 1.25 + 20 };
+      });
+      const headerHeight = panels.reduce((sum, panel) => sum + panel.height, 0);
+      for (const e of elements.slice(start)) e.y += headerHeight;
+      const outer = this.elementFactory.createRectangle({
+        id: this.idGenerator.generateId(), x: body.x, y, width: body.width,
+        height: body.height + headerHeight, strokeColor: this.config.nodeColor, roundnessType: 3,
+      });
+      outer.groupIds = [groupId];
+      elements.push(outer);
+      own.push(outer);
+      let headerY = y;
+      for (const panel of panels) {
+        const header = this.elementFactory.createRectangle({
+          id: this.idGenerator.generateId(), x: body.x, y: headerY, width: body.width,
+          height: panel.height, strokeColor: this.config.nodeColor, roundnessType: 3,
+        });
+        const title = this.elementFactory.createText({
+          id: this.idGenerator.generateId(), x: body.x + 12, y: headerY + 10,
+          width: body.width - 24, height: panel.height - 20, text: panel.text,
+          fontSize: this.config.detailsFontSize, fontFamily: 7, textAlign: 'center',
+          verticalAlign: 'top', containerId: header.id, strokeColor: this.config.nodeColor,
+        });
+        header.groupIds = [groupId];
+        title.groupIds = [groupId];
+        headers.push(header.id);
+        elements.push(header, title);
+        own.push(header, title);
+        headerY += panel.height;
+      }
+      info.rectId = outer.id;
+      info.height = outer.height;
+      info.y += headerHeight;
+    }
+    const body = elements.find((e) => e.id === bodyId)!;
+    const overflowing = own.some((e) => e.type === 'text' && e.y >= body.y && e.y < body.y + body.height &&
+      (!e.containerId || e.containerId === bodyId) &&
+      (e.text.split('\n').some((line) => textWidth(line, e.fontSize) > body.width - 20) ||
+       e.y + e.height > body.y + body.height));
+    this.needsAdaptiveLayout ||= overflowing || resolution.inferred || resolution.family === 'default' || wrappers.length > 0;
+    this.records.set(node, { info, bodyId, own, children, headers });
     return info;
   }
 

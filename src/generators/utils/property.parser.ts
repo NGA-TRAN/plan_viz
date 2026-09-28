@@ -1,3 +1,4 @@
+import { splitTopLevel, listContent, withoutColumnIndex, expressionAlias } from '../../parsers/plan-text';
 /**
  * Property Parser utility
  * Extracts and parses properties from execution plan nodes
@@ -8,56 +9,7 @@ export class PropertyParser {
    * Handles complex expressions like function calls, arrays, etc.
    */
   parseCommaSeparated(text: string): string[] {
-    const items: string[] = [];
-    let pos = 0;
-    let parenDepth = 0;
-    let bracketDepth = 0;
-    let braceDepth = 0;
-    let currentItem = '';
-
-    while (pos < text.length) {
-      const char = text[pos];
-
-      if (char === '(') {
-        parenDepth++;
-        currentItem += char;
-        pos++;
-      } else if (char === ')') {
-        parenDepth--;
-        currentItem += char;
-        pos++;
-      } else if (char === '[') {
-        bracketDepth++;
-        currentItem += char;
-        pos++;
-      } else if (char === ']') {
-        bracketDepth--;
-        currentItem += char;
-        pos++;
-      } else if (char === '{') {
-        braceDepth++;
-        currentItem += char;
-        pos++;
-      } else if (char === '}') {
-        braceDepth--;
-        currentItem += char;
-        pos++;
-      } else if (char === ',' && parenDepth === 0 && bracketDepth === 0 && braceDepth === 0) {
-        // Comma outside nested structures means end of this item
-        items.push(currentItem.trim());
-        currentItem = '';
-        pos++;
-      } else {
-        currentItem += char;
-        pos++;
-      }
-    }
-
-    if (currentItem.trim()) {
-      items.push(currentItem.trim());
-    }
-
-    return items;
+    return splitTopLevel(text);
   }
 
   /**
@@ -82,61 +34,11 @@ export class PropertyParser {
 
     const groupsArrayStr = groupsMatch[1];
 
-    // Parse nested arrays manually
-    const groups: string[][] = [];
-    let depth = 0;
-    let currentGroup: string[] = [];
-    let currentFile = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < groupsArrayStr.length; i++) {
-      const char = groupsArrayStr[i];
-
-      if (char === '"' || char === '\'') {
-        inQuotes = !inQuotes;
-        continue;
-      }
-
-      if (inQuotes) {
-        currentFile += char;
-        continue;
-      }
-
-      if (char === '[') {
-        if (depth === 1) {
-          // Starting a new group
-          currentGroup = [];
-          currentFile = '';
-        }
-        depth++;
-      } else if (char === ']') {
-        depth--;
-        if (depth === 1) {
-          // Ending a group
-          if (currentFile.trim()) {
-            currentGroup.push(currentFile.trim().replace(/^["']|["']$/g, ''));
-          }
-          if (currentGroup.length > 0) {
-            groups.push([...currentGroup]);
-          }
-          currentGroup = [];
-          currentFile = '';
-        } else if (depth === 0) {
-          // Done parsing
-          break;
-        }
-      } else if (char === ',' && depth === 2) {
-        // File separator within a group
-        if (currentFile.trim()) {
-          currentGroup.push(currentFile.trim().replace(/^["']|["']$/g, ''));
-        }
-        currentFile = '';
-      } else if (depth >= 2) {
-        currentFile += char;
-      }
-    }
-
-    return groups;
+    return splitTopLevel(listContent(groupsArrayStr))
+      .filter((group) => group.startsWith('[') && group.endsWith(']'))
+      .map((group) => splitTopLevel(listContent(group))
+        .map((file) => file.trim().replace(/^["']|["']$/g, '')))
+      .filter((group) => group.length > 0);
   }
 
   /**
@@ -171,17 +73,8 @@ export class PropertyParser {
    * Example: "projection=[col1@0, col2@1]" -> ["col1", "col2"]
    */
   extractProjectionColumns(property: string): string[] {
-    const match = property.match(/\[([^\]]+)\]/);
-    if (!match) {
-      return [];
-    }
-    const projectionText = match[1];
-    return projectionText.split(',').map((col) => {
-      const trimmed = col.trim();
-      // Remove @ symbol and number after it
-      const columnMatch = trimmed.match(/^([^@]+)/);
-      return columnMatch ? columnMatch[1].trim() : trimmed;
-    });
+    if (!property.trim().startsWith('[')) return [];
+    return splitTopLevel(listContent(property)).map((column) => withoutColumnIndex(column));
   }
 
   /**
@@ -189,20 +82,10 @@ export class PropertyParser {
    * Example: "[f_dkey@0 ASC NULLS LAST, timestamp@1 ASC NULLS LAST]" -> ["f_dkey", "timestamp"]
    */
   extractSortOrder(property: string): string[] {
-    const orderingMatch = property.match(/\[([^\]]+)\]/);
-    if (!orderingMatch) {
-      return [];
-    }
-    const orderingParts = orderingMatch[1].split(',');
-    const sortOrder: string[] = [];
-    for (const part of orderingParts) {
-      // Extract column name before @ symbol
-      const columnMatch = part.trim().match(/^([^@]+)/);
-      if (columnMatch) {
-        sortOrder.push(columnMatch[1].trim());
-      }
-    }
-    return sortOrder;
+    if (!property.trim().startsWith('[')) return [];
+    return splitTopLevel(listContent(property)).map((column) =>
+      withoutColumnIndex(column).replace(/\s+(?:ASC|DESC)(?:\s+NULLS\s+(?:FIRST|LAST))?$/i, '').trim()
+    );
   }
 
   /**
@@ -253,6 +136,8 @@ export class PropertyParser {
    */
   extractColumnName(expression: string): string {
     const trimmed = expression.trim();
+    const alias = expressionAlias(trimmed);
+    if (alias) return alias;
 
     // Check if it's a function call (e.g., date_bin(...))
     const functionMatch = trimmed.match(/^(\w+)\s*\(/);
@@ -267,8 +152,7 @@ export class PropertyParser {
     }
 
     // Otherwise, extract column name before @ symbol
-    const columnMatch = trimmed.match(/^([^@]+)/);
-    return columnMatch ? columnMatch[1].trim() : trimmed;
+    return withoutColumnIndex(trimmed);
   }
 
   /**
@@ -328,11 +212,7 @@ export class PropertyParser {
       const columnsStr = hashMatch[1];
       const partitionCount = parseInt(hashMatch[2], 10);
       // Extract column names (remove @N parts)
-      const columns = columnsStr.split(',').map((col) => {
-        const trimmed = col.trim();
-        const columnMatch = trimmed.match(/^([^@]+)/);
-        return columnMatch ? columnMatch[1].trim() : trimmed;
-      });
+      const columns = splitTopLevel(columnsStr).map(withoutColumnIndex);
       return {
         simplified: `Hash([${columns.join(', ')}], ${partitionCount})`,
         partitionCount,

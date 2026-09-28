@@ -116,6 +116,7 @@ export class WrapperNodeGenerator extends BaseNodeGenerator {
         outputArrowPositions.length > 0 ? outputArrowPositions : childResult.allInputArrowPositions,
       outputColumns,
       outputSortOrder,
+      streamCountKnown: childResult.firstChildInfo?.streamCountKnown,
     };
   }
 }
