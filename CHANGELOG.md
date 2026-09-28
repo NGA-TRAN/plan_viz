@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-09-28
+
 ### Added
 - Recognize unfamiliar file-source, aggregate, repartition, and hash-join operators from their properties and child counts while retaining their original labels and custom-generator precedence.
 - Render inline wrappers as grouped header panels above the inner operator, including nested wrappers.

@@ -1,6 +1,6 @@
 {
   "name": "plan-viz",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "Convert Apache Data Fusion Physical Execution Plans to Excalidraw JSON format",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
