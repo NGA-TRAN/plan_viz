@@ -114,7 +114,7 @@ describe('BaseNodeGenerator', () => {
     });
 
     it('should process single child', () => {
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [
         NodeBuilder.createSimpleNode('ChildOp'),
       ]);
       const result = generator.generate(node);
@@ -127,7 +127,7 @@ describe('BaseNodeGenerator', () => {
       // Create a child node that will have 2 input arrows
       // We need to use an operator that generates 2 arrows, like RepartitionExec with 2 partitions
       const childNode = NodeBuilder.createRepartitionExec('Hash(2)', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       TestHelpers.assertHasArrows(result);
@@ -141,7 +141,7 @@ describe('BaseNodeGenerator', () => {
       // Create a child that has 2 arrows but inputArrowPositions don't match
       // Use RepartitionExec with 2 partitions - it should trigger the balancing logic
       const childNode = NodeBuilder.createRepartitionExec('Hash(2)', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should create 2 arrows balanced at edges
@@ -159,7 +159,7 @@ describe('BaseNodeGenerator', () => {
       // Need a scenario where child has 2 arrows but positions array doesn't match
       // Create a child with 2 output arrows but mismatched inputArrowPositions
       const childNode = NodeBuilder.createRepartitionExec('Hash(2)', []);
-      const parentNode = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const parentNode = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(parentNode);
 
       // Should have arrows positioned at left and right edges of parent rectangle
@@ -174,7 +174,7 @@ describe('BaseNodeGenerator', () => {
     it('should handle child with multiple input arrows (3+)', () => {
       // Create a child with 3+ arrows - use RepartitionExec with more partitions
       const childNode = NodeBuilder.createRepartitionExec('Hash(5)', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       TestHelpers.assertHasArrows(result);
@@ -183,7 +183,7 @@ describe('BaseNodeGenerator', () => {
     });
 
     it('should handle multiple children', () => {
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [
         NodeBuilder.createSimpleNode('Child1'),
         NodeBuilder.createSimpleNode('Child2'),
       ]);
@@ -194,7 +194,7 @@ describe('BaseNodeGenerator', () => {
     });
 
     it('should track maxChildY correctly for multiple children', () => {
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [
         NodeBuilder.createSimpleNode('Child1'),
         NodeBuilder.createSimpleNode('Child2'),
         NodeBuilder.createSimpleNode('Child3'),
@@ -208,7 +208,7 @@ describe('BaseNodeGenerator', () => {
     it('should use child input arrow positions when available and count matches', () => {
       // Create a child that has specific input arrow positions
       const childNode = NodeBuilder.createRepartitionExec('Hash(2)', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Verify arrows are positioned correctly
@@ -219,7 +219,7 @@ describe('BaseNodeGenerator', () => {
     it('should balance arrows when child input positions are not available', () => {
       // Create a simple child without specific arrow positions
       const childNode = NodeBuilder.createSimpleNode('ChildOp');
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should still create arrows
@@ -228,7 +228,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should handle child with output columns and sort order', () => {
       const childNode = NodeBuilder.createSortExec('[id ASC]', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should create arrows with column labels if applicable
@@ -237,7 +237,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should bind arrows to connected elements', () => {
       const childNode = NodeBuilder.createSimpleNode('ChildOp');
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       const arrows = TestHelpers.getArrows(result.elements) as ExcalidrawArrow[];
@@ -263,7 +263,7 @@ describe('BaseNodeGenerator', () => {
     it('should create arrows with ellipsis for many arrows', () => {
       // Create a child with many arrows (more than MAX_ARROWS_FOR_ELLIPSIS = 8)
       const childNode = NodeBuilder.createRepartitionExec('Hash(10)', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should show ellipsis
@@ -273,7 +273,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should create arrows without ellipsis for few arrows', () => {
       const childNode = NodeBuilder.createSimpleNode('ChildOp');
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should not show ellipsis
@@ -283,7 +283,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should render column labels when columns are provided', () => {
       const childNode = NodeBuilder.createProjectionExec('[id, name, age]', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should have column labels
@@ -296,7 +296,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should handle sort order for column labels', () => {
       const childNode = NodeBuilder.createSortExec('[id ASC]', []);
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should create arrows and potentially column labels
@@ -307,7 +307,7 @@ describe('BaseNodeGenerator', () => {
   describe('edge cases', () => {
     it('should handle child with zero input arrows', () => {
       const childNode = NodeBuilder.createSimpleNode('ChildOp');
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should still create at least one arrow (Math.max(1, 0) = 1)
@@ -316,7 +316,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should handle empty columns array', () => {
       const childNode = NodeBuilder.createSimpleNode('ChildOp');
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should not throw and should create arrows
@@ -325,7 +325,7 @@ describe('BaseNodeGenerator', () => {
 
     it('should handle empty sort order array', () => {
       const childNode = NodeBuilder.createSimpleNode('ChildOp');
-      const node = NodeBuilder.createNodeWithChildren('ParentOp', [childNode]);
+      const node = NodeBuilder.createNodeWithChildren('CoalesceBatchesExec', [childNode]);
       const result = generator.generate(node);
 
       // Should not throw

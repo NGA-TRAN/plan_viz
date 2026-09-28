@@ -34,6 +34,10 @@
         {
           "id": "element-1704067200000-7",
           "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-2",
+          "type": "text"
         }
       ],
       "updated": 1704067200002,
@@ -111,6 +115,10 @@
         {
           "id": "element-1704067200000-7",
           "type": "arrow"
+        },
+        {
+          "id": "element-1704067200000-5",
+          "type": "text"
         }
       ],
       "updated": 1704067200005,
@@ -186,14 +194,14 @@
       "updated": 1704067200007,
       "link": null,
       "locked": false,
-      "text": "count",
+      "text": "count(*)",
       "fontSize": 14,
       "fontFamily": 6,
       "textAlign": "center",
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "count",
+      "originalText": "count(*)",
       "autoResize": false,
       "lineHeight": 1.25
     },

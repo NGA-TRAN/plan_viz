@@ -1,3 +1,5 @@
+import { compactExpression } from '../utils/adaptive-layout';
+import { listContent } from '../../parsers/plan-text';
 import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { NodeInfo } from '../types/node-info.types';
 import { GenerationContext } from '../types/generation-context.types';
@@ -57,48 +59,10 @@ export class ProjectionNodeGenerator extends BaseNodeGenerator {
     // ProjectionExec: outputColumns come from aliases/column names in expr
     let detailText = '';
     const outputColumns: string[] = [];
-    const detailItems: string[] = [];
-
     if (node.properties?.expr) {
-      const exprMatch = node.properties.expr.match(/\[([^\]]+)\]/);
-      if (exprMatch) {
-        const exprContent = exprMatch[1];
-        // Parse comma-separated items respecting nested parentheses
-        const items = context.propertyParser.parseCommaSeparated(exprContent);
-
-        items.forEach((item) => {
-          const trimmed = item.trim();
-          // Extract alias after "as" keyword for outputColumns
-          const asMatch = trimmed.match(/\s+as\s+(.+?)(?:\s*@|$)/i);
-          let aliasOrColumn = '';
-          if (asMatch) {
-            aliasOrColumn = asMatch[1].trim();
-          } else {
-            // No alias, extract column name before @ symbol
-            const columnMatch = trimmed.match(/^([^@]+)/);
-            aliasOrColumn = columnMatch ? columnMatch[1].trim() : trimmed;
-          }
-          outputColumns.push(aliasOrColumn);
-
-          // For details: check if expression before "as" is a function
-          // Extract the expression part (before "as")
-          const exprPart = trimmed.split(/\s+as\s+/i)[0].trim();
-          // Check if it's a function (contains opening parenthesis before @)
-          const functionMatch = exprPart.match(/^(\w+)\s*\(/);
-          if (functionMatch) {
-            // It's a function, show only function name in details
-            detailItems.push(functionMatch[1]);
-          } else {
-            // Not a function, show the alias/column name
-            detailItems.push(aliasOrColumn);
-          }
-        });
-
-        detailText = detailItems.join(', ');
-      } else {
-        // Fallback: just remove brackets if format doesn't match
-        detailText = node.properties.expr.replace(/^\[|\]$/g, '');
-      }
+      const items = context.propertyParser.parseCommaSeparated(listContent(node.properties.expr));
+      outputColumns.push(...items.map((item) => context.propertyParser.extractColumnName(item)));
+      detailText = outputColumns.map(compactExpression).join(', ');
     }
 
     // Create detail text at bottom center

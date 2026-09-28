@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Recognize unfamiliar file-source, aggregate, repartition, and hash-join operators from their properties and child counts while retaining their original labels and custom-generator precedence.
+- Render inline wrappers as grouped header panels above the inner operator, including nested wrappers.
+- Add synthetic operator fixtures and an external snapshot-corpus audit with explicit single-node scope.
+
+### Fixed
+- Replace the red unimplemented fallback with neutral property summaries and separated child subtrees.
+- Keep single-input operator boxes on the same vertical centerline, independent of file glyphs and column labels.
+- Fit long labels and pack complete subtrees; compact large file-group and hash-table layouts while retaining logical partition counts.
+- Preserve quoted delimiters, nested expressions, aliases, and column names starting with `@`; display partial aggregate ordering.
+- Use explicit source output partitioning when present, and reject unsupported distributed/stage input instead of drawing a partial plan.
+
 ## [0.1.23] - 2026-09-22
 
 ### Fixed

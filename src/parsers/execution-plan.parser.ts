@@ -1,5 +1,7 @@
+import { topLevelPositions } from './plan-text';
 import {
   ExecutionPlanNode,
+  OperatorWrapper,
   ParsedExecutionPlan,
   ParserConfig,
 } from '../types/execution-plan.types';
@@ -42,8 +44,20 @@ export class ExecutionPlanParser {
     const extractedPlan = this.extractPhysicalPlanFromExplain(planText);
     const planToParse = extractedPlan || planText;
 
+    if (planToParse.split('\n').some((line) =>
+      /^\s*(?:[│|]\s*)?(?:\[Stage\s+[0-9]+\]|(?:Distributed\w*Exec|Network\w*Exec)\b|┌────)/.test(line)
+    )) {
+      throw new Error('Distributed plans are not supported; provide a single-node physical plan.');
+    }
     const lines = this.preprocessLines(planToParse);
     const root = this.buildTree(lines);
+    const rejectDistributed = (node: ExecutionPlanNode): void => {
+      if (/^(?:Distributed\w*Exec|Network\w*Exec)\b/.test(node.operator)) {
+        throw new Error('Distributed plans are not supported; provide a single-node physical plan.');
+      }
+      node.children.forEach(rejectDistributed);
+    };
+    if (root) rejectDistributed(root);
 
     return {
       root,
@@ -83,7 +97,7 @@ export class ExecutionPlanParser {
         foundPhysicalPlan = true;
         const planLines: string[] = [];
         if (parts.length >= 3) {
-          planLines.push(parts[2].trim());
+          planLines.push(parts.slice(2, -1).join('|').trim());
         }
         // Check if the plan continues on subsequent lines (if it's wrapped)
         // Preserve indentation structure by keeping each line separate
@@ -98,7 +112,7 @@ export class ExecutionPlanParser {
           ) {
             const nextParts = nextLine.split('|');
             if (nextParts.length >= 3) {
-              const continuationText = nextParts[2]; // Use parts[2] which is the plan column
+              const continuationText = nextParts.slice(2, -1).join('|'); // Use parts[2] which is the plan column
               // Count leading spaces to determine indentation level
               const leadingSpacesMatch = continuationText.match(/^(\s*)/);
               const leadingSpaces = leadingSpacesMatch ? leadingSpacesMatch[1].length : 0;
@@ -143,9 +157,11 @@ export class ExecutionPlanParser {
         // Example: "|               |         AggregateExec: ... |" -> "         AggregateExec: ..."
         // Important: preserve leading spaces in the operator column as they indicate indentation level
         let processed = line.trimEnd();
+        // Copied plan-column output can retain its trailing table border.
+        if (!processed.trimStart().startsWith('|')) processed = processed.replace(/\s+\|$/, '').trimEnd();
 
         // If line contains pipe characters, extract the operator column (preserving leading spaces)
-        if (processed.includes('|')) {
+        if (processed.trimStart().startsWith('|')) {
           const parts = processed.split('|').map((p) => p.trimEnd());
           // Find the last non-empty part that contains an operator (not just whitespace)
           // Usually this is the second-to-last part (before the trailing pipe)
@@ -191,11 +207,12 @@ export class ExecutionPlanParser {
 
     for (const line of lines) {
       const level = this.getIndentationLevel(line);
-      const { operator, properties } = this.parseOperatorLine(line.trim());
+      const { operator, properties, wrappers } = this.parseOperatorLine(line.trim());
 
       const node: ExecutionPlanNode = {
         operator,
         properties,
+        ...(wrappers?.length ? { wrappers } : {}),
         children: [],
         level,
       };
@@ -229,6 +246,7 @@ export class ExecutionPlanParser {
   private parseOperatorLine(line: string): {
     operator: string;
     properties?: Record<string, string>;
+    wrappers?: OperatorWrapper[];
   } {
     if (!this.config.extractProperties) {
       return { operator: line };
@@ -238,7 +256,25 @@ export class ExecutionPlanParser {
     // "ProjectionExec: expr=[a, b, c]"
     // "FilterExec: predicate=a > 10"
     // "CoalescePartitionsExec, metrics=[...]"
-    const colonIndex = line.indexOf(':');
+    const colonIndex = topLevelPositions(line).find((index) => line[index] === ':') ?? -1;
+    if (colonIndex >= 0) {
+      const prefix = line.slice(0, colonIndex).trim();
+      const header = prefix.match(/^([A-Za-z_]\w*)(?:\(([\s\S]*)\))?$/);
+      const rest = line.slice(colonIndex + 1).trim();
+      const innerColon = topLevelPositions(rest).find((index) => rest[index] === ':');
+      const innerHeader = innerColon === undefined ? rest : rest.slice(0, innerColon).trim();
+      const isInner = /^[A-Za-z_]\w*(?:\([\s\S]*\))?$/.test(innerHeader) &&
+        (innerColon !== undefined ? !rest.slice(innerColon + 1).startsWith('//') : /Exec$/.test(innerHeader) || innerHeader === 'SortMergeJoin' || !!header?.[2]);
+      if (header && isInner) {
+        const inner = this.parseOperatorLine(rest);
+        return {
+          ...inner,
+          wrappers: [{
+            operator: header[1], argumentsText: header[2], rawText: prefix,
+          }, ...(inner.wrappers ?? [])],
+        };
+      }
+    }
     if (colonIndex === -1) {
       const bareWithProperties = line.match(/^([A-Za-z]\w*)\s*,\s*(.+)$/);
       if (bareWithProperties) {
@@ -324,129 +360,24 @@ export class ExecutionPlanParser {
    * Extracts key-value pairs from a properties string
    */
   private extractKeyValuePairs(text: string): Array<[string, string]> {
-    const pairs: Array<[string, string]> = [];
-    let pos = 0;
-
-    while (pos < text.length) {
-      // Skip whitespace
-      while (pos < text.length && /\s/.test(text[pos])) {
-        pos++;
-      }
-
-      if (pos >= text.length) break;
-
-      // Extract key
-      const keyMatch = this.matchKeyValueAt(text, pos);
-      if (!keyMatch) break;
-
-      const key = keyMatch[1];
-      pos += keyMatch[0].length;
-
-      // Skip whitespace after =
-      while (pos < text.length && /\s/.test(text[pos])) {
-        pos++;
-      }
-
-      // Extract value (handle square brackets, parentheses, and other delimiters)
-      let value = '';
-      let bracketDepth = 0;
-      let parenDepth = 0;
-      let braceDepth = 0;
-
-      while (pos < text.length) {
-        const char = text[pos];
-
-        if (char === '[') {
-          bracketDepth++;
-          value += char;
-          pos++;
-        } else if (char === ']') {
-          bracketDepth--;
-          value += char;
-          pos++;
-        } else if (char === '{') {
-          braceDepth++;
-          value += char;
-          pos++;
-        } else if (char === '}') {
-          braceDepth--;
-          value += char;
-          pos++;
-        } else if (char === '(') {
-          parenDepth++;
-          value += char;
-          pos++;
-        } else if (char === ')') {
-          parenDepth--;
-          value += char;
-          pos++;
-        } else if (char === ',' && bracketDepth === 0 && parenDepth === 0 && braceDepth === 0) {
-          // A comma outside nested structures only ends this property when the
-          // next token is another key=value pair. Some DataFusion values, such
-          // as sort_exprs, are unbracketed comma-separated lists.
-          const nextPos = this.skipWhitespace(text, pos + 1);
-          if (this.matchKeyValueAt(text, nextPos)) {
-            pos++; // Skip the comma
-            break;
-          }
-          value += char;
-          pos++;
-        } else {
-          value += char;
-          pos++;
-        }
-      }
-
-      pairs.push([key.trim(), value.trim()]);
-    }
-
-    return pairs;
+    const starts = topLevelPositions(text).filter((index) =>
+      (index === 0 || /[\s,]/.test(text[index - 1])) &&
+      !!text.slice(index).match(/^([A-Za-z_][\w.-]*)\s*=(?!=)/)
+    );
+    // A new property must follow a top-level comma, not whitespace inside a value.
+    const boundaries = starts.filter((index) => index === 0 || text.slice(0, index).trimEnd().endsWith(','));
+    return boundaries.map((index, position) => {
+      const match = text.slice(index).match(/^([A-Za-z_][\w.-]*)\s*=(?!=)/)!;
+      const end = boundaries[position + 1] ?? text.length;
+      return [match[1], text.slice(index + match[0].length, end).trim().replace(/,\s*$/, '')];
+    });
   }
 
-  /**
-   * Finds the first top-level key=value token in a property string.
-   */
   private findFirstKeyValueIndex(text: string): number {
-    let bracketDepth = 0;
-    let parenDepth = 0;
-    let braceDepth = 0;
-
-    for (let pos = 0; pos < text.length; pos++) {
-      const char = text[pos];
-      if (char === '[') {
-        bracketDepth++;
-      } else if (char === ']') {
-        bracketDepth--;
-      } else if (char === '(') {
-        parenDepth++;
-      } else if (char === ')') {
-        parenDepth--;
-      } else if (char === '{') {
-        braceDepth++;
-      } else if (char === '}') {
-        braceDepth--;
-      }
-
-      if (bracketDepth === 0 && parenDepth === 0 && braceDepth === 0) {
-        const previous = pos === 0 ? '' : text[pos - 1];
-        if ((pos === 0 || /[\s,]/.test(previous)) && this.matchKeyValueAt(text, pos)) {
-          return pos;
-        }
-      }
-    }
-
-    return -1;
-  }
-
-  private matchKeyValueAt(text: string, pos: number): RegExpMatchArray | null {
-    return text.substring(pos).match(/^([A-Za-z_][\w.-]*)\s*=/);
-  }
-
-  private skipWhitespace(text: string, pos: number): number {
-    while (pos < text.length && /\s/.test(text[pos])) {
-      pos++;
-    }
-    return pos;
+    return topLevelPositions(text).find((index) =>
+      (index === 0 || /[\s,]/.test(text[index - 1])) &&
+      !!text.slice(index).match(/^([A-Za-z_][\w.-]*)\s*=(?!=)/)
+    ) ?? -1;
   }
 
   /**

@@ -3,6 +3,7 @@ import { ElementFactory } from '../factories/element.factory';
 import { TextMeasurement } from '../utils/text-measurement';
 import { IdGenerator } from '../utils/id.generator';
 import { COLORS, FONT_SIZES, TEXT_HEIGHTS, FONT_FAMILIES, ELEMENT_DEFAULTS } from '../constants';
+import { compactExpression } from '../utils/adaptive-layout';
 import { addGroupId } from '../utils/node-group';
 
 export interface ColumnLabelOptions {
@@ -50,14 +51,14 @@ export class ColumnLabelRenderer {
       const color = isOrdered ? COLORS.ORDERED_COLUMN : nodeColor;
 
       // Group consecutive columns with the same color
-      const groupParts: string[] = [column];
+      const groupParts: string[] = [compactExpression(column)];
       let j = i + 1;
       while (j < columns.length) {
         const nextColumn = columns[j];
         const nextIsOrdered = orderedColumns.has(nextColumn);
         const nextColor = nextIsOrdered ? COLORS.ORDERED_COLUMN : nodeColor;
         if (nextColor === color) {
-          groupParts.push(nextColumn);
+          groupParts.push(compactExpression(nextColumn));
           j++;
         } else {
           break;
@@ -153,14 +154,14 @@ export class ColumnLabelRenderer {
       const column = columns[i];
       const isOrdered = orderedColumns.has(column);
       const color = isOrdered ? COLORS.ORDERED_COLUMN : nodeColor;
-      const groupParts: string[] = [column];
+      const groupParts: string[] = [compactExpression(column)];
       let j = i + 1;
       while (j < columns.length) {
         const nextColumn = columns[j];
         const nextIsOrdered = orderedColumns.has(nextColumn);
         const nextColor = nextIsOrdered ? COLORS.ORDERED_COLUMN : nodeColor;
         if (nextColor === color) {
-          groupParts.push(nextColumn);
+          groupParts.push(compactExpression(nextColumn));
           j++;
         } else {
           break;

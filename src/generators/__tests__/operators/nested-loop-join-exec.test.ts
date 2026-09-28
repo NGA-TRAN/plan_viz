@@ -111,7 +111,7 @@ describe('ExcalidrawGenerator - NestedLoopJoinExec', () => {
     expect(texts.some((text) => text.includes('projection=[x@0, y@2]'))).toBe(true);
     const filterLine = texts.find((text) => text.includes('filter='));
     expect(filterLine).toBeDefined();
-    const filterValue = filterLine?.split('\n').find((line) => line.startsWith('filter='));
+    const filterValue = filterLine?.slice(filterLine.indexOf('filter=')).split('projection=')[0].replace(/\n/g, '');
     expect(filterValue?.includes('...')).toBe(true);
     expect(filterValue && filterValue.length <= 70).toBe(true);
   });

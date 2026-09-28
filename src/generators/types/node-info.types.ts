@@ -25,5 +25,7 @@ export interface NodeInfo {
   outputSortOrder: string[];
   /** When true, parents must not invent a stream (EmptyExec). */
   emitsNoStreams?: boolean;
+  /** False when an unknown operator has only topology connections. */
+  streamCountKnown?: boolean;
 }
 
