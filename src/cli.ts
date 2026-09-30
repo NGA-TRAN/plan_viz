@@ -3,10 +3,12 @@
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
-import { convertPlanToExcalidraw } from './index';
+import { ConverterService } from './services/converter.service';
 
 interface CliOptions {
   input?: string;
+  section?: number;
+  allWorkers?: boolean;
   output?: string;
   nodeWidth: number;
   nodeHeight: number;
@@ -29,6 +31,8 @@ program
 program
   .option('-i, --input <file>', 'Input file containing the execution plan')
   .option('-o, --output <file>', 'Output file for Excalidraw JSON')
+  .option('--section <number>', 'Select a 1-based plan section', Number)
+  .option('--all-workers', 'Draw every distributed task')
   .option(
     '--node-width <number>',
     'Width of each node box',
@@ -73,6 +77,8 @@ program
 
       // Convert
       const config = {
+        input: { section: options.section },
+        distributed: { workerDisplay: options.allWorkers ? 'all' as const : 'representative' as const },
         generator: {
           nodeWidth: options.nodeWidth,
           nodeHeight: options.nodeHeight,
@@ -81,7 +87,9 @@ program
         },
       };
 
-      const excalidrawData = convertPlanToExcalidraw(planText, config);
+      const result = new ConverterService(config).convertDetailed(planText);
+      for (const diagnostic of result.diagnostics) console.error(diagnostic.code + ': ' + diagnostic.message);
+      const excalidrawData = result.scene;
       const output = JSON.stringify(excalidrawData, null, 2);
 
       // Write output

@@ -151,7 +151,7 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
 
       // Find the maximum height needed (for the group with most files)
       // Cap at 3 because we collapse groups larger than 2 files
-      const maxFilesInGroup = Math.max(...fileGroups.map((g) => (g.length > 2 ? 3 : g.length)));
+      const maxFilesInGroup = Math.max(...fileGroups.map((g) => Math.max(1, g.length > 2 ? 3 : g.length)));
       const maxGroupHeight = maxFilesInGroup * ellipseSize + (maxFilesInGroup - 1) * ellipseSpacing;
 
       // Create ellipses for each file group
@@ -181,7 +181,7 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
 
         // Center the group vertically if it has fewer files than the max
         // If group has more than 2 files, we'll display 3 elements (first, dots, last)
-        const displayCount = group.length > 2 ? 3 : group.length;
+        const displayCount = Math.max(1, group.length > 2 ? 3 : group.length);
         const groupHeight = displayCount * ellipseSize + (displayCount - 1) * ellipseSpacing;
         const groupStartY = baseEllipseY + (maxGroupHeight - groupHeight) / 2;
 
@@ -300,8 +300,13 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
           }
         }
 
-        // Create dotted rectangle around group if it has more than one file
-        if (group.length > 1) {
+        // Empty groups are real partitions too; show their slot without inventing a file.
+        if (group.length === 0) {
+          groupMinY = groupStartY;
+          groupMaxY = groupStartY + ellipseSize;
+        }
+        // Group boxes distinguish multiple files and explicitly empty partition slots.
+        if (group.length !== 1) {
           const padding = 10;
           const groupRectId = context.idGenerator.generateId();
           const groupRect = context.elementFactory.createRectangle({
@@ -315,6 +320,15 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
           });
           // Set stroke style to dashed for dotted rectangle
           groupRect.strokeStyle = 'dashed';
+          if (group.length === 0) {
+            groupRect.customData = { role: 'empty-file-group', group: listedGroups.indexOf(group) + 1 };
+            context.elements.push(context.elementFactory.createText({
+              id: context.idGenerator.generateId(), x: currentGroupX, y: groupStartY + 12,
+              width: ellipseSize, height: 36, text: 'group ' + (listedGroups.indexOf(group) + 1) + '\nempty',
+              fontSize: 12, fontFamily: FONT_FAMILIES.NORMAL, textAlign: 'center', verticalAlign: 'middle',
+              strokeColor: context.config.nodeColor, containerId: groupRectId,
+            }));
+          }
           context.elements.push(groupRect);
           groupRects.push({
             groupIndex,
@@ -575,7 +589,7 @@ export class DataSourceNodeGenerator extends BaseNodeGenerator {
       !['file_groups', 'projection', 'output_ordering', 'limit'].includes(key) &&
       !(key === 'predicate' && node.properties![key].includes('DynamicFilter')));
     if (extras.length || collapseGroups) {
-      const summary = ['file groups: ' + streamCount, ...extras.map(([key, value]) => {
+      const summary = ['file groups: ' + (node.properties?.file_groups === undefined ? 'unknown' : streamCount), ...extras.map(([key, value]) => {
         if (key === 'output_partitioning' && explicitCount) {
           const family = value.slice(0, value.indexOf('('));
           return 'output: ' + family + ', ' + outputCount + ' partitions';

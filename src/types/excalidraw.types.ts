@@ -35,6 +35,7 @@ export interface ExcalidrawElementBase {
   updated: number;
   link: string | null;
   locked: boolean;
+  customData?: Record<string, unknown>;
 }
 
 /**

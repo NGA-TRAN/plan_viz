@@ -16,7 +16,7 @@ export class ExecutionPlanParser {
    * - `physical_plan`: standard EXPLAIN output
    * - `Plan with Metrics`: EXPLAIN ANALYZE output (includes runtime metrics)
    */
-  private static readonly PHYSICAL_PLAN_ROW_LABELS = ['physical_plan', 'Plan with Metrics'] as const;
+  private static readonly PHYSICAL_PLAN_ROW_LABELS = ['physical_plan', 'Plan with Metrics', 'Plan with Full Metrics'] as const;
 
   private readonly config: Required<ParserConfig>;
 
@@ -75,7 +75,7 @@ export class ExecutionPlanParser {
    * @param planText - The raw plan text (may be SQL EXPLAIN output)
    * @returns Extracted physical plan line or null if not SQL EXPLAIN format
    */
-  private extractPhysicalPlanFromExplain(planText: string): string | null {
+  public extractPhysicalPlanFromExplain(planText: string): string | null {
     const lines = planText.split('\n');
 
     // Check if this looks like SQL EXPLAIN table format
@@ -107,11 +107,10 @@ export class ExecutionPlanParser {
           const nextLineTrimmed = nextLine.trim();
           // If next line starts with | but doesn't contain another column header or separator, it's continuation
           if (
-            nextLineTrimmed.startsWith('|') &&
-            !nextLineTrimmed.includes('plan_type')
+            nextLineTrimmed.startsWith('|')
           ) {
             const nextParts = nextLine.split('|');
-            if (nextParts.length >= 3) {
+            if (nextParts.length >= 3 && !nextParts[1].trim()) {
               const continuationText = nextParts.slice(2, -1).join('|'); // Use parts[2] which is the plan column
               // Count leading spaces to determine indentation level
               const leadingSpacesMatch = continuationText.match(/^(\s*)/);
@@ -122,7 +121,7 @@ export class ExecutionPlanParser {
                 // The first line has 1 space, each level adds 2 spaces
                 // So: level 0 = 1 space, level 1 = 3 spaces, level 2 = 5 spaces, etc.
                 // Formula: indentLevel = (leadingSpaces - 1) / 2
-                const indentLevel = Math.floor((leadingSpaces - 1) / 2);
+                const indentLevel = Math.max(0, Math.floor((leadingSpaces - 1) / 2));
                 const indent = '  '.repeat(indentLevel);
                 planLines.push(indent + trimmedText);
               } else {
@@ -243,7 +242,7 @@ export class ExecutionPlanParser {
   /**
    * Parses an operator line to extract operator name and properties
    */
-  private parseOperatorLine(line: string): {
+  public parseOperatorLine(line: string): {
     operator: string;
     properties?: Record<string, string>;
     wrappers?: OperatorWrapper[];
@@ -263,7 +262,7 @@ export class ExecutionPlanParser {
       const rest = line.slice(colonIndex + 1).trim();
       const innerColon = topLevelPositions(rest).find((index) => rest[index] === ':');
       const innerHeader = innerColon === undefined ? rest : rest.slice(0, innerColon).trim();
-      const isInner = /^[A-Za-z_]\w*(?:\([\s\S]*\))?$/.test(innerHeader) &&
+      const isInner = !/^t\d+$/.test(innerHeader) && /^[A-Za-z_]\w*(?:\([\s\S]*\))?$/.test(innerHeader) &&
         (innerColon !== undefined ? !rest.slice(innerColon + 1).startsWith('//') : /Exec$/.test(innerHeader) || innerHeader === 'SortMergeJoin' || !!header?.[2]);
       if (header && isInner) {
         const inner = this.parseOperatorLine(rest);

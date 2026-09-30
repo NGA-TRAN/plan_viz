@@ -1,0 +1,13 @@
+┌───── DistributedExec
+│ CoalescePartitionsExec
+│   [Stage 2] => NetworkCoalesceExec: output_partitions=6, input_tasks=3
+└──────────────────────────────────────────────────
+  ┌───── Stage 2 ── tasks=3, partitions=6
+  │ AggregateExec: mode=FinalPartitioned, gby=[region@0 as region], aggr=[count(*)]
+  │   [Stage 1] => NetworkShuffleExec: output_partitions=2, input_tasks=4
+  └──────────────────────────────────────────────────
+    ┌───── Stage 1 ── tasks=4, partitions=6
+    │ RepartitionExec: partitioning=Hash([region@0], 6), input_partitions=2
+    │   AggregateExec: mode=Partial, gby=[region@0 as region], aggr=[count(*)]
+    │     MeadowScanExec: file_groups={2 groups: [...]}, projection=[record_id, region, value], file_type=parquet
+    └──────────────────────────────────────────────────

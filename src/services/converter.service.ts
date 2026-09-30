@@ -1,50 +1,34 @@
-import { ExecutionPlanParser } from '../parsers/execution-plan.parser';
 import { ExcalidrawGenerator } from '../generators/excalidraw.generator';
+import { DistributedExcalidrawGenerator, DistributedRenderConfig } from '../generators/distributed-excalidraw.generator';
 import { ExcalidrawData, ExcalidrawConfig } from '../types/excalidraw.types';
 import { ParserConfig } from '../types/execution-plan.types';
+import { PlanDiagnostic, PlanDocument } from '../types/plan-document.types';
+import { PlanDocumentParser } from '../parsers/plan-document.parser';
+import { analyzeDistributed } from '../analysis/distributed-analysis';
 
-/**
- * Configuration for the converter service
- */
 export interface ConverterConfig {
   parser?: ParserConfig;
   generator?: ExcalidrawConfig;
+  input?: { section?: number };
+  distributed?: DistributedRenderConfig;
 }
-
-/**
- * Service that orchestrates the conversion process
- * Follows Facade pattern and Dependency Inversion Principle
- */
+export interface ConversionResult {
+  scene: ExcalidrawData;
+  document: PlanDocument;
+  diagnostics: PlanDiagnostic[];
+}
 export class ConverterService {
-  private readonly parser: ExecutionPlanParser;
-  private readonly generator: ExcalidrawGenerator;
-
-  constructor(config: ConverterConfig = {}) {
-    this.parser = new ExecutionPlanParser(config.parser);
-    this.generator = new ExcalidrawGenerator(config.generator);
+  constructor(private readonly config: ConverterConfig = {}) {}
+  convert(planText: string): ExcalidrawData {
+    return this.convertDetailed(planText).scene;
   }
-
-  /**
-   * Converts an execution plan text to Excalidraw JSON
-   * @param planText - The physical execution plan text
-   * @returns Excalidraw-compatible JSON data
-   * @throws Error if the plan text is invalid
-   */
-  public convert(planText: string): ExcalidrawData {
-    if (!planText || planText.trim().length === 0) {
-      throw new Error('Execution plan text cannot be empty');
+  convertDetailed(planText: string): ConversionResult {
+    const document = new PlanDocumentParser(this.config.parser).parse(planText, this.config.input?.section);
+    if (document.kind === 'single') {
+      return { scene: new ExcalidrawGenerator(this.config.generator).generate(document.root), document, diagnostics: [] };
     }
-
-    // Parse the execution plan
-    const parsedPlan = this.parser.parse(planText);
-
-    if (!parsedPlan.root) {
-      throw new Error('Failed to parse execution plan: no valid operators found');
-    }
-
-    // Generate Excalidraw JSON
-    const excalidrawData = this.generator.generate(parsedPlan.root);
-
-    return excalidrawData;
+    const analysis = analyzeDistributed(document);
+    return { scene: new DistributedExcalidrawGenerator(this.config.generator, this.config.distributed).generate(document, analysis),
+      document, diagnostics: analysis.diagnostics };
   }
 }

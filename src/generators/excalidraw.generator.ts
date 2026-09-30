@@ -4,6 +4,9 @@ import {
   ExcalidrawConfig,
   ResolvedExcalidrawConfig,
 } from '../types/excalidraw.types';
+import { PartitionCount } from '../types/plan-document.types';
+import { addPartitionOmissions } from './utils/partition-omissions';
+import { bindingAt } from './utils/arrow-binding';
 import { ExecutionPlanNode } from '../types/execution-plan.types';
 import { IdGenerator } from './utils/id.generator';
 import { TextMeasurement } from './utils/text-measurement';
@@ -120,7 +123,11 @@ export class ExcalidrawGenerator {
    * @param root - Root node of the execution plan
    * @returns Complete Excalidraw data structure
    */
-  public generate(root: ExecutionPlanNode | null): ExcalidrawData {
+  public generate(
+    root: ExecutionPlanNode | null,
+    annotations?: ReadonlyMap<ExecutionPlanNode, PartitionCount>,
+    nodeShapes?: Map<ExecutionPlanNode, ExcalidrawElement>
+  ): ExcalidrawData {
     const elements: ExcalidrawElement[] = [];
     this.records = new Map();
     this.needsAdaptiveLayout = false;
@@ -130,9 +137,70 @@ export class ExcalidrawGenerator {
       this.generateNodeElements(root, 0, 0, elements, true);
     }
 
+    if (annotations) {
+      this.needsAdaptiveLayout = true;
+      for (const [node, record] of this.records) {
+        const body = elements.find((e) => e.id === record.bodyId)!;
+        const outer = elements.find((e) => e.id === record.info.rectId)!;
+        const count = annotations.get(node);
+        const label = 'output partitions = ' + (count?.value ?? 'unknown') +
+          (count?.assigned !== undefined && count.assigned !== count.value ? '\nassigned = ' + count.assigned : '');
+        const height = label.split('\n').length * 18 + 10;
+        for (const e of record.own) {
+          if (e !== body && e !== outer && e.type !== 'arrow' && e.y >= body.y + body.height) e.y += height;
+        }
+        const badge = this.elementFactory.createText({
+          id: this.idGenerator.generateId(), x: body.x + 12, y: body.y + body.height + 3,
+          width: body.width - 24, height: height - 6, text: label, fontSize: 14, strokeColor: '#1864ab',
+        });
+        badge.groupIds = [record.info.groupId!];
+        body.height += height;
+        if (outer !== body) outer.height += height;
+        record.info.height += height;
+        record.own.push(badge); elements.push(badge);
+      }
+    }
+
     if (root && this.needsAdaptiveLayout) {
       layoutAdaptiveTree(this.records.get(root)!, elements, this.config.verticalSpacing, this.config.horizontalSpacing);
     }
+    if (annotations) {
+      const bodies = new Set([...this.records.values()].flatMap((r) => [r.bodyId, r.info.rectId]));
+      const byId = new Map(elements.map((e) => [e.id, e]));
+      for (const e of elements) {
+        if (e.type !== 'arrow') continue;
+        const points = e.points.map((p) => [e.x + p[0], e.y + p[1]]);
+        const first = points[0]; const last = points[points.length - 1];
+        const from = byId.get(e.startBinding?.elementId ?? ''); const to = byId.get(e.endBinding?.elementId ?? '');
+        if (from && bodies.has(from.id)) first[1] = from.y - 1;
+        if (to && bodies.has(to.id)) last[1] = to.y + to.height + 1;
+        e.x = first[0]; e.y = first[1]; e.points = points.map((p) => [p[0] - e.x, p[1] - e.y]);
+        e.width = Math.max(...points.map((p) => p[0])) - Math.min(...points.map((p) => p[0]));
+        e.height = Math.max(...points.map((p) => p[1])) - Math.min(...points.map((p) => p[1]));
+        if (from) e.startBinding = bindingAt(from, first[0], first[1], points[1][0], points[1][1]);
+        if (to) e.endBinding = bindingAt(to, last[0], last[1], points[points.length - 2][0], points[points.length - 2][1]);
+      }
+    }
+    if (annotations) {
+      const bodies = [...this.records.values()].map((r) => elements.find((e) => e.id === r.bodyId)!);
+      for (const e of elements) {
+        if (e.type !== 'text' || e.containerId) continue;
+        for (const body of bodies) {
+          const overlaps = e.x < body.x + body.width && e.x + e.width > body.x &&
+            e.y < body.y + body.height && e.y + e.height > body.y;
+          const inside = e.x >= body.x && e.x + e.width <= body.x + body.width &&
+            e.y >= body.y && e.y + e.height <= body.y + body.height;
+          if (overlaps && !inside) e.x = body.x + body.width + 16;
+        }
+      }
+    }
+    // Return references to the final operator shapes for scene composition/bindings.
+    if (nodeShapes) {
+      nodeShapes.clear();
+      const byId = new Map(elements.map((e) => [e.id, e]));
+      for (const [node, record] of this.records) nodeShapes.set(node, byId.get(record.bodyId)!);
+    }
+    addPartitionOmissions(elements, this.elementFactory, this.idGenerator);
     bindTextToContainers(elements);
 
     return {

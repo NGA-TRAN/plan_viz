@@ -37,8 +37,7 @@ export class PropertyParser {
     return splitTopLevel(listContent(groupsArrayStr))
       .filter((group) => group.startsWith('[') && group.endsWith(']'))
       .map((group) => splitTopLevel(listContent(group))
-        .map((file) => file.trim().replace(/^["']|["']$/g, '')))
-      .filter((group) => group.length > 0);
+        .map((file) => file.trim().replace(/^["']|["']$/g, '')));
   }
 
   /**

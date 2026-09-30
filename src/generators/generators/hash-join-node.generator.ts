@@ -417,6 +417,11 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
         bottomX: centerX,
         bottomY: tableY + tableHeight,
       });
+      if (tableCount < logicalCount) {
+        context.elements.find((e) => e.id === id)!.customData = {
+          partitionSeries: context.nodeGroupId + ':tables', partitionIndex: partitionIndices[i], partitionTotal: logicalCount,
+        };
+      }
       tableX += tableWidth + gap;
     }
 
@@ -487,6 +492,11 @@ export class HashJoinNodeGenerator extends BaseNodeGenerator {
           strokeColor: context.config.arrowColor,
         })
       );
+      if (indices.length < arrowCount) {
+        context.elements.find((e) => e.id === arrowId)!.customData = {
+          partitionSeries: context.nodeGroupId + ':' + side, partitionIndex: indices[i], partitionTotal: arrowCount,
+        };
+      }
       this.bindArrowToElements(context, arrowId, [childInfo.rectId, table.id]);
     }
 

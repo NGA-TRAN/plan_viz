@@ -4,3 +4,5 @@ export type { NodeGeneratorStrategy } from './generators/node-generator.strategy
 export type { GenerationContext } from './types/generation-context.types';
 export type { NodeInfo } from './types/node-info.types';
 export type { ExecutionPlanNode } from '../types/execution-plan.types';
+
+export * from './distributed-excalidraw.generator';
