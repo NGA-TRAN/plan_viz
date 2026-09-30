@@ -8,7 +8,7 @@
     "plan-viz": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist coverage",
     "test": "jest",
     "test:watch": "jest --watch",
