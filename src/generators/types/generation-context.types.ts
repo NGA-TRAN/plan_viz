@@ -1,3 +1,4 @@
+import { PartitionCount } from '../../types/plan-document.types';
 import { ExcalidrawElement, ResolvedExcalidrawConfig } from '../../types/excalidraw.types';
 import { ExecutionPlanNode } from '../../types/execution-plan.types';
 import { ElementFactory } from '../factories/element.factory';
@@ -28,6 +29,8 @@ export interface GenerationContext {
   textMeasurement: TextMeasurement;
   /** Geometry utilities */
   geometryUtils: GeometryUtils;
+  /** Audited logical partition counts, when available. */
+  partitionCounts?: ReadonlyMap<ExecutionPlanNode, PartitionCount>;
   /** Configuration */
   config: ResolvedExcalidrawConfig;
   /** Elements array to add generated elements to */
@@ -39,6 +42,7 @@ export interface GenerationContext {
     child: ExecutionPlanNode,
     childX: number,
     childY: number,
-    isRoot: boolean
+    isRoot: boolean,
+    counts?: ReadonlyMap<ExecutionPlanNode, PartitionCount>
   ) => NodeInfo;
 }

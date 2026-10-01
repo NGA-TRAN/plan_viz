@@ -455,3 +455,88 @@ Created with ❤️ for the Apache DataFusion community
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
+
+
+## Distributed physical plans
+
+The library function and CLI automatically recognize boxed distributed plans:
+
+~~~sh
+plan-viz --input distributed-plan.snap --output distributed-plan.excalidraw
+plan-viz --input mixed-snapshots.snap --section 2 --output selected.excalidraw
+plan-viz --input distributed-plan.snap --all-workers --output expanded.excalidraw
+~~~
+
+A stage is drawn as a row of task slots, with consumers above producers. Equivalent
+tasks show their first and last instances by default. Blue annotations give output
+partitions per operator in one task. Purple arrows bundle logical streams between
+tasks and terminate at the receiving network operator; purple ellipses count omitted connections. Task slots do not identify physical
+machines, and a purple bundle is not a claim about TCP connections.
+
+Grouped gathers assign contiguous producer groups to receivers. Their network operators
+show output partition capacity, assigned streams, and empty padding separately; padding
+has no incoming network connection. Groups with different assigned counts remain distinct.
+For grouped gathers with up to three producer tasks, all producers are shown.
+
+DistributedLeafExec selects the source variant for the current task.
+DistributedUnionExec uses a transparent background and shows active and inactive children. Its child
+task context determines network routing: a three-task stage can contain a local UNION
+branch and only two shuffle receivers. Unequal assignments display assigned partitions
+separately from the UNION's padded output capacity.
+
+~~~typescript
+import { ConverterService } from 'plan-viz';
+
+const result = new ConverterService({
+  input: { section: 2 }, // Optional, 1-based; required for multiple snapshot sections.
+  distributed: { workerDisplay: 'representative' }, // Or 'all'.
+}).convertDetailed(planText);
+
+const { scene, diagnostics } = result;
+~~~
+
+Existing convertPlanToExcalidraw() and ConverterService.convert() still return an
+Excalidraw scene. ExecutionPlanParser and ExcalidrawGenerator retain their single-tree
+interfaces; use PlanDocumentParser for stage-aware parsing. Custom generators remain
+supported.
+
+Complete plans support gather to one or multiple receivers, direct hash shuffle, worker-local
+joins and task-specific UNION. Empty file groups retain their partition slots and appear as labeled empty groups with input arrows. Printed repartition input counts and network-gather capacity also establish upstream output counts, including custom sources, through known partition-preserving operators. Counts without sufficient evidence stay unknown. Broadcast and two-phase shuffle are supported with explicit stream multiplicity. Shuffle routing with insufficient evidence remains visibly unresolved rather than
+guessed. Worker recordings without their full document render as incomplete views
+with no invented inter-stage connections. Malformed complete graphs fail with a
+stage/line diagnostic. Time-partition panels and physical-host placement are not inferred.
+
+### Corpus review tooling
+
+After building, generate an inventory and local gallery without modifying input files:
+
+~~~sh
+npm run build
+npx playwright install chromium
+node scripts/review-corpus.cjs \
+  --upstream /path/to/datafusion-distributed \
+  --connector /path/to/metrics-points-and-tags/snapshots \
+  --output tmp/corpus-review \
+  --render
+~~~
+
+The script finds stored physical plans in snapshot sections, Rust inline snapshots/raw
+strings, and Markdown code blocks. It records excluded sections, unsupported sketches,
+conversion failures and missing runtime outputs explicitly. Each rendered entry links
+to its original plan text, editable Excalidraw and PNG. PNG exports check that every
+expected label was drawn; large previews are scaled to browser-safe dimensions.
+Source revisions/hashes and the local converter revision/changes are recorded.
+Use --fixtures tests/distributed to include the public distributed fixtures, and
+--runtime /path/to/captured/snapshots for additional locally captured plans.
+
+Create the thumbnail overview and run the browser editability checks with:
+
+~~~sh
+node scripts/corpus-contact-sheets.cjs tmp/corpus-review
+node scripts/verify-distributed.cjs
+~~~
+
+The browser checks exercise worker-group dragging, individual operator dragging and
+network bindings in the actual Excalidraw editor, plus CLI section/error handling.
+
+See the [Distributed DataFusion operator audit](docs/operators/distributed-datafusion.md) for source references, execution contracts, coverage, and metadata limitations.

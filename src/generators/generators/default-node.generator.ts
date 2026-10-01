@@ -36,15 +36,28 @@ export class DefaultNodeGenerator extends BaseNodeGenerator {
       const childX = x + (i - (node.children.length - 1) / 2) * (width + context.config.horizontalSpacing);
       const childY = y + height + context.config.verticalSpacing;
       const info = context.generateChildNode(child, childX, childY, false);
-      const arrow = context.elementFactory.createArrow({
-        id: context.idGenerator.generateId(), startX: info.x + info.width / 2, startY: childY,
-        endX: x + width / 2, endY: y + height, childRectId: info.rectId, parentRectId: rectId,
-        strokeColor: context.config.arrowColor,
+      const knownEmpty = context.partitionCounts?.get(child)?.value === 0;
+      const positions = context.partitionCounts && (info.inputArrowPositions.length > 0 || knownEmpty) ?
+        info.inputArrowPositions : [info.x + info.width / 2];
+      const targets = context.arrowCalculator.calculateOutputArrowPositions(positions.length, x, width).positions;
+      positions.forEach((position, j) => {
+        const arrow = context.elementFactory.createArrow({
+          id: context.idGenerator.generateId(), startX: position, startY: childY,
+          endX: targets[j], endY: y + height, childRectId: info.rectId, parentRectId: rectId,
+          strokeColor: context.config.arrowColor,
+        });
+        if (context.partitionCounts && info.inputArrowCount > positions.length) {
+          arrow.customData = { partitionSeries: rectId + '/' + info.rectId,
+            partitionIndex: j < 2 ? j : info.inputArrowCount - positions.length + j,
+            partitionTotal: info.inputArrowCount };
+        }
+        context.elements.push(arrow);
+        this.bindArrowToElements(context, arrow.id, [info.rectId, rectId]);
       });
-      context.elements.push(arrow);
-      this.bindArrowToElements(context, arrow.id, [info.rectId, rectId]);
     });
-    return { x, y, width, height, rectId, inputArrowCount: 1,
-      inputArrowPositions: [x + width / 2], outputColumns: [], outputSortOrder: [], streamCountKnown: false };
+    const count = context.partitionCounts?.get(node)?.value;
+    const output = context.arrowCalculator.calculateOutputArrowPositions(count ?? 1, x, width);
+    return { x, y, width, height, rectId, inputArrowCount: output.fullCount,
+      inputArrowPositions: output.positions, outputColumns: [], outputSortOrder: [], streamCountKnown: count !== undefined };
   }
 }

@@ -61,6 +61,11 @@ describe('PropertyParser', () => {
       expect(result).toEqual([['f1.parquet', 'f2.parquet'], ['f3.parquet']]);
     });
 
+    it('preserves empty partitions and their positions', () => {
+      expect(parser.parseFileGroups({ file_groups: '{4 groups: [[], [orchard.parquet], [], []]}' }))
+        .toEqual([[], ['orchard.parquet'], [], []]);
+      expect(parser.parseFileGroups({ file_groups: '{2 groups: [[], []]}' })).toEqual([[], []]);
+    });
     it('should handle empty properties', () => {
       const result = parser.parseFileGroups({});
       expect(result).toEqual([]);

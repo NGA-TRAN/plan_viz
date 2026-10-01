@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Audit and document all current upstream Distributed DataFusion execution operators; add broadcast, two-phase shuffle, sampler, public source contracts, and legacy partition-isolation support.
+- Render grouped network gathers with contiguous producer routing, assigned-stream counts, and explicit empty padding.
+- Convert distributed physical plans into stage/task diagrams with per-operator partition counts and bundled network connections.
+- Preserve DistributedLeafExec task variants and DistributedUnionExec child assignments, including child-local routing and padded capacity.
+- Add explicit snapshot section selection, an all-workers view, structured conversion diagnostics, and partial worker-recording views.
+- Add invented distributed fixtures and reproducible upstream/connector corpus galleries with Excalidraw exports and label checks.
+
+### Fixed
+- Draw stream multiplicity for operators with inferred counts and recognize direct shuffles beneath partial reduction.
+- Recover custom-operator partition counts from printed repartition inputs and network-gather capacity, propagating through known preserving operators.
+- Exclude compiled tests and test helpers from production builds and npm packages.
+- Preserve empty file-group partitions and show their labeled inputs for standard and structurally inferred source operators.
+- Show omission markers between compacted partitioned-join hash tables and both sets of input streams.
+- Use a transparent background and standard border for DistributedUnionExec.
+- Bind distributed network arrows to the exact receiving network operator, including multiple boundaries within one task.
+
 ## [0.1.24] - 2026-09-28
 
 ### Added

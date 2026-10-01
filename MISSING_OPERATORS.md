@@ -17,6 +17,10 @@ PlaceholderRowExec, LazyMemoryExec / ValuesExec, ExplainExec,
 StreamingTableExec, WorkTableExec, BufferExec, CooperativeExec,
 DataSinkExec / FileSinkExec, RecursiveQueryExec, ScalarSubqueryExec.
 
+## Distributed DataFusion
+
+See the [source-backed operator audit](docs/operators/distributed-datafusion.md) and its machine-readable inventory for distributed support and remaining metadata limitations.
+
 ## Missing (specs ready for review)
 
 **Wave A (implemented):** [WindowAggExec](docs/operators/window-agg-exec.md),
