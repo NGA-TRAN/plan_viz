@@ -5,6 +5,8 @@ import { ExecutionPlanParser } from '../execution-plan.parser';
 import { analyzeDistributed, taskGroups } from '../../analysis/distributed-analysis';
 import { ConverterService } from '../../services/converter.service';
 import { ExcalidrawData } from '../../types/excalidraw.types';
+import { PlanNode } from '../../types/plan-document.types';
+import { PropertyParser } from '../../generators/utils/property.parser';
 
 const fixture = (name: string): string => fs.readFileSync(path.join(__dirname, '../../../tests/distributed', name + '.sql'), 'utf8');
 const parser = new PlanDocumentParser();
@@ -14,11 +16,15 @@ const validateScene: (scene: ExcalidrawData) => string[] = require('../../../scr
 describe('distributed conversion', () => {
   test.each([
     ['gather_four_tasks', 4, 2, 2],
+    ['grouped_gather_partial_reduction', 5, 5, 0],
     ['hash_aggregate_four_to_three', 15, 6, 9],
     ['colocated_join_four_tasks', 4, 2, 2],
     ['join_aggregate_six_to_four', 28, 6, 22],
     ['union_distinct_branches', 9, 7, 2],
-    ['union_sketch_branches', 9, 7, 2],
+    ['union_five_branches_metrics', 3, 3, 0],
+    ['full_outer_join_two_shuffles', 36, 10, 26],
+    ['dynamic_filter_range_join', 6, 6, 0],
+    ['count_distinct_union_time_ranges', 9, 7, 2],
   ])('%s preserves all logical connections while drawing representatives', (name, pairs, visible, omitted) => {
     const text = fixture(name as string); const doc = parser.parse(text);
     if (doc.kind === 'single') throw new Error('Expected distributed document');
@@ -111,7 +117,7 @@ describe('distributed conversion', () => {
     expect(parser.parse('FilterExec: predicate=name = \'[Stage 1] => NetworkShuffleExec\'\n  EmptyExec').kind).toBe('single');
   });
   test('unknown operators retain unknown counts and a visible diagnostic', () => {
-    const result = new ConverterService().convertDetailed(fixture('gather_four_tasks').replace(/MeadowScanExec:[^\n]+/, 'MysteryExec'));
+    const result = new ConverterService().convertDetailed(fixture('gather_four_tasks').replace(/MeadowScanExec:[^\n]+/, 'MysteryExec\n  │   UnknownSourceExec'));
     expect(result.diagnostics.some((d) => d.code === 'unknown-count')).toBe(true);
     expect(result.scene.elements.some((e) => e.type === 'text' && e.text.includes('output partitions = unknown'))).toBe(true);
   });
@@ -195,7 +201,7 @@ describe('distributed edge cases found during corpus review', () => {
     expect(doc.stages[1].root.raw).toContain('t0:[0-6)');
   });
   test('unknown routing draws no speculative task-pair arrows', () => {
-    const text = fixture('gather_four_tasks').replace('NetworkCoalesceExec', 'NetworkBroadcastExec');
+    const text = fixture('gather_four_tasks').replace('NetworkCoalesceExec', 'NetworkMysteryExec');
     const result = new ConverterService().convertDetailed(text);
     expect(result.diagnostics.some((d) => d.code === 'unknown-routing')).toBe(true);
     expect(result.scene.elements.filter((e) => e.customData?.role === 'network-bundle')).toHaveLength(0);
@@ -210,4 +216,81 @@ test('EXPLAIN tables preserve literal pipes and stop at the next named row', () 
   if (doc.kind === 'single') throw new Error('Expected distributed');
   expect(doc.stages[1].root.properties?.predicate).toBe('label = \'plan_type|west\'');
   expect(new ConverterService().convert(table).elements.length).toBeGreaterThan(0);
+});
+
+
+describe('representative complex distributed fixtures', () => {
+  const nodes = (root: PlanNode): PlanNode[] => [root, ...root.children.flatMap(nodes)];
+  const analyze = (name: string): ReturnType<typeof analyzeDistributed> => {
+    const document = parser.parse(fixture(name));
+    if (document.kind === 'single') throw new Error('Expected distributed document');
+    return analyzeDistributed(document);
+  };
+
+  test('five UNION branches retain unequal assignments, padding and runtime metrics', () => {
+    const result = analyze('union_five_branches_metrics');
+    const tasks = result.tasks.filter((task) => task.stage === '1');
+    expect(tasks.map((task) => task.root.children.length)).toEqual([2, 2, 1]);
+    expect(tasks.map((task) => task.counts.get(task.root)?.value)).toEqual([6, 6, 6]);
+    expect(tasks.map((task) => task.counts.get(task.root)?.assigned)).toEqual([6, 6, 3]);
+    expect(tasks.map((task) => task.root.properties?.active)).toEqual([
+      'c0 (0/1), c3 (0/1)', 'c1 (0/1), c4 (0/1)', 'c2 (0/1)',
+    ]);
+    expect(tasks.every((task) => task.root.properties?.metrics?.includes('output_rows=924'))).toBe(true);
+    expect(result.connections[0].pairs.map((pair) => pair.streams)).toEqual([6, 6, 6]);
+  });
+
+  test('full outer join keeps independent shuffle boundaries on both inputs', () => {
+    const result = analyze('full_outer_join_two_shuffles');
+    const shuffles = result.connections.filter((edge) => edge.operator === 'NetworkShuffleExec');
+    expect(shuffles.map((edge) => edge.producer)).toEqual(['1', '2']);
+    expect(new Set(shuffles.map((edge) => edge.boundary)).size).toBe(2);
+    for (const edge of shuffles) {
+      expect(edge.consumer).toBe('3');
+      expect(edge.pairs).toHaveLength(16);
+      expect(new Set(edge.pairs.map((pair) => pair.from + '/' + pair.to)).size).toBe(16);
+      expect(edge.pairs.every((pair) => pair.streams === 3)).toBe(true);
+    }
+    const joins = result.tasks.filter((task) => task.stage === '3');
+    expect(joins).toHaveLength(4);
+    expect(joins.every((task) => task.root.properties?.join_type === 'Full')).toBe(true);
+    expect(joins.map((task) => task.counts.get(task.root)?.value)).toEqual([3, 3, 3, 3]);
+  });
+
+  test('range-partitioned scans retain task-specific dynamic filters', () => {
+    const result = analyze('dynamic_filter_range_join');
+    const tasks = result.tasks.filter((task) => task.stage === '1');
+    expect(taskGroups(tasks).map((group) => group.length)).toEqual([1, 1]);
+    tasks.forEach((task, index) => {
+      const scans = nodes(task.root).filter((node) => node.operator === 'DataSourceExec');
+      expect(scans).toHaveLength(2);
+      expect(scans.every((node) => node.properties?.output_partitioning?.startsWith('Range('))).toBe(true);
+      expect(scans.map((node) => task.counts.get(node)?.value)).toEqual([2, 2]);
+      const filtered = scans.find((node) => node.properties?.predicate?.includes('DynamicFilter'))!;
+      expect(filtered.properties?.predicate).toContain('event_key@2 >= ' + (index === 0 ? 'A' : 'B'));
+      expect(filtered.properties?.dynamic_rg_pruning).toBe('eligible');
+    });
+  });
+
+  test('time-range UNION preserves local empty groups and routes shuffle only to assigned children', () => {
+    const result = analyze('count_distinct_union_time_ranges');
+    const shuffle = result.connections.find((edge) => edge.operator === 'NetworkShuffleExec')!;
+    expect([...new Set(shuffle.pairs.map((pair) => pair.to))]).toEqual([1, 2]);
+    const local = result.tasks.find((task) => task.stage === '2' && task.task === 0)!;
+    const scans = nodes(local.root).filter((node) => node.operator === 'ConcurrentFileScanExec');
+    expect(scans).toHaveLength(2);
+    expect(scans.map((node) => node.properties?.file_type)).toEqual(['metadata', 'measurements']);
+    for (const scan of scans) {
+      const groups = new PropertyParser().parseFileGroups(scan.properties);
+      expect(groups).toHaveLength(4);
+      expect(groups.slice(2)).toEqual([[], []]);
+      expect(local.counts.get(scan)?.value).toBe(4);
+    }
+    const join = nodes(local.root).find((node) => node.operator === 'HashJoinExec')!;
+    expect(join.wrappers?.map((wrapper) => wrapper.operator)).toEqual(['ResourceGuardExec']);
+    const scene = new ConverterService().convert(fixture('count_distinct_union_time_ranges'));
+    expect(scene.elements.filter((element) => element.customData?.role === 'empty-file-group')).toHaveLength(4);
+    expect(scene.elements.filter((element) => element.customData?.role === 'union-selection')
+      .every((element) => element.backgroundColor === 'transparent')).toBe(true);
+  });
 });

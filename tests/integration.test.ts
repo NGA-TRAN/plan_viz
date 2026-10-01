@@ -52,14 +52,17 @@ function normalizeExcalidraw(data: ExcalidrawData): ExcalidrawData {
 }
 
 /**
- * Gets all SQL files from the tests directory
+ * Gets all single-node and distributed SQL fixtures
  */
+const fixtureDirectories = [__dirname, path.join(__dirname, 'distributed')];
+
 function getSqlFiles(): string[] {
-  const testsDir = path.join(__dirname);
-  const files = fs.readdirSync(testsDir);
-  return files
-    .filter((file) => file.endsWith('.sql'))
-    .map((file) => path.join(testsDir, file));
+  return fixtureDirectories.flatMap((directory) =>
+    fs.readdirSync(directory)
+      .filter((file) => file.endsWith('.sql'))
+      .sort()
+      .map((file) => path.join(directory, file))
+  );
 }
 
 describe('Examples Integration Tests', () => {
@@ -72,7 +75,7 @@ describe('Examples Integration Tests', () => {
     // Get expected excalidraw file path
     const sqlFileName = path.basename(sqlFilePath, '.sql');
     const expectedPath = path.join(
-      __dirname,
+      path.dirname(sqlFilePath),
       'expected',
       `${sqlFileName}.excalidraw`
     );
@@ -81,7 +84,7 @@ describe('Examples Integration Tests', () => {
     if (!fs.existsSync(expectedPath)) {
       throw new Error(
         `Expected file not found: ${expectedPath}. ` +
-        `Make sure all .excalidraw files are copied to tests/expected/`
+        `Each fixture directory must have a matching expected/ drawing`
       );
     }
 
@@ -103,8 +106,7 @@ describe('Examples Integration Tests', () => {
     expect(normalizedGenerated).toEqual(normalizedExpected);
   });
 
-  it('should have matching SQL and expected excalidraw files', () => {
-    const testsDir = path.join(__dirname);
+  test.each(fixtureDirectories)('should have matching SQL and expected excalidraw files in %s', (testsDir) => {
     const expectedDir = path.join(testsDir, 'expected');
 
     const sqlFiles = fs

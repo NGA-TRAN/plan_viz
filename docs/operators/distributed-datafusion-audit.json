@@ -1,0 +1,181 @@
+{
+  "repository": "https://github.com/datafusion-contrib/datafusion-distributed",
+  "revision": "b32ee66e5f12227a5fe8e8444a022991da0758ea",
+  "scope": [
+    "src",
+    "examples",
+    "tests",
+    "iceberg"
+  ],
+  "operators": [
+    {
+      "operator": "DistributedExec",
+      "source": "src/coordinator/distributed.rs",
+      "kind": "coordinator",
+      "contract": "Head-stage container; runs partition zero, prepares tasks and waits for distributed execution. Base-plan properties are retained.",
+      "tests": "src/parsers/__tests__/distributed-plan.parser.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "BroadcastExec",
+      "source": "src/execution_plans/broadcast.rs",
+      "kind": "replication",
+      "contract": "Caches each input stream once and exposes one copy per consumer task: output = input_partitions * consumer_tasks.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "ChildrenIsolatorUnionExec",
+      "source": "src/execution_plans/children_isolator_union.rs",
+      "kind": "task-assignment",
+      "contract": "Displayed as DistributedUnionExec. Child-local task contexts select active branches; output capacity is maximum assigned child-partition sum, padded with empty streams.",
+      "tests": "src/parsers/__tests__/distributed-plan.parser.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "DistributedLeafExec",
+      "source": "src/execution_plans/distributed_leaf.rs",
+      "kind": "task-specialization",
+      "contract": "Selects a prebuilt leaf variant by effective task index. With one task executes original. Inline displays retain original labels; printed variants are specialized before drawing.",
+      "tests": "src/parsers/__tests__/distributed-plan.parser.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "MetricsWrapperExec",
+      "source": "src/execution_plans/metrics.rs",
+      "kind": "hidden",
+      "contract": "Display and children delegate to inner operator; merges metrics only. Not a separately displayed dataflow node; execute is unimplemented.",
+      "tests": "src/parsers/__tests__/distributed-plan.parser.test.ts",
+      "status": "audited-hidden"
+    },
+    {
+      "operator": "NetworkBroadcastExec",
+      "source": "src/execution_plans/network_broadcast.rs",
+      "kind": "network",
+      "contract": "Each consumer requests Q partitions from every producer; Q = partitions_per_consumer. stage_partitions=0 means remote plan metadata unavailable, not zero output.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "NetworkCoalesceExec",
+      "source": "src/execution_plans/network_coalesce.rs",
+      "kind": "network",
+      "contract": "Contiguous balanced producer groups; output capacity = producer partitions * max(ceil(producers/consumers),1); shorter groups expose empty padding.",
+      "tests": "src/parsers/__tests__/grouped-gather.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "NetworkShuffleExec",
+      "source": "src/execution_plans/network_shuffle.rs",
+      "kind": "network",
+      "contract": "Direct: Q streams per producer-consumer pair. Two-phase: one stream per pair, one receiver output per producer. Counts distinguish modes; missing evidence stays unresolved.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "SamplerExec",
+      "source": "src/execution_plans/sampler.rs",
+      "kind": "preserving",
+      "contract": "Samples/buffers for adaptive planning, then returns the buffered stream and continuation. Retains input partitioning and ordering; partitions= prints sampler count.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "DistributedAnalyzeExec",
+      "source": "src/explain_analyze.rs",
+      "kind": "analysis",
+      "contract": "Drains distributed execution and collects worker metrics into one EXPLAIN result stream. Colonless verbose= formatting is recognized.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "MockExec",
+      "source": "src/test_utils/mock_exec.rs",
+      "kind": "test-source",
+      "contract": "Configurable partition count is not printed. Retain generic box and unknown count unless a consumer contract establishes capacity.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "audited-metadata-limited"
+    },
+    {
+      "operator": "URLEmitterExec",
+      "source": "src/test_utils/routing.rs",
+      "kind": "test-source",
+      "contract": "Printed partitions is advertised capacity, including possible empty slots; emits worker URL and task/partition identity.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "RowGeneratorExec",
+      "source": "src/test_utils/test_work_unit_feed.rs",
+      "kind": "test-source",
+      "contract": "Work-feed operations generate rows. Scaling uses integer division of global partition_ops length by effective task count; operation count is not stream count.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "NumbersExec",
+      "source": "examples/custom_execution_plan.rs",
+      "kind": "example-source",
+      "contract": "One partition per task; task index selects a numeric range. Range count is not local partition count.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "CacheExec",
+      "source": "examples/custom_worker_url_routing.rs",
+      "kind": "example-wrapper",
+      "contract": "One cached or child stream per partition; preserves schema, partitioning and ordering.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "RemoteScanExec",
+      "source": "examples/work_unit_feed.rs",
+      "kind": "example-source",
+      "contract": "Work-feed source: floor(global chunk-list count / effective task count) after scaling, global count before scaling. Inner values are row counts. Missing worker context remains unknown.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "CustomConfigExtensionRequiredExec",
+      "source": "tests/custom_config_extension.rs",
+      "kind": "test-wrapper",
+      "contract": "Copies child partition properties; execution checks a custom configuration extension and may fail.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "CustomPassThroughExec",
+      "source": "tests/custom_extension_codec.rs",
+      "kind": "test-wrapper",
+      "contract": "Custom codec example forwarding child partitions with copied partition properties.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "ErrorThrowingExec",
+      "source": "tests/error_propagation.rs",
+      "kind": "test-wrapper",
+      "contract": "Copies child partition capacity but execution produces an error stream; capacity does not imply successful execution or rows.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    },
+    {
+      "operator": "StatefulPassThroughExec",
+      "source": "tests/stateful_execution_plan.rs",
+      "kind": "test-wrapper",
+      "contract": "Stores asynchronous forwarding state; partition properties copied from child.",
+      "tests": "src/parsers/__tests__/upstream-operators.test.ts",
+      "status": "implemented"
+    }
+  ],
+  "legacy": [
+    {
+      "operator": "PartitionIsolatorExec",
+      "revision": "ee15e30c07fb8b2d8dff6911361783569af6a61e",
+      "source": "src/execution_plans/partition_isolator.rs",
+      "status": "implemented-compact-format",
+      "contract": "tasks=T partitions=P prints global child P; per-task output capacity ceil(P/T), contiguous selection and empty padding. Verbose-only mapping without counts remains metadata-limited."
+    }
+  ]
+}

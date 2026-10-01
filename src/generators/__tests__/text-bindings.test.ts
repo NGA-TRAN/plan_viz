@@ -8,13 +8,14 @@ import { assertTextBindings } from './utils/text-binding-assertions';
 const leafOperators = [
   'DataSourceExec', 'EmptyExec', 'PlaceholderRowExec', 'LazyMemoryExec',
   'ValuesExec', 'ExplainExec', 'WorkTableExec', 'StreamingTableExec',
+  'NumbersExec', 'RemoteScanExec', 'RowGeneratorExec', 'URLEmitterExec',
 ];
 const unaryOperators = [
   'CoalescePartitionsExec', 'CoalesceBatchesExec', 'FilterExec', 'RepartitionExec',
   'AggregateExec', 'ProjectionExec', 'SortExec', 'SortPreservingMergeExec',
   'LocalLimitExec', 'GlobalLimitExec', 'WindowAggExec', 'BoundedWindowAggExec',
   'UnnestExec', 'AnalyzeExec', 'BufferExec', 'CooperativeExec', 'DataSinkExec',
-  'FileSinkExec',
+  'FileSinkExec', 'PartitionIsolatorExec', 'BroadcastExec', 'SamplerExec', 'CacheExec', 'DistributedExec', 'DistributedAnalyzeExec',
 ];
 const binaryOperators = [
   'HashJoinExec', 'SortMergeJoin', 'SortMergeJoinExec', 'CrossJoinExec', 'UnionExec',

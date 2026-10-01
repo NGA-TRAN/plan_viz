@@ -1,3 +1,4 @@
+import { UpstreamNodeGenerator } from './generators/upstream-node.generator';
 import {
   ExcalidrawData,
   ExcalidrawElement,
@@ -79,6 +80,7 @@ export class ExcalidrawGenerator {
   private readonly propertyParser: PropertyParser;
   private readonly columnRenderer: ColumnLabelRenderer;
   private readonly geometryUtils: GeometryUtils;
+  private partitionAnnotations?: ReadonlyMap<ExecutionPlanNode, PartitionCount>;
   private readonly nodeGeneratorRegistry: NodeGeneratorRegistry;
 
   constructor(config: ExcalidrawConfig = {}) {
@@ -130,6 +132,7 @@ export class ExcalidrawGenerator {
   ): ExcalidrawData {
     const elements: ExcalidrawElement[] = [];
     this.records = new Map();
+    this.partitionAnnotations = annotations;
     this.needsAdaptiveLayout = false;
 
     if (root) {
@@ -144,7 +147,8 @@ export class ExcalidrawGenerator {
         const outer = elements.find((e) => e.id === record.info.rectId)!;
         const count = annotations.get(node);
         const label = 'output partitions = ' + (count?.value ?? 'unknown') +
-          (count?.assigned !== undefined && count.assigned !== count.value ? '\nassigned = ' + count.assigned : '');
+          (count?.padding !== undefined ? '\nassigned streams = ' + count.assigned + '\nempty padding = ' + count.padding :
+            count?.assigned !== undefined && count.assigned !== count.value ? '\nassigned = ' + count.assigned : '');
         const height = label.split('\n').length * 18 + 10;
         for (const e of record.own) {
           if (e !== body && e !== outer && e.type !== 'arrow' && e.y >= body.y + body.height) e.y += height;
@@ -219,8 +223,12 @@ export class ExcalidrawGenerator {
   /**
    * Creates a generation context for node generators
    */
-  private createGenerationContext(elements: ExcalidrawElement[]): GenerationContext {
+  private createGenerationContext(
+    elements: ExcalidrawElement[],
+    counts = this.partitionAnnotations
+  ): GenerationContext {
     return {
+      partitionCounts: counts,
       elementFactory: this.elementFactory,
       propertyParser: this.propertyParser,
       arrowCalculator: this.arrowCalculator,
@@ -230,8 +238,8 @@ export class ExcalidrawGenerator {
       geometryUtils: this.geometryUtils,
       config: this.config,
       elements,
-      generateChildNode: (child, childX, childY, isChildRoot) => {
-        return this.generateNodeElements(child, childX, childY, elements, isChildRoot);
+      generateChildNode: (child, childX, childY, isChildRoot, childCounts = counts) => {
+        return this.generateNodeElements(child, childX, childY, elements, isChildRoot, childCounts);
       },
     };
   }
@@ -246,10 +254,11 @@ export class ExcalidrawGenerator {
     x: number,
     y: number,
     elements: ExcalidrawElement[],
-    isRoot: boolean = false
+    isRoot: boolean = false,
+    counts = this.partitionAnnotations
   ): NodeInfo {
     const groupId = this.idGenerator.generateId();
-    const context = this.createGenerationContext(elements);
+    const context = this.createGenerationContext(elements, counts);
     context.nodeGroupId = groupId;
 
     const start = elements.length;
@@ -327,6 +336,10 @@ export class ExcalidrawGenerator {
    */
   private registerNodeGenerators(): void {
     this.nodeGeneratorRegistry.register('default', new DefaultNodeGenerator());
+    for (const operator of ['BroadcastExec', 'SamplerExec', 'CacheExec', 'NumbersExec', 'RemoteScanExec', 'PartitionIsolatorExec',
+      'RowGeneratorExec', 'URLEmitterExec', 'DistributedExec', 'DistributedAnalyzeExec']) {
+      this.nodeGeneratorRegistry.register(operator, new UpstreamNodeGenerator());
+    }
     this.nodeGeneratorRegistry.register(
       'CoalescePartitionsExec',
       new CoalescePartitionsNodeGenerator()

@@ -1,3 +1,4 @@
+import { wrapLabel } from './utils/adaptive-layout';
 import { ExcalidrawConfig, ExcalidrawData, ExcalidrawElement, ExcalidrawRectangle } from '../types/excalidraw.types';
 import { ExecutionPlanNode } from '../types/execution-plan.types';
 import { DistributedAnalysis, PlanDocument, PlanNode, TaskPlan } from '../types/plan-document.types';
@@ -16,16 +17,21 @@ export class DistributedExcalidrawGenerator {
     const composition = new SceneComposition();
     const elements: ExcalidrawElement[] = [];
     const network = new LeafNodeGenerator({
-      details: (n) => ['from Stage ' + ((n as PlanNode).network?.producer ?? '?'), 'input tasks=' + (n.properties?.input_tasks ?? '?')],
-      outputArrows: (n) => Number(n.properties?.output_partitions) || 0,
+      details: (n) => ['from Stage ' + ((n as PlanNode).network?.producer ?? '?'), 'input tasks=' + (n.properties?.input_tasks ?? '?'),
+        ...(n.properties?.sort_exprs ? ['sort-merge ' + n.properties.sort_exprs] : [])]
+        .flatMap((line) => wrapLabel(line, 270, 16).split('\n')),
+      outputArrows: (n) => Number(n.properties?.output_partitions ?? n.properties?.partitions_per_consumer) || 0,
     });
     const stages: StageScene[] = document.stages.map((stage) => {
       const workers: WorkerScene[] = [];
+      // Keep a small grouped-gather example explicit instead of hiding one producer.
+      const showSmallGather = stage.tasks <= 3 && analysis.connections.some((edge) =>
+        edge.producer === stage.id && edge.groupedGather);
       for (const group of taskGroups(analysis.tasks.filter((t) => t.stage === stage.id))) {
-        const selected = this.distributed.workerDisplay === 'all' || group.length <= 2 ? group : [group[0], group[group.length - 1]];
+        const selected = this.distributed.workerDisplay === 'all' || showSmallGather || group.length <= 2 ? group : [group[0], group[group.length - 1]];
         selected.forEach((task, index) => {
           const generator = new ExcalidrawGenerator({ ...this.config, customGenerators: [
-            { operator: 'NetworkCoalesceExec', generator: network }, { operator: 'NetworkShuffleExec', generator: network },
+            { operator: 'NetworkBroadcastExec', generator: network }, { operator: 'NetworkCoalesceExec', generator: network }, { operator: 'NetworkShuffleExec', generator: network },
             { operator: 'DistributedUnionExec', generator: new DistributedUnionNodeGenerator() }, ...(this.config.customGenerators ?? []),
           ] });
           const shapes = new Map<ExecutionPlanNode, ExcalidrawElement>();
@@ -121,7 +127,7 @@ export class DistributedExcalidrawGenerator {
       }
       const streams = [...new Set(edge.pairs.map((p) => p.streams ?? 'unknown'))].join(', ') || 'unknown';
       const omitted = edge.pairs.length - visible.length;
-      const caption = composition.text(edge.operator + '\nStage ' + edge.producer + ' -> ' + edge.consumer +
+      const caption = composition.text(edge.operator + (edge.routing === 'shuffle-two-phase' ? ' (two-phase)' : '') + '\nStage ' + edge.producer + ' -> ' + edge.consumer +
         '\nStreams/bundle: ' + streams + '\n' + (edge.routingKnown ? edge.pairs.length + ' connections' : 'routing unresolved'),
       40, source.y - Number(source.customData?.gap) + 20 + localIndex * 110, 275, 16, '#6741d9');
       elements.push(caption);

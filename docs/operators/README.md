@@ -3,9 +3,9 @@
 Comparison of Apache DataFusion physical operators (`datafusion-physical-plan`
 **55.1.0**, September 2026) against plan-viz **0.1.23**.
 
-Unknown operators already render via `DefaultNodeGenerator` (red
-`unimplemented`). This catalog is the work queue to replace that fallback with
-real diagrams.
+Unknown operators render neutral boxes and can reuse known renderers through structural inference.
+
+The [Distributed DataFusion audit](distributed-datafusion.md) covers current distributed operators, public examples/test helpers, network formulas, legacy compatibility, and explicit metadata limits.
 
 ## Already implemented (34)
 

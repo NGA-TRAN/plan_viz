@@ -31,6 +31,8 @@ export interface PlanSection { title: string; text: string }
 export interface PartitionCount {
   value?: number;
   assigned?: number;
+  /** Advertised slots without an upstream stream in an uneven grouped gather. */
+  padding?: number;
   evidence: string;
 }
 export interface TaskPlan {
@@ -46,6 +48,8 @@ export interface NetworkConnection {
   operator: string;
   pairs: Array<{ from: number; to: number; streams?: number }>;
   routingKnown: boolean;
+  routing?: 'gather' | 'grouped-gather' | 'broadcast' | 'shuffle-direct' | 'shuffle-two-phase';
+  groupedGather?: boolean;
 }
 export interface DistributedAnalysis {
   tasks: TaskPlan[];

@@ -251,6 +251,9 @@ export class ExecutionPlanParser {
       return { operator: line };
     }
 
+    // Upstream's DistributedAnalyzeExec uniquely omits the colon before verbose.
+    line = line.replace(/^DistributedAnalyzeExec (?=verbose=)/, 'DistributedAnalyzeExec: ');
+
     // Extract operator name and properties from formats like:
     // "ProjectionExec: expr=[a, b, c]"
     // "FilterExec: predicate=a > 10"
