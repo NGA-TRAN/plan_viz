@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Lead the README with single-node, distributed, and unfamiliar-operator examples; consolidate installation and move detailed API, CLI, routing, customization, and corpus-review guidance into dedicated guides.
+- Add shuffle-aggregation and worker-local join diagrams with their text plans and editable Excalidraw sources; retain the annotated reading guide in a collapsible README section.
+
 ## [0.1.25] - 2026-09-30
 
 ### Added
@@ -332,4 +336,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Jest testing framework integration
 - ESLint and Prettier configuration
 - Commitizen for conventional commits
-

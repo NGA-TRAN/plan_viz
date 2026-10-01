@@ -29,7 +29,10 @@ plan_viz/
 │   └── usage-example.ts
 ├── scripts/                # Operator checks, upstream audit, corpus review, browser checks
 ├── docs/
-│   ├── assets/             # README illustrations
+│   ├── API.md / CLI.md     # Public interfaces and options
+│   ├── DISTRIBUTED_PLANS.md / CUSTOM_OPERATORS.md
+│   ├── CORPUS_REVIEW.md     # Saved-plan inventory and gallery workflow
+│   ├── assets/             # README illustrations and their text/scene sources
 │   └── operators/          # Operator specs and pinned distributed inventory
 ├── .github/workflows/      # CI and tag-triggered npm publishing
 ├── tsconfig.json           # Shared TypeScript settings

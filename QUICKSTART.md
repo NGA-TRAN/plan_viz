@@ -89,7 +89,7 @@ ending at the receiving network operator. Ellipses mark omitted partitions,
 tasks, or connections. Empty padding has no incoming network arrow.
 
 Unknown counts and incomplete worker topology remain explicit. See
-[diagram conventions and limits](README.md#distributed-physical-plans).
+[diagram conventions and limits](docs/DISTRIBUTED_PLANS.md).
 
 ## Development checks
 
@@ -105,6 +105,6 @@ npx playwright install chromium
 node scripts/verify-distributed.cjs
 ```
 
-See [README](README.md#api) for the full API, [CONTRIBUTING](CONTRIBUTING.md)
+See [API reference](docs/API.md) for the full API, [CONTRIBUTING](CONTRIBUTING.md)
 for review/release checks, and [the distributed fixture directory](tests/distributed/)
 for gather, broadcast, shuffle, join, UNION, and legacy examples.

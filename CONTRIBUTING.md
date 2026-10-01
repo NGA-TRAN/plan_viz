@@ -69,7 +69,7 @@ node scripts/audit-upstream-operators.cjs /path/to/datafusion-distributed
 The operator inventory check requires the revision pinned in
 [the distributed audit](docs/operators/distributed-datafusion.md). Browser checks
 exercise the CLI and actual Excalidraw worker/operator/network-input dragging.
-For larger input collections, use [corpus review tooling](README.md#corpus-review-tooling).
+For larger input collections, use [corpus review tooling](docs/CORPUS_REVIEW.md).
 Keep external inputs and generated galleries in ignored local directories.
 
 ## Before opening a pull request
