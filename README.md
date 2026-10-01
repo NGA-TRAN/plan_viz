@@ -62,13 +62,16 @@ partitions per task. Purple arrows bundle streams between tasks and connect to t
 receiving network operator. Ellipses mark omitted tasks or connections; task slots
 do not represent physical machines.
 
-The examples show the first and last equivalent tasks. Use `--all-workers` to draw
-every task. See [distributed conventions and limits](docs/DISTRIBUTED_PLANS.md) for
-gathers, shuffle, broadcast, UNION, and incomplete recordings.
+Equivalent tasks show their first and last instances by default; this example has
+two tasks per stage, so both are shown. Use `--all-workers` to draw every task in
+larger plans. See [distributed conventions and limits](docs/DISTRIBUTED_PLANS.md).
 
-### Shuffle aggregation and gather
+### Range-partitioned join with dynamic filtering
 
-Four producer tasks scan and partially aggregate events by region. A hash shuffle sends the partial results to three aggregation tasks, each with two output partitions. The coordinator gathers those six streams and coalesces them into one.
+Two tasks join range-partitioned catalog and event inputs, with dynamic filters
+on the event scans. They partially aggregate counts by region, then hash-shuffle
+the results to two final aggregation tasks. The coordinator gathers their four
+output streams and coalesces them into one.
 
 <details open>
 <summary>Text plan</summary>
@@ -76,50 +79,32 @@ Four producer tasks scan and partially aggregate events by region. A hash shuffl
 ```text
 ┌───── DistributedExec
 │ CoalescePartitionsExec
-│   [Stage 2] => NetworkCoalesceExec: output_partitions=6, input_tasks=3
+│   [Stage 2] => NetworkCoalesceExec: output_partitions=4, input_tasks=2
 └──────────────────────────────────────────────────
-  ┌───── Stage 2 ── tasks=3, partitions=6
-  │ AggregateExec: mode=FinalPartitioned, gby=[region@0 as region], aggr=[count(*)]
-  │   [Stage 1] => NetworkShuffleExec: output_partitions=2, input_tasks=4
+  ┌───── Stage 2 ── tasks=2, partitions=2
+  │ ProjectionExec: expr=[region@0 as region, count(Int64(1))@1 as n]
+  │   AggregateExec: mode=FinalPartitioned, gby=[region@0 as region], aggr=[count(Int64(1))]
+  │     [Stage 1] => NetworkShuffleExec: output_partitions=2, input_tasks=2
   └──────────────────────────────────────────────────
-    ┌───── Stage 1 ── tasks=4, partitions=6
-    │ RepartitionExec: partitioning=Hash([region@0], 6), input_partitions=2
-    │   AggregateExec: mode=Partial, gby=[region@0 as region], aggr=[count(*)]
-    │     DataSourceExec: file_groups={2 groups: [[events-1.parquet], [events-2.parquet]]}, projection=[region, value], file_type=parquet
+    ┌───── Stage 1 ── tasks=2, partitions=4
+    │ RepartitionExec: partitioning=Hash([region@0], 4), input_partitions=2
+    │   AggregateExec: mode=Partial, gby=[region@0 as region], aggr=[count(Int64(1))]
+    │     HashJoinExec: mode=Partitioned, join_type=Inner, on=[(catalog_key@1, event_key@0)], projection=[region@0]
+    │       FilterExec: category@1 = sensor, projection=[region@0, catalog_key@2]
+    │         DistributedLeafExec:
+    │           t0: DataSourceExec: file_groups={2 groups: [[fixtures/catalog/catalog_key=A/data0.parquet], [fixtures/catalog/catalog_key=C/data0.parquet]]}, projection=[region, category, catalog_key], output_partitioning=Range([catalog_key@2 ASC NULLS LAST], [(C)], 2), file_type=parquet, predicate=category@1 = sensor, pruning_predicate=category_null_count@2 != row_count@3 AND category_min@0 <= sensor AND sensor <= category_max@1, required_guarantees=[category in (sensor)]
+    │           t1: DataSourceExec: file_groups={2 groups: [[fixtures/catalog/catalog_key=B/data0.parquet], [fixtures/catalog/catalog_key=D/data0.parquet]]}, projection=[region, category, catalog_key], output_partitioning=Range([catalog_key@2 ASC NULLS LAST], [(C)], 2), file_type=parquet, predicate=category@1 = sensor, pruning_predicate=category_null_count@2 != row_count@3 AND category_min@0 <= sensor AND sensor <= category_max@1, required_guarantees=[category in (sensor)]
+    │       DistributedLeafExec:
+    │         t0: DataSourceExec: file_groups={2 groups: [[fixtures/events/event_key=A/data0.parquet], [fixtures/events/event_key=C/data0.parquet]]}, projection=[event_key], output_partitioning=Range([event_key@0 ASC NULLS LAST], [(C)], 2), file_type=parquet, predicate=DynamicFilter [ event_key@2 >= A AND event_key@2 <= A AND event_key@2 IN (SET) ([<values>]) ], dynamic_rg_pruning=eligible, pruning_predicate=event_key_null_count@1 != row_count@2 AND event_key_max@0 >= A AND event_key_null_count@1 != row_count@2 AND event_key_min@3 <= A AND event_key_null_count@1 != row_count@2 AND event_key_min@3 <= A AND A <= event_key_max@0, required_guarantees=[event_key in (A)]
+    │         t1: DataSourceExec: file_groups={2 groups: [[fixtures/events/event_key=B/data0.parquet], [fixtures/events/event_key=D/data0.parquet]]}, projection=[event_key], output_partitioning=Range([event_key@0 ASC NULLS LAST], [(C)], 2), file_type=parquet, predicate=DynamicFilter [ event_key@2 >= B AND event_key@2 <= B AND event_key@2 IN (SET) ([<values>]) ], dynamic_rg_pruning=eligible, pruning_predicate=event_key_null_count@1 != row_count@2 AND event_key_max@0 >= B AND event_key_null_count@1 != row_count@2 AND event_key_min@3 <= B AND event_key_null_count@1 != row_count@2 AND event_key_min@3 <= B AND B <= event_key_max@0, required_guarantees=[event_key in (B)]
     └──────────────────────────────────────────────────
 ```
 
 </details>
 
-![Distributed aggregation with four producer tasks, three aggregation tasks, and a coordinator connected by purple shuffle and gather arrows](docs/assets/distributed-shuffle-aggregate.png)
+![Distributed range-partitioned join with dynamic filtering, partial aggregation, shuffle, final aggregation, and gather](docs/assets/distributed-dynamic-filter-range-join.png)
 
-[Plan text](docs/assets/distributed-shuffle-aggregate.txt) · [Full-size diagram](docs/assets/distributed-shuffle-aggregate.png) · [Editable Excalidraw](docs/assets/distributed-shuffle-aggregate.excalidraw)
-
-### Worker-local partitioned join and gather
-
-Four tasks each join two local inputs on record_id, using two partitions per input and two hash tables. The coordinator gathers the eight resulting streams and coalesces them into one. The inputs must already be partitioned compatibly; this example has no network shuffle before the join.
-
-<details open>
-<summary>Text plan</summary>
-
-```text
-┌───── DistributedExec
-│ CoalescePartitionsExec
-│   [Stage 1] => NetworkCoalesceExec: output_partitions=8, input_tasks=4
-└──────────────────────────────────────────────────
-  ┌───── Stage 1 ── tasks=4, partitions=8
-  │ HashJoinExec: mode=Partitioned, join_type=Inner, on=[(record_id@0, record_id@0)]
-  │   DataSourceExec: file_groups={2 groups: [[catalog-1.parquet], [catalog-2.parquet]]}, projection=[record_id, region], file_type=parquet
-  │   BufferExec: capacity=_
-  │     DataSourceExec: file_groups={2 groups: [[readings-1.parquet], [readings-2.parquet]]}, projection=[record_id, value], file_type=parquet
-  └──────────────────────────────────────────────────
-```
-
-</details>
-
-![Distributed join with four tasks, each containing two data sources and a partitioned hash join, gathered by a coordinator](docs/assets/distributed-colocated-join.png)
-
-[Plan text](docs/assets/distributed-colocated-join.txt) · [Full-size diagram](docs/assets/distributed-colocated-join.png) · [Editable Excalidraw](docs/assets/distributed-colocated-join.excalidraw)
+[Plan text](tests/distributed/dynamic_filter_range_join.sql) · [Full-size diagram](docs/assets/distributed-dynamic-filter-range-join.png) · [Editable Excalidraw](tests/distributed/expected/dynamic_filter_range_join.excalidraw)
 
 ## Custom and unfamiliar operators
 

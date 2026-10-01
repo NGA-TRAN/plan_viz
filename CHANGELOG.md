@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Lead the README with single-node, distributed, and unfamiliar-operator examples; consolidate installation and move detailed API, CLI, routing, customization, and corpus-review guidance into dedicated guides.
-- Add shuffle-aggregation and worker-local join diagrams with their text plans and editable Excalidraw sources; retain the annotated reading guide in a collapsible README section.
+- Illustrate distributed plans with the dynamic-filter range-join test and its diagram; link to the fixture and editable expected drawing, and retain the annotated reading guide in a collapsible README section.
 
 ## [0.1.25] - 2026-09-30
 
