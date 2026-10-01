@@ -19,9 +19,9 @@ DataSinkExec / FileSinkExec, RecursiveQueryExec, ScalarSubqueryExec.
 
 ## Distributed DataFusion
 
-See the [source-backed operator audit](docs/operators/distributed-datafusion.md) and its machine-readable inventory for distributed support and remaining metadata limitations.
+The source tree supports distributed stage/task diagrams, gather and grouped gather, broadcast, direct/two-phase shuffle, and task-specific UNION. See the [source-backed operator audit](docs/operators/distributed-datafusion.md) and its machine-readable inventory for the 20 current upstream implementations, legacy isolation support, and metadata limitations. Distributed support remains Unreleased.
 
-## Missing (specs ready for review)
+## Implemented operator specifications
 
 **Wave A (implemented):** [WindowAggExec](docs/operators/window-agg-exec.md),
 [BoundedWindowAggExec](docs/operators/bounded-window-agg-exec.md),
@@ -53,6 +53,10 @@ LeftAnti). `TopKExec` is `SortExec` + `fetch`. `ParquetExec` / `CsvExec` /
 `JsonExec` folded into `DataSourceExec`. `DistinctExec` is `AggregateExec`.
 `ValuesExec` is registered to the `LazyMemoryExec` renderer. Custom ops use
 `customGenerators` (v0.1.15).
+
+## Remaining scope
+
+All four implementation waves listed above are complete. This is not an exhaustive inventory of every DataFusion extension. Unknown names may use structural inference or a neutral box; known local rendering does not imply a complete distributed count contract. Abbreviated plans and worker-only recordings can retain unknown counts or routes.
 
 ## Workflow
 

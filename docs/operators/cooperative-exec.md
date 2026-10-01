@@ -24,6 +24,8 @@ CooperativeExec
 
 - Unary wrapper. 1:1 arrows. Preserve child columns/sort.
 - No details (DataFusion prints only the name).
+- Distributed count analysis can propagate consumer evidence through the wrapper
+  to a child whose output count is otherwise unknown.
 
 ## Tests
 

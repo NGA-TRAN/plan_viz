@@ -15,7 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add explicit snapshot section selection, an all-workers view, structured conversion diagnostics, and partial worker-recording views.
 - Add invented distributed fixtures and reproducible upstream/connector corpus galleries with Excalidraw exports and label checks.
 
+### Changed
+- Refresh README, API/CLI usage, architecture, fixture guidance, and contribution/release documentation for distributed plan support.
+
 ### Fixed
+- Preserve standalone sampler child stream multiplicity and topology when source metadata is omitted.
 - Draw stream multiplicity for operators with inferred counts and recognize direct shuffles beneath partial reduction.
 - Recover custom-operator partition counts from printed repartition inputs and network-gather capacity, propagating through known preserving operators.
 - Exclude compiled tests and test helpers from production builds and npm packages.

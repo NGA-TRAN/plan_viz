@@ -7,7 +7,7 @@ pattern and is not checked into this project. Use this workflow instead.
 ## Why not Spec Kit here
 
 - Adding an operator is a **closed shape**: generator + register + unit tests +
-  golden `tests/*.sql` pair. A full SDD cycle recreates that every time.
+  golden fixture/expected-drawing pair. A full SDD cycle recreates that every time.
 - Spec Kit is not initialized in this repo (no `.specify/`).
 - Review is easier when each operator is one short spec with a **verify
   command**, not a long plan/tasks tree.
@@ -39,7 +39,7 @@ Each operator owns these files. No other operator should touch them:
 | `tests/<scenario>.sql` | Integration fixture (name prefixed with operator) |
 | `tests/expected/<scenario>.excalidraw` | Golden diagram |
 
-Shared choke points (edit last, one line each):
+Shared integration points (coordinate changes):
 
 - `src/generators/excalidraw.generator.ts` — `register('FooExec', ...)`
 - `docs/operators/README.md` and `MISSING_OPERATORS.md` — status
@@ -79,7 +79,7 @@ Or:
 Open `tests/expected/<scenario>.excalidraw` in the Excalidraw IDE extension
 to review the picture, not just the JSON diff.
 
-Full `npm test` + `npm run lint` is the PR gate, not the review loop.
+Full build, `npm run test:coverage`, and `npm run lint` are the PR gate. See [CONTRIBUTING.md](../../CONTRIBUTING.md) for package and browser checks.
 
 ## Implementation checklist (agent)
 
@@ -91,5 +91,39 @@ Full `npm test` + `npm run lint` is the PR gate, not the review loop.
 6. Run the isolated verify commands until they pass.
 7. Flip the spec status to `Implemented` and update the catalog.
 
-Do not change parser code unless the spec says the EXPLAIN line is not
-`key=value` and needs a positional property (today only `FilterExec` does).
+Parser changes belong in the spec when the printed format requires them,
+including positional properties, inline wrappers, stage headers, or task variants.
+
+## Distributed operators and execution contracts
+
+A registered renderer alone does not establish distributed behavior. Use the
+[source-backed audit](distributed-datafusion.md) when extending a public upstream
+operator; private extensions should be inferred from structure and use invented
+fixture names.
+
+1. Record printed metadata and execution semantics: effective task context,
+   logical partitions, network producer/receiver pairs, and padding.
+2. Update the relevant `src/analysis/` contract and parser only as needed. Keep
+   unknown counts explicit when the text lacks evidence.
+3. Add semantic regressions in `src/parsers/__tests__/` and any drawing/binding
+   tests in `src/generators/__tests__/`.
+4. Add `tests/distributed/<scenario>.sql` and its matching
+   `tests/distributed/expected/<scenario>.excalidraw`. Preserve source indentation
+   and counts when sanitizing names.
+5. Generate expected output with the built CLI and visually inspect it. Check
+   arrows end at their receiving operators, omission markers, and empty padding.
+6. Update `distributed-datafusion-audit.json` and its documentation if the public
+   inventory or execution contract changes. Run the pinned inventory check.
+
+```sh
+npm run build
+node dist/cli.js -i tests/distributed/shuffle_two_phase.sql \
+  -o tests/distributed/expected/shuffle_two_phase.excalidraw
+npx jest --runInBand --coverage=false tests/integration.test.ts -t shuffle_two_phase
+npx jest --runInBand --coverage=false distributed-plan.parser grouped-gather partition-inference upstream-operators
+node scripts/audit-upstream-operators.cjs /path/to/datafusion-distributed
+```
+
+After changing distributed layout/bindings, run `scripts/verify-distributed.cjs`
+with Playwright Chromium installed. Use the local corpus gallery for broader
+visual review; external source snapshots and gallery artifacts stay untracked.

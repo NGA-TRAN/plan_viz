@@ -1,7 +1,8 @@
 # DataFusion operator catalog
 
 Comparison of Apache DataFusion physical operators (`datafusion-physical-plan`
-**55.1.0**, September 2026) against plan-viz **0.1.23**.
+**55.1.0**, September 2026). This catalog describes the current repository;
+see [the changelog](../../CHANGELOG.md) for released versus Unreleased support.
 
 Unknown operators render neutral boxes and can reuse known renderers through structural inference.
 
@@ -46,9 +47,20 @@ The [Distributed DataFusion audit](distributed-datafusion.md) covers current dis
 | `RecursiveQueryExec` | `recursive-query-node.generator.ts` |
 | `ScalarSubqueryExec` | `scalar-subquery-node.generator.ts` |
 
-## Missing — implement these
+## Implemented operator specifications
 
-Reviewed against DataFusion 55.1.0 source and docs.rs. Waves A–D are done.
+Waves A–D are complete. These files record the local renderer contracts and
+focused verification commands. Distributed count analysis is a separate contract;
+consult the [distributed audit](distributed-datafusion.md) for its scope.
+
+### Wave A — windows and unary/join additions (implemented)
+
+| Operator | Spec | Children | Why |
+|---|---|---|---|
+| `WindowAggExec` | [window-agg-exec.md](window-agg-exec.md) | 1 | Window expressions |
+| `BoundedWindowAggExec` | [bounded-window-agg-exec.md](bounded-window-agg-exec.md) | 1 | Streaming window expressions |
+| `NestedLoopJoinExec` | [nested-loop-join-exec.md](nested-loop-join-exec.md) | 2 | Non-equijoin predicates |
+| `UnnestExec` | [unnest-exec.md](unnest-exec.md) | 1 | Expand list/struct values |
 
 ### Wave B — joins and set-like fan-in (implemented)
 
@@ -95,11 +107,15 @@ standalone physical `*Exec` nodes in DataFusion 55:
 | `ValuesExec` | Legacy name; registered to the same generator as `LazyMemoryExec` |
 | `ExtensionExec` | User-defined; use `customGenerators` (already shipped in 0.1.15) |
 
-## How to review
+## Remaining scope and review
 
-1. Read [WORKFLOW.md](./WORKFLOW.md).
-2. Waves A–D are implemented. Review only if new DataFusion operators appear.
-3. Reply with which specs are approved (or request visual changes).
-4. Implementation starts only after that approval.
+Unknown operators can reuse a structurally compatible renderer or retain a
+neutral box. This is not a claim that all dependency operators have audited
+distributed partition semantics. Missing task/source metadata remains visible.
+
+For new operators or contract changes, use [WORKFLOW.md](WORKFLOW.md), confirm
+the execution behavior from source, and review both semantic tests and the
+expected drawing. Public upstream names can have explicit support; private
+extensions should use structural inference and sanitized fixtures.
 
 Template for a new spec: [_TEMPLATE.md](./_TEMPLATE.md).

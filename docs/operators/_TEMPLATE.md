@@ -27,6 +27,8 @@ Properties the parser already extracts as `node.properties`.
 - Layout: vertical children / horizontal two-input / multi-child
 - Arrows in → arrows out (partition math)
 - Sort-order: preserve / lose / add
+- Count evidence: printed fields / child contract / task context / unknown
+- If distributed: producer/receiver mapping, streams per pair, and empty padding
 - Special glyphs: none / ellipse / color
 - Details lines to render
 
@@ -34,7 +36,7 @@ Properties the parser already extracts as `node.properties`.
 
 Unit (`src/generators/__tests__/operators/<kebab>-exec.test.ts`):
 
-- Happy path renders operator name (not red `unimplemented`)
+- Happy path renders the intended operator shape and details rather than only the neutral fallback
 - Properties appear in detail text
 - Arrow / column / sort propagation
 - Invalid child count throws when the operator requires a fixed arity
@@ -43,6 +45,7 @@ Integration:
 
 - `tests/<prefix>_basic.sql` + `tests/expected/<prefix>_basic.excalidraw`
 - One extra fixture only if layout stress matters (many partitions, 2+ children)
+- Distributed cases: `tests/distributed/<scenario>.sql` + `tests/distributed/expected/<scenario>.excalidraw`
 
 ## Verify
 
