@@ -34,7 +34,7 @@ flowchart TD
   conversion diagnostics on stderr. `--section` selects a 1-based snapshot
   section; `--all-workers` expands representative task groups.
 
-See [the API reference](../README.md#api) for configuration and return values.
+See [the API reference](API.md) for configuration and return values.
 The service constructs its parsers and generators internally. It does not expose
 an injectable parser or an alternate-output-format interface.
 

@@ -40,9 +40,9 @@ and [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for source and fixture location
 
 ## Usage and development
 
-Start with [QUICKSTART.md](../QUICKSTART.md). The [README API](../README.md#api)
-covers `convertPlanToExcalidraw`, `ConverterService.convertDetailed`, configuration,
-and CLI options. `customGenerators` can add or replace operator renderers.
+Start with [QUICKSTART.md](../QUICKSTART.md). The [API reference](API.md)
+covers `convertPlanToExcalidraw`, `ConverterService.convertDetailed`, and configuration;
+the [CLI reference](CLI.md) lists command-line options. `customGenerators` can add or replace operator renderers.
 
 ```sh
 npm ci
@@ -64,7 +64,11 @@ helpers; corpus exports stay in ignored local directories.
 
 | Document | Purpose |
 |---|---|
-| [README](../README.md) | Usage, API, diagram conventions, limitations, and corpus tools |
+| [README](../README.md) | Visual examples, shared installation, and basic usage |
+| [API](API.md) / [CLI](CLI.md) | Configuration, diagnostics, input formats, and options |
+| [Distributed plans](DISTRIBUTED_PLANS.md) | Diagram conventions, routing, and limitations |
+| [Custom operators](CUSTOM_OPERATORS.md) | Inference, wrappers, and renderer registration |
+| [Corpus review](CORPUS_REVIEW.md) | Inventory, conversion, and gallery tooling |
 | [Quick start](../QUICKSTART.md) | Build or install, convert a plan, open the drawing |
 | [Architecture](ARCHITECTURE.md) | Parsing, analysis, rendering, and extension boundaries |
 | [Project structure](PROJECT_STRUCTURE.md) | Source, tests, scripts, and generated artifacts |
