@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.26] - 2026-10-01
+
 ### Changed
 - Lead the README with single-node, distributed, and unfamiliar-operator examples; consolidate installation and move detailed API, CLI, routing, customization, and corpus-review guidance into dedicated guides.
 - Illustrate distributed plans with the dynamic-filter range-join test and its diagram; link to the fixture and editable expected drawing, and retain the annotated reading guide in a collapsible README section.
