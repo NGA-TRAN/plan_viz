@@ -1,177 +1,123 @@
 # Contributing to plan-viz
 
-Thank you for your interest in contributing! We follow trunk-based development and use conventional commits.
+Use feature branches from `master` and Conventional Commits. See
+[the architecture](docs/ARCHITECTURE.md) and
+[operator workflow](docs/operators/WORKFLOW.md) before changing rendering or
+execution contracts.
 
-## Getting Started
+## Setup
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/plan-viz.git`
-3. Install dependencies: `npm install`
-4. Create a feature branch: `git checkout -b feature/your-feature-name`
+Use Node.js 20 or newer.
 
-## Development Workflow
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-### Linting and Formatting
-
-```bash
-# Lint code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Format code
-npm run format
-```
-
-### Building
-
-```bash
-# Build the project
+```sh
+git clone https://github.com/YOUR_USERNAME/plan_viz.git
+cd plan_viz
+npm ci
+git switch -c feature/your-change
 npm run build
+```
 
-# Clean build artifacts
+`npm run build` uses `tsconfig.build.json` to exclude tests and test helpers from
+production output. `npm run clean` removes `dist/` and `coverage/`.
+
+## Development checks
+
+```sh
+npm test                     # All unit and integration tests
+npm run test:watch           # Watch mode
+npm run test:coverage        # Coverage report and thresholds
+npm run lint                 # ESLint
+npm run lint:fix             # Apply lint fixes
+npm run format               # Format src/**/*.ts
+```
+
+Follow the existing TypeScript style and keep changes focused. Jest enforces
+80% global coverage for statements, branches, functions, and lines. Add meaningful
+regressions for changed behavior, including count/routing evidence and malformed
+input where relevant.
+
+## Fixtures and visual review
+
+Single-tree fixtures live in `tests/*.sql` with matching
+`tests/expected/*.excalidraw`. Distributed fixtures live in
+`tests/distributed/*.sql` with matching `tests/distributed/expected/*.excalidraw`.
+The files contain saved EXPLAIN text; tests do not execute SQL. Keep representative
+indentation and replace private names with invented names while preserving plan
+structure, task counts, and empty partition slots.
+
+Generate one expected drawing after building:
+
+```sh
+node dist/cli.js -i tests/distributed/gather_four_tasks.sql \
+  -o tests/distributed/expected/gather_four_tasks.excalidraw
+npx jest --runInBand --coverage=false tests/integration.test.ts -t gather_four_tasks
+```
+
+Review the drawing itself before accepting a changed expected file. Integration
+tests normalize generated identifiers, compare scenes, check text bindings, and
+require a matching expected file for each fixture in both directories.
+
+For distributed parser, count, and routing work:
+
+```sh
+npx jest --runInBand --coverage=false distributed-plan.parser grouped-gather partition-inference upstream-operators
+npx playwright install chromium
+node scripts/verify-distributed.cjs
+node scripts/audit-upstream-operators.cjs /path/to/datafusion-distributed
+```
+
+The operator inventory check requires the revision pinned in
+[the distributed audit](docs/operators/distributed-datafusion.md). Browser checks
+exercise the CLI and actual Excalidraw worker/operator/network-input dragging.
+For larger input collections, use [corpus review tooling](README.md#corpus-review-tooling).
+Keep external inputs and generated galleries in ignored local directories.
+
+## Before opening a pull request
+
+```sh
 npm run clean
+npm run build
+npm run lint
+npm run test:coverage
+npm pack --dry-run --ignore-scripts
 ```
 
-## Commit Guidelines
+Update affected documentation and the **Unreleased** changelog. Describe the
+observable behavior, why it changed, the relevant tests, and remaining limits.
+Include fixture paths so reviewers can open the expected drawings. Review
+requirements are enforced by repository settings.
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) specification.
+## Commits
 
-```bash
-# Use commitizen for guided commits
-npm run commit
+Use `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, or `chore:` followed by a concrete
+description. `npm run commit` opens the Commitizen prompt. For example:
+
+```text
+fix: connect grouped gather streams to their receiving operators
+test: cover empty padding in uneven gathers
+docs: explain distributed stream bundles and task slots
 ```
 
-### Commit Types
+## CI and releases
 
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
-- `refactor`: Code refactoring
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
+[ci-cd.yml](.github/workflows/ci-cd.yml) runs on pull requests targeting `master`,
+pushes to `master`, and `v*` tags. It runs lint, coverage tests on Node 20, 22, and
+latest, then a production build. Only a pushed version tag triggers publishing.
+Merging a feature PR does not publish a package.
 
-### Examples
+For a release:
 
-```
-feat: add support for window functions in parser
-fix: correct arrow positioning for multiple children
-docs: update API documentation with examples
-test: add tests for nested execution plans
-```
+1. Prepare a release branch from updated `master`. Move the appropriate Unreleased
+   changelog entries into a dated version section and update both `package.json`
+   and `package-lock.json` (for example, `npm version patch --no-git-tag-version`).
+2. Run the checks above, review the package contents, and merge the release PR.
+3. Fetch the merged release commit and create its matching tag. Push that exact
+   tag, for example `git tag vX.Y.Z <release-commit>` followed by
+   `git push origin vX.Y.Z`.
+4. Check the publish workflow result. It verifies that the tag version matches
+   `package.json`, runs tests/build, and publishes to npm.
 
-## Code Style
-
-- Follow the [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
-- Use Clean Code principles
-- Apply SOLID principles
-- Write self-documenting code
-- Add comments for complex logic
-
-## Testing Requirements
-
-- Maintain minimum 80% code coverage
-- Write unit tests for all new features
-- Include edge case testing
-- Test error handling
-
-## Pull Request Process
-
-1. Update documentation for any changed functionality
-2. Add tests for new features
-3. Ensure all tests pass: `npm test`
-4. Ensure code is linted: `npm run lint`
-5. Update README.md if needed
-6. Create a pull request with a clear description
-
-## Code Review
-
-All submissions require review. We aim to:
-
-- Provide constructive feedback
-- Respond within 48 hours
-- Maintain high code quality standards
-
-## CI/CD Pipeline
-
-The project uses GitHub Actions for continuous integration and deployment. The pipeline automatically:
-
-1. **Lints** code on every push and pull request
-2. **Tests** on multiple Node.js versions (20, 22, latest)
-3. **Builds** the project to verify compilation
-4. **Publishes** to npm when a version tag is pushed (e.g., `v1.0.0`)
-
-### Pipeline Jobs
-
-- **Lint**: Runs ESLint to check code style
-- **Test**: Runs Jest tests with coverage on multiple Node versions
-- **Build**: Compiles TypeScript and verifies build artifacts
-- **Publish**: Publishes to npm when a version tag is pushed
-
-### Publishing a New Version
-
-To publish a new version to npm:
-
-1. **Update version in package.json**:
-   ```bash
-   npm version patch  # for 0.1.0 -> 0.1.1
-   npm version minor  # for 0.1.0 -> 0.2.0
-   npm version major  # for 0.1.0 -> 1.0.0
-   ```
-
-2. **Push the version tag**:
-   ```bash
-   git push origin main --tags
-   ```
-
-3. **The CI/CD pipeline will automatically**:
-   - Run all tests and linting
-   - Build the project
-   - Verify the package.json version matches the tag
-   - Publish to npm (if NPM_TOKEN is configured)
-
-### Setting Up NPM_TOKEN
-
-To enable automatic publishing, you need to configure an npm access token:
-
-1. **Create an npm access token**:
-   - Go to [npmjs.com](https://www.npmjs.com/)
-   - Log in and go to Access Tokens
-   - Create a new "Automation" token (for CI/CD)
-
-2. **Add the token to GitHub Secrets**:
-   - Go to your GitHub repository
-   - Navigate to Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `NPM_TOKEN`
-   - Value: Your npm access token
-   - Click "Add secret"
-
-The pipeline will use this token to authenticate with npm when publishing.
-
-### Version Tag Format
-
-Version tags must follow the format `v<version>` (e.g., `v0.1.0`, `v1.2.3`). The pipeline will:
-- Extract the version from the tag
-- Verify it matches `package.json`
-- Publish to npm with that version
-
-## Questions?
-
-Feel free to open an issue for any questions or concerns.
-
+The current workflow grants `id-token: write` and uses npm trusted publishing;
+it does not configure an `NPM_TOKEN` secret. The npm package's trusted publisher
+must match this repository and workflow. Keep this guide aligned with the
+checked-in workflow when changing release authentication.

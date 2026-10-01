@@ -37,4 +37,12 @@ Read `docs/operators/WORKFLOW.md` and the approved spec
 - Unary: `filter-node.generator.ts` or `aggregate-node.generator.ts`
 - Two-input join: `cross-join-node.generator.ts` + `hash-join-node.generator.ts`
 - Multi-child: `union-node.generator.ts`
-- Newest end-to-end example: `cross-join-node.generator.ts` + `tests/cross_join_*.sql`
+- Distributed rendering/count contracts: `docs/operators/distributed-datafusion.md` and `tests/distributed/expected/`
+
+## Distributed support
+
+Follow the distributed-contract section in `docs/operators/WORKFLOW.md`. Add
+semantic tests for task context, partition capacity, routing, and padding before
+accepting a drawing. Fixtures belong in `tests/distributed/` with matching
+`expected/` scenes. Update the upstream inventory for public operators; infer
+private extensions from content and use sanitized fixture names.

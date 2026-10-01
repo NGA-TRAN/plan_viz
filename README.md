@@ -8,7 +8,7 @@
 [![CI/CD](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/NGA-TRAN/plan_viz/actions/workflows/ci-cd.yml)
 
 
-Convert Apache DataFusion physical execution plans into **Excalidraw‑JSON** for clear visualization and deeper understanding. The generated diagrams use color coding to highlight key properties and propagate them throughout the plan, making it easy to see how many streams or partitions run in parallel at each operator and whether sort order is preserved and leveraged. The visualization also pinpoints operators where parallelism or sort order is lost, helping you quickly identify bottlenecks and guide performance improvements.
+Convert Apache DataFusion single-node and distributed physical execution plans into **Excalidraw‑JSON** for clear visualization and deeper understanding. The generated diagrams use color coding to highlight key properties and propagate them throughout the plan, making it easy to see how many streams or partitions run in parallel at each operator and whether sort order is preserved and leveraged. The visualization also pinpoints operators where parallelism or sort order is lost, helping you quickly identify bottlenecks and guide performance improvements.
 
 **Additional advantages of using Excalidraw:**
 - Edit or extend the graphical plan directly in Excalidraw, then re‑save it back to JSON
@@ -19,15 +19,14 @@ Convert Apache DataFusion physical execution plans into **Excalidraw‑JSON** fo
 
 > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues)
 
-<!-- ## Features
+Distributed support is merged on `master` and remains under **Unreleased** in the
+[changelog](CHANGELOG.md). Build from source to use it before the next package release.
 
-- 📊 Parse Apache DataFusion Physical Execution Plans
-- 🎨 Generate Excalidraw-compatible JSON diagrams
-- 🔧 Use as a library or CLI tool
-- ✅ TypeScript support with full type definitions
-- 🧪 Comprehensive test coverage (>95%)
-- 🏗️ Built with Clean Code and SOLID principles
-- ⚡ Fast and lightweight -->
+- [Quick start](QUICKSTART.md)
+- [Distributed plans and diagram conventions](#distributed-physical-plans)
+- [API](#api)
+- [Operator catalog](docs/operators/README.md)
+
 
 ## Example
 
@@ -38,7 +37,7 @@ An indented EXPLAIN. You may also provide SQL or just the plan; the function aut
 Supported EXPLAIN table row labels for physical plan extraction:
 
 - `physical_plan` — standard `EXPLAIN` output
-- `Plan with Metrics` — `EXPLAIN ANALYZE` output (includes runtime metrics)
+- `Plan with Metrics` / `Plan with Full Metrics` — `EXPLAIN ANALYZE` output (includes runtime metrics)
 
   ```SQL
   | physical_plan | SortExec: expr=[env@0 ASC NULLS LAST, time_bin@1 ASC NULLS LAST], preserve_partitioning=[false]                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -87,7 +86,7 @@ This section adds pink annotations to clarify the roles of arrows, circles/ellip
 ```bash
 git clone https://github.com/NGA-TRAN/plan_viz.git
 cd plan_viz
-npm install
+npm ci
 npm run build
 ```
 
@@ -167,31 +166,33 @@ Use two spaces for each tree level, as in ordinary physical plans. Wrapper argum
 
 `BufferExec` preserves known input metadata and displays `capacity=_` literally. Aggregate summaries show `SinglePartitioned` and `PartiallySorted` explicitly. Column names such as `@host` keep their leading `@`.
 
-Distributed plans, stage references, and network shuffles remain unsupported and produce an explicit error. The library accepts a single physical plan, not a mixed snapshot file.
+Use the same library entry point for boxed distributed plans and worker recordings. Snapshot files containing multiple sections require `input.section` or CLI `--section` (1-based). See [distributed physical plans](#distributed-physical-plans) for routing, diagnostics, and incomplete-plan behavior.
 
-To audit an external snapshot corpus without copying it into this repository:
+For the single-plan audit (which excludes distributed/worker sections):
 
 ```sh
 npm run build
 node scripts/audit-corpus.cjs /path/to/snapshots --out /path/to/report.json
 ```
 
-The audit separates physical-plan sections from distributed/worker plans, logical plans, and result tables, then checks geometry, text bounds, and bindings. Add `--render-dir /path/to/scenes` to save generated Excalidraw files. Synthetic regression fixtures use invented operator names and the same two-space indentation.
+The audit separates physical-plan sections from distributed/worker plans, logical plans, and result tables, then checks geometry, text bounds, and bindings. Add `--render-dir /path/to/scenes` to save generated Excalidraw files. Synthetic regression fixtures use invented operator names and the same two-space indentation. Use [corpus review tooling](#corpus-review-tooling) to include distributed plans, worker recordings, and upstream examples.
 
 
 ### As a CLI
 
-**After package installation `npm install plan-viz`:**
+**After global CLI installation `npm install -g plan-viz`:**
+
+For a local installation, use `npx plan-viz`. Replace `plan.txt` with your saved physical EXPLAIN output.
 
 ```bash
 # Basic usage: from file
-plan-viz -i tests/join.sql -o output.excalidraw
+plan-viz -i plan.txt -o output.excalidraw
 
 # From stdin
-cat tests/join.sql | plan-viz > output.excalidraw
+cat plan.txt | plan-viz > output.excalidraw
 
 # With custom dimensions and spacing
-plan-viz -i tests/join.sql -o output.excalidraw \
+plan-viz -i plan.txt -o output.excalidraw \
   --node-width 250 \
   --node-height 100 \
   --vertical-spacing 120 \
@@ -220,6 +221,8 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 **CLI Options:**
 - `-i, --input <file>` - Input file containing the execution plan
 - `-o, --output <file>` - Output file for Excalidraw JSON
+- `--section <number>` - Select a 1-based snapshot section (required when multiple sections exist)
+- `--all-workers` - Draw every distributed task instead of representative tasks
 - `--node-width <number>` - Width of each node box (default: 200)
 - `--node-height <number>` - Height of each node box (default: 80)
 - `--vertical-spacing <number>` - Vertical spacing between nodes (default: 100)
@@ -228,6 +231,9 @@ node dist/cli.js -i tests/join.sql -o output.excalidraw \
 ### Viewing (and Editing) the Output
 
 #### Option 1: Use the UI App [plan-visualizer](https://nga-tran.github.io/plan-visualizer), customized for this library
+
+The app is deployed separately; feature availability depends on its library version.
+
 1. Enter your `EXPLAIN` output in the input panel
 2. Click the **Visualize** button to see the graphical output
 
@@ -248,213 +254,12 @@ If you use an IDE such as VSCode or Cursor, you can install the Excalidraw exten
 
 
 > **Note:** The `tests/` directory serves a dual purpose:
-> - **Test fixtures**: `.sql` files containing physical plans (and their SQL queries) with expected outputs in [`tests/expected/`] for integration tests
+> - **Test fixtures**: `.sql` files containing physical plans (and their SQL queries) with expected outputs in [`tests/expected/`](tests/expected/) for integration tests
 > - **Examples**: `.sql` files containing physical plans you can run directly with the CLI (`plan-viz -i tests/join.sql -o output.excalidraw`) or use as input to the UI App in Option 1
 >
+> Distributed fixtures and their matching drawings are in [`tests/distributed/`](tests/distributed/) and [`tests/distributed/expected/`](tests/distributed/expected/).
+>
 > See the [`tests/`](tests/) directory for sample execution plans. Expected JSON‑formatted outputs are available in [`tests/expected/`](tests/expected/) and can be opened using Option 2 or Option 3.
-
-
-## API
-
-#### `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
-
-Converts an Apache DataFusion physical execution plan into Excalidraw-compatible JSON for visualization.
-
-**Parameters:**
-- `plan` - The physical execution plan as a string
-- `config` - Optional configuration object (see below)
-
-**Returns:**
-- `ExcalidrawData` - Excalidraw-compatible JSON object
-
-**Throws:**
-- `Error` - If the plan text is invalid or empty
-
-**Configuration Options:**
-
-```typescript
-interface ConverterConfig {
-  parser?: {
-    indentationSize?: number;      // Default: 2
-    extractProperties?: boolean;    // Default: true
-  };
-  generator?: {
-    nodeWidth?: number;               // Default: 200
-    nodeHeight?: number;              // Default: 80
-    verticalSpacing?: number;         // Default: 100
-    horizontalSpacing?: number;       // Default: 50
-    operatorFontSize?: number;        // Default: 18 (for operator name)
-    detailsFontSize?: number;         // Default: 14 (for properties/details)
-    nodeColor?: string;               // Default: '#1971c2'
-    arrowColor?: string;              // Default: '#495057'
-    customGenerators?: Array<{
-      operator: string;
-      generator: NodeGeneratorStrategy;
-    }>;
-  };
-}
-```
-
-**Example:**
-
-```typescript
-import { convertPlanToExcalidraw } from 'plan-viz';
-
-const plan = `
-ProjectionExec: expr=[id, name, age]
-  FilterExec: age > 18
-    DataSourceExec: file_groups={1 groups: [[data.parquet]]}
-`;
-
-const result = convertPlanToExcalidraw(plan, {
-  generator: {
-    nodeWidth: 250,
-    nodeHeight: 100,
-    nodeColor: '#64748b',
-  },
-});
-```
-
-## Examples
-
-The project includes numerous example execution plans in the [`tests/`](tests/) directory, including:
-
-- Data source plans (`dataSource*.sql`)
-- Filter operations (`filter*.sql`)
-- Repartitioning (`repartition*.sql`)
-- Aggregation examples (`*aggregate*.sql`)
-- Projection (`*projection*.sql`)
-- Join operations (`join*.sql`, `join_hash_collectLeft.sql`, `join_hash_partitioned.sql`, `join_sort_merge*.sql`, `join_nested_loop.sql`, `join_symmetric_hash.sql`, `join_piecewise_merge.sql`)
-- TPC-H physical plans from Apache DataFusion (`tpch_q3.sql`, `tpch_q5.sql`, `tpch_q9.sql`, `tpch_q11.sql`, `tpch_q21.sql`)
-- Window functions (`window_agg*.sql`, `window_bounded*.sql`, `window_streaming_unbounded.sql`)
-- Unnest (`unnest_basic.sql`)
-- Sorting (`sort*.sql`)
-- Union / interleave (`union*.sql`, `interleave_2_inputs.sql`)
-- Analyze / empty / placeholder / memory leaves (`analyze_basic.sql`, `empty_basic.sql`, `placeholder_row_basic.sql`, `memory_lazy_4.sql`)
-- Wave D (`explain_basic.sql`, `streaming_basic.sql`, `work_table_basic.sql`, `buffer_basic.sql`, `cooperative_basic.sql`, `sink_basic.sql`, `recursive_basic.sql`, `recursive_cte_trans.sql`, `scalar_subquery_basic.sql`, `subquery_two_scalars.sql`, `subquery_nested.sql`)
-- And many more!
-
-> **Note:** The `tests/` directory serves a dual purpose: test fixtures and examples
-
-Each example includes:
-- A `.sql` file with the execution plan (in `tests/`)
-- A `.excalidraw` file showing the expected Excalidraw-compatible JSON for visualization (in `tests/expected/`)
-
-Try them out:
-
-```bash
-# Convert an example (after building)
-npm run build
-node dist/cli.js -i tests/join.sql -o output.excalidraw
-
-# Or use the usage example script
-npx ts-node tests/usage-example.ts
-```
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm test:coverage
-
-# Lint
-npm run lint
-
-# Format
-npm run format
-```
-
-## Project Structure
-
-See [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed project organization.
-
-## Architecture
-
-The project follows Clean Code principles and SOLID design patterns. See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for comprehensive architecture documentation.
-
-**Key Highlights:**
-- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- **Design Patterns**: Coordinator, Strategy, Factory, Builder, Renderer patterns
-- **Components**: ExecutionPlanParser, ExcalidrawGenerator (coordinator), ConverterService
-- **Testability**: >95% test coverage across all components
-
-## Testing
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-```
-
-Current coverage: >95% (branches, functions, lines, statements)
-
-## Code Quality
-
-- **Linting**: ESLint with Google TypeScript style guide
-- **Formatting**: Prettier
-- **Type Safety**: Strict TypeScript configuration
-- **Testing**: Jest with comprehensive test suites
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-```bash
-# Use commitizen for commits
-npm run commit
-```
-
-### Commit Convention
-
-This project uses [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `test:` - Test updates
-- `refactor:` - Code refactoring
-
-## Roadmap
-
-- [X] Interactive web interface: [plan-visualizer](https://nga-tran.github.io/plan-visualizer) — try it out!
-- [X] Support for additional DataFusion operators (Waves A–D; see [operator catalog](./docs/operators/README.md))
-- [ ] Support [Distributed Datafusion](https://github.com/datafusion-contrib/datafusion-distributed) physical plans
-- [ ] Enhanced options for custom styling
-- [ ] Performance optimizations for large plans
-
-## Resources
-
-- [Apache DataFusion](https://arrow.apache.org/datafusion/)
-- [Excalidraw API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api)
-- [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
-- [Quick Start Guide](QUICKSTART.md) - Get started quickly
-- [Project Overview](docs/PROJECT_OVERVIEW.md) - Detailed architecture and design
-
-## License
-
-MIT - see [LICENSE](LICENSE) for details
-
-## Authors
-
-Created with ❤️ for the Apache DataFusion community
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 
 ## Distributed physical plans
@@ -515,7 +320,7 @@ npm run build
 npx playwright install chromium
 node scripts/review-corpus.cjs \
   --upstream /path/to/datafusion-distributed \
-  --connector /path/to/metrics-points-and-tags/snapshots \
+  --connector /path/to/snapshots \
   --output tmp/corpus-review \
   --render
 ~~~
@@ -526,17 +331,255 @@ conversion failures and missing runtime outputs explicitly. Each rendered entry 
 to its original plan text, editable Excalidraw and PNG. PNG exports check that every
 expected label was drawn; large previews are scaled to browser-safe dimensions.
 Source revisions/hashes and the local converter revision/changes are recorded.
-Use --fixtures tests/distributed to include the public distributed fixtures, and
---runtime /path/to/captured/snapshots for additional locally captured plans.
+`--connector` accepts any directory of saved connector plans.
+Use `--fixtures tests/distributed` to include the public distributed fixtures, and
+`--runtime /path/to/captured/snapshots` for additional locally captured plans.
 
 Create the thumbnail overview and run the browser editability checks with:
 
 ~~~sh
 node scripts/corpus-contact-sheets.cjs tmp/corpus-review
 node scripts/verify-distributed.cjs
+node scripts/audit-upstream-operators.cjs /path/to/datafusion-distributed
 ~~~
+
+The inventory audit requires the pinned upstream revision documented in the operator audit.
+Local corpus galleries belong in ignored directories such as `tmp/`.
 
 The browser checks exercise worker-group dragging, individual operator dragging and
 network bindings in the actual Excalidraw editor, plus CLI section/error handling.
 
 See the [Distributed DataFusion operator audit](docs/operators/distributed-datafusion.md) for source references, execution contracts, coverage, and metadata limitations.
+
+## API
+
+#### `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
+
+Converts a single or distributed physical plan into Excalidraw-compatible JSON. This convenience function returns the scene; use `ConverterService.convertDetailed()` to inspect the selected document and diagnostics.
+
+**Parameters:**
+- `plan` - The physical execution plan as a string
+- `config` - Optional configuration object (see below)
+
+**Returns:**
+- `ExcalidrawData` - Excalidraw-compatible JSON object
+
+**Throws:**
+- `Error` - If the input is empty, the section selection is missing/invalid, parsing fails, or a complete distributed graph violates its contracts
+
+**Configuration Options:**
+
+```typescript
+interface ConverterConfig {
+  input?: { section?: number }; // 1-based snapshot section
+  distributed?: { workerDisplay?: 'representative' | 'all' };
+  parser?: {
+    indentationSize?: number;      // Default: 2
+    extractProperties?: boolean;    // Default: true
+  };
+  generator?: {
+    nodeWidth?: number;               // Default: 200
+    nodeHeight?: number;              // Default: 80
+    verticalSpacing?: number;         // Default: 100
+    horizontalSpacing?: number;       // Default: 50
+    fontSize?: number;                // Default: 16; base for derived font sizes
+    operatorFontSize?: number;        // Default: 20 (for operator name)
+    detailsFontSize?: number;         // Default: 14 (for properties/details)
+    nodeColor?: string;               // Default: '#1e1e1e'
+    arrowColor?: string;              // Default: '#1e1e1e'
+    customGenerators?: Array<{
+      operator: string;
+      generator: NodeGeneratorStrategy;
+    }>;
+  };
+}
+```
+
+**Example:**
+
+```typescript
+import { convertPlanToExcalidraw } from 'plan-viz';
+
+const plan = `
+ProjectionExec: expr=[id, name, age]
+  FilterExec: age > 18
+    DataSourceExec: file_groups={1 groups: [[data.parquet]]}
+`;
+
+const result = convertPlanToExcalidraw(plan, {
+  generator: {
+    nodeWidth: 250,
+    nodeHeight: 100,
+    nodeColor: '#64748b',
+  },
+});
+```
+
+### Detailed conversion and parsing
+
+```typescript
+import { ConverterService, PlanDocumentParser } from 'plan-viz';
+
+const result = new ConverterService({
+  distributed: { workerDisplay: 'all' },
+}).convertDetailed(executionPlan);
+
+// result.scene: ExcalidrawData
+// result.document.kind: 'single' | 'distributed' | 'recorded'
+// result.diagnostics: Array<{ code: string; message: string; node?: string }>
+
+const document = new PlanDocumentParser().parse(executionPlan);
+```
+
+`convertDetailed()` exposes incomplete topology, unknown counts, and unresolved
+routing for distributed/recorded documents. Single-tree conversions currently
+return an empty diagnostics list. `ConverterService.convert()` returns only the
+scene, like `convertPlanToExcalidraw()`.
+
+`PlanDocumentParser.parse(text, section?)` accepts the same 1-based section
+selection. `ExecutionPlanParser.parse()` and `ExcalidrawGenerator.generate()`
+remain available for a single operator tree.
+
+Dimensions and fonts are layout defaults; specialized renderers and label fitting
+may increase box sizes or use operator-specific settings.
+
+## Examples
+
+The project includes numerous example execution plans in the [`tests/`](tests/) directory, including:
+
+- Data source plans (`dataSource*.sql`)
+- Filter operations (`filter*.sql`)
+- Repartitioning (`repartition*.sql`)
+- Aggregation examples (`*aggregate*.sql`)
+- Projection (`*projection*.sql`)
+- Join operations (`join*.sql`, `join_hash_collectLeft.sql`, `join_hash_partitioned.sql`, `join_sort_merge*.sql`, `join_nested_loop.sql`, `join_symmetric_hash.sql`, `join_piecewise_merge.sql`)
+- TPC-H physical plans from Apache DataFusion (`tpch_q3.sql`, `tpch_q5.sql`, `tpch_q9.sql`, `tpch_q11.sql`, `tpch_q21.sql`)
+- Window functions (`window_agg*.sql`, `window_bounded*.sql`, `window_streaming_unbounded.sql`)
+- Unnest (`unnest_basic.sql`)
+- Sorting (`sort*.sql`)
+- Union / interleave (`union*.sql`, `interleave_2_inputs.sql`)
+- Analyze / empty / placeholder / memory leaves (`analyze_basic.sql`, `empty_basic.sql`, `placeholder_row_basic.sql`, `memory_lazy_4.sql`)
+- Wave D (`explain_basic.sql`, `streaming_basic.sql`, `work_table_basic.sql`, `buffer_basic.sql`, `cooperative_basic.sql`, `sink_basic.sql`, `recursive_basic.sql`, `recursive_cte_trans.sql`, `scalar_subquery_basic.sql`, `subquery_two_scalars.sql`, `subquery_nested.sql`)
+- Distributed gather, grouped gather, broadcast, direct/two-phase shuffle, joins, task-specific UNION, and legacy isolation ([fixtures](tests/distributed/), [expected drawings](tests/distributed/expected/)).
+
+> **Note:** The `tests/` directory serves a dual purpose: test fixtures and examples
+
+Each example includes:
+- A `.sql` file with the execution plan (in `tests/`)
+- A matching `.excalidraw` file in the adjacent `expected/` directory (`tests/expected/` or `tests/distributed/expected/`)
+
+Try them out:
+
+```bash
+# Convert an example (after building)
+npm run build
+node dist/cli.js -i tests/join.sql -o output.excalidraw
+
+# Convert a distributed example
+node dist/cli.js -i tests/distributed/broadcast_three_to_two.sql -o broadcast.excalidraw
+```
+
+## Development
+
+```bash
+# Install locked development dependencies
+npm ci
+
+# Build
+npm run build
+
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Lint
+npm run lint
+
+# Format
+npm run format
+```
+
+## Project Structure
+
+See [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed project organization.
+
+## Architecture
+
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current conversion pipeline:
+section selection and parsing, task/count/routing analysis, operator strategies,
+and stage composition. [PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) provides a
+short documentation map.
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+Jest enforces at least 80% global coverage for branches, functions, lines, and
+statements. Integration tests compare normalized scenes and text bindings against
+checked-in expected drawings in both fixture directories. Run the coverage command
+for current results; see [corpus review tooling](#corpus-review-tooling) for browser and gallery checks.
+
+## Code Quality
+
+- **Linting**: ESLint with Google TypeScript style guide
+- **Formatting**: Prettier
+- **Type Safety**: Strict TypeScript configuration
+- **Testing**: Jest with comprehensive test suites
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+```bash
+# Use commitizen for commits
+npm run commit
+```
+
+### Commit Convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `docs:` - Documentation changes
+- `test:` - Test updates
+- `refactor:` - Code refactoring
+
+## Roadmap
+
+- [X] Interactive web interface: [plan-visualizer](https://nga-tran.github.io/plan-visualizer) — try it out!
+- [X] Support for additional DataFusion operators (Waves A–D; see [operator catalog](./docs/operators/README.md))
+- [X] Support [Distributed DataFusion](https://github.com/datafusion-contrib/datafusion-distributed) physical plans
+- [ ] Enhanced options for custom styling
+- [ ] Performance optimizations for large plans
+
+## Resources
+
+- [Apache DataFusion](https://arrow.apache.org/datafusion/)
+- [Excalidraw API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api)
+- [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
+- [Quick Start Guide](QUICKSTART.md) - Get started quickly
+- [Project Overview](docs/PROJECT_OVERVIEW.md) - Detailed architecture and design
+
+## License
+
+MIT - see [LICENSE](LICENSE) for details
+
+## Authors
+
+Created with ❤️ for the Apache DataFusion community
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.

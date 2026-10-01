@@ -24,7 +24,9 @@ BufferExec: capacity=8192
 ## Visualization
 
 - Unary wrapper. 1:1 arrows. Preserve child columns/sort.
-- Details: `capacity=...`.
+- Details: `capacity=...`; preserve placeholders such as `capacity=_` literally.
+- Distributed count analysis propagates known input/output capacity through this
+  preserving wrapper, including consumer evidence for an unfamiliar child source.
 
 ## Tests
 

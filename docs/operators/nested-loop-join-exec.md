@@ -37,7 +37,8 @@ No `on=` keys. No `mode=CollectLeft|Partitioned` like HashJoin.
 - Arrows out: follow **HashJoin CollectLeft-style** for a build-probe join —
   output partition count equals the **probe (right)** child's arrow count,
   not the Cartesian product. Nested loop probes right partitions against the
-  built left side.
+  built left side. The distributed count analyzer uses this probe-capacity
+  contract for every supported join type, including outer/semi/anti/mark joins.
 - Sort-order: **do not claim order is preserved** unless both inputs share a
   compatible order we can see. Default: no blue output sort.
 - Details, centered:
@@ -56,6 +57,8 @@ Unit — `src/generators/__tests__/operators/nested-loop-join-exec.test.ts`:
   (probe side)
 - Not red `unimplemented`
 - Bindings exist on child arrows (same assertion style as CrossJoin)
+- `src/parsers/__tests__/upstream-operators.test.ts` checks probe partition counts
+  across join types used by distributed plans
 
 Integration:
 

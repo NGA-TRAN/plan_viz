@@ -1,38 +1,34 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report incorrect plan conversion, rendering, or CLI behavior
 title: ''
 labels: ''
 assignees: ''
-
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Describe the problem**
+What did you expect, and what happened instead?
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**Input plan and reproduction**
+Include a minimal saved physical EXPLAIN plan with its original indentation.
+For distributed plans, include stage headers, task counts, network references,
+and source/UNION variants needed to reproduce the routing. Replace private names
+without changing the structure or counts.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+Include the CLI command or library call, including `--section`, `--all-workers`,
+or the corresponding configuration if used.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Output**
+Attach the generated `.excalidraw` file or a screenshot, and include any error or
+diagnostic messages. Identify the affected operator/stage and arrow when relevant.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Environment**
+- plan-viz version (`plan-viz --version`) or source commit:
+- Node.js version (`node --version`):
+- Operating system:
+- Viewer (Excalidraw web, IDE extension, or plan-visualizer) and version if known:
+- DataFusion / Distributed DataFusion version or source revision if known:
 
 **Additional context**
-Add any other context about the problem here.
+Is this a complete EXPLAIN plan, an abbreviated documentation example, or a
+worker/planner recording? Include any other context needed to reproduce it.

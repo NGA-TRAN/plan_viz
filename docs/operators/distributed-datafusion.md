@@ -73,3 +73,27 @@ npm run lint
 ```
 
 The inventory command fails for a different upstream revision or an added, removed, or undocumented ExecutionPlan implementation. This is an audit at a pinned revision, not a guarantee about future upstream changes. Saved Excalidraw drawings and semantic tests are checked in; external corpus exports remain local review artifacts.
+
+## Review drawings
+
+Every fixture in [tests/distributed](../../tests/distributed/) has a matching
+[expected Excalidraw scene](../../tests/distributed/expected/), checked by
+`tests/integration.test.ts`. Useful starting points:
+
+| Behavior | Fixture / expected drawing basename |
+|---|---|
+| Basic gather and representative tasks | `gather_four_tasks` |
+| Uneven producer groups and empty padding | `grouped_gather_partial_reduction` |
+| Broadcast copies and receiver bundles | `broadcast_three_to_two` |
+| Direct shuffle beneath partial reduction | `shuffle_partial_reduce` |
+| One stream per producer/consumer pair | `shuffle_two_phase` |
+| UNION task assignments and distinct branches | `union_distinct_branches`, `count_distinct_union_time_ranges` |
+| Two shuffles around a full outer join | `full_outer_join_two_shuffles` |
+| Historical global-to-local isolation | `legacy_partition_isolator` |
+
+The inventory includes public example/test helpers as well as library operators.
+A metadata-limited helper such as `MockExec` is documented and tested as unknown
+when its EXPLAIN text omits the count; an audit entry is not a promise that every
+recorded plan can be reconstructed completely. Standalone sampler tests also
+check inferred child stream counts and retention of topology when source
+metadata is absent.
