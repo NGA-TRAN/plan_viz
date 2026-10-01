@@ -19,8 +19,8 @@ Convert Apache DataFusion single-node and distributed physical execution plans i
 
 > **Repository**: [GitHub](https://github.com/NGA-TRAN/plan_viz) | **Issues**: [Report a bug](https://github.com/NGA-TRAN/plan_viz/issues)
 
-Distributed support is merged on `master` and remains under **Unreleased** in the
-[changelog](CHANGELOG.md). Build from source to use it before the next package release.
+Distributed physical plans are supported in **v0.1.25 and later**. See the
+[changelog](CHANGELOG.md) for release details.
 
 - [Quick start](QUICKSTART.md)
 - [Distributed plans and diagram conventions](#distributed-physical-plans)

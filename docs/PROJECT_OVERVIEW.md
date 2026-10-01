@@ -4,8 +4,8 @@ plan-viz is a TypeScript library and CLI that turns Apache DataFusion physical
 EXPLAIN output into editable Excalidraw JSON. It supports ordinary operator trees,
 boxed Distributed DataFusion plans, and incomplete worker recordings.
 
-This overview follows the current repository. Distributed support is merged on
-`master` and remains under **Unreleased** in [the changelog](../CHANGELOG.md).
+This overview follows the current repository. Distributed-plan support starts
+with **v0.1.25**; see [the changelog](../CHANGELOG.md) for release details.
 See [package.json](../package.json) for package version and Node.js requirements.
 
 ## Main capabilities

@@ -1,7 +1,7 @@
 # Quick start
 
-Use Node.js 20 or newer and npm. Distributed-plan support described here is on
-`master` under **Unreleased**; build from source to try it before the next release.
+Use Node.js 20 or newer and npm. The distributed-plan examples require
+**plan-viz 0.1.25 or newer**.
 
 ## Build from source
 

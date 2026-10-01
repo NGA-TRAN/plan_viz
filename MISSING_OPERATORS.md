@@ -19,7 +19,7 @@ DataSinkExec / FileSinkExec, RecursiveQueryExec, ScalarSubqueryExec.
 
 ## Distributed DataFusion
 
-The source tree supports distributed stage/task diagrams, gather and grouped gather, broadcast, direct/two-phase shuffle, and task-specific UNION. See the [source-backed operator audit](docs/operators/distributed-datafusion.md) and its machine-readable inventory for the 20 current upstream implementations, legacy isolation support, and metadata limitations. Distributed support remains Unreleased.
+The source tree supports distributed stage/task diagrams, gather and grouped gather, broadcast, direct/two-phase shuffle, and task-specific UNION. See the [source-backed operator audit](docs/operators/distributed-datafusion.md) and its machine-readable inventory for the 20 current upstream implementations, legacy isolation support, and metadata limitations. Distributed support starts with v0.1.25.
 
 ## Implemented operator specifications
 

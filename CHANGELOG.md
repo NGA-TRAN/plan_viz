@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-09-30
+
 ### Added
 - Audit and document all current upstream Distributed DataFusion execution operators; add broadcast, two-phase shuffle, sampler, public source contracts, and legacy partition-isolation support.
 - Render grouped network gathers with contiguous producer routing, assigned-stream counts, and explicit empty padding.
