@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.27] - 2026-10-28
+
 ### Fixed
 - Infer custom-operator partition counts consistently in single-node and distributed plans, preferring explicit metadata and otherwise inheriting a child's count or the shared count of equally partitioned children.
 - Preserve child stream multiplicity through generic wrappers, including counts supplied by custom renderers, empty streams, and compacted partition arrows.
