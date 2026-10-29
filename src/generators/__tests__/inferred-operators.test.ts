@@ -155,10 +155,12 @@ describe('structural operators and inline decorators', () => {
     });
   });
 
-  it('does not claim unknown unary operators preserve columns, ordering, or streams', () => {
+  it('inherits custom unary stream counts without assuming columns or ordering', () => {
     const spy = jest.spyOn(DefaultNodeGenerator.prototype, 'generate');
     convertPlanToExcalidraw('MysteryUnary: capacity=_\n  ' + source);
-    expect(spy.mock.results[0].value).toMatchObject({ outputColumns: [], outputSortOrder: [], streamCountKnown: false });
+    expect(spy.mock.results[0].value).toMatchObject({
+      inputArrowCount: 2, outputColumns: [], outputSortOrder: [], streamCountKnown: true,
+    });
   });
 
   it('keeps exact custom registrations ahead of structural inference and wrapper adaptation', () => {

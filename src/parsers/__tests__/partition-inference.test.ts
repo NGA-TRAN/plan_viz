@@ -26,7 +26,10 @@ describe('partition counts inferred from consumers', () => {
       '  AggregateExec: mode=Partial, gby=[key@0 as key], aggr=[count(*)]\n    FeedSourceExec', 2))
       .toEqual([2, 2, 2]);
   });
-  test.each(['MysteryExec', 'CoalescePartitionsExec', 'SortExec: preserve_partitioning=[false]',
+  test('custom unary fallback carries consumer counts through unknown wrappers', () => {
+    expect(counts('MysteryExec\n  AnotherMysteryExec\n    FeedSourceExec', 4)).toEqual([4, 4, 4]);
+  });
+  test.each(['CoalescePartitionsExec', 'SortExec: preserve_partitioning=[false]',
     'SortExec', 'AggregateExec: mode=Final, gby=[], aggr=[count(*)]'])('does not infer input counts through %s', (operator) => {
     expect(counts(operator + '\n  FeedSourceExec', 1)[0]).toBeUndefined();
   });

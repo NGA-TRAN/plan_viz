@@ -4,8 +4,9 @@ import { GenerationContext } from '../types/generation-context.types';
 import { BaseNodeGenerator } from './base-node.generator';
 import { FONT_FAMILIES } from '../constants';
 import { wrapLabel } from '../utils/adaptive-layout';
+import { usesChildPartitionFallback } from '../../analysis/partition-analysis';
 
-/** Neutral topology for operators whose execution semantics are not known. */
+/** Generic boxes with explicit or child-inherited partition counts. */
 export class DefaultNodeGenerator extends BaseNodeGenerator {
   generate(node: ExecutionPlanNode, x: number, y: number, _isRoot: boolean, context: GenerationContext): NodeInfo {
     const width = Math.max(300, context.config.nodeWidth);
@@ -32,13 +33,18 @@ export class DefaultNodeGenerator extends BaseNodeGenerator {
         textAlign: 'center', verticalAlign: 'top', strokeColor: context.config.nodeColor,
       }));
     }
+    let childCount: number | undefined;
     node.children.forEach((child, i) => {
       const childX = x + (i - (node.children.length - 1) / 2) * (width + context.config.horizontalSpacing);
       const childY = y + height + context.config.verticalSpacing;
       const info = context.generateChildNode(child, childX, childY, false);
+      // Some specialized or user-registered renderers know a count that analysis
+      // cannot infer. Inherit only a count shared by every child, including omissions.
+      childCount = info.streamCountKnown !== false && (info.inputArrowCount > 0 || info.emitsNoStreams) &&
+        (i === 0 || childCount === info.inputArrowCount) ? info.inputArrowCount : undefined;
       const knownEmpty = context.partitionCounts?.get(child)?.value === 0;
-      const positions = context.partitionCounts && (info.inputArrowPositions.length > 0 || knownEmpty) ?
-        info.inputArrowPositions : [info.x + info.width / 2];
+      const positions = knownEmpty || info.emitsNoStreams ? [] :
+        info.inputArrowPositions.length > 0 ? info.inputArrowPositions : [info.x + info.width / 2];
       const targets = context.arrowCalculator.calculateOutputArrowPositions(positions.length, x, width).positions;
       positions.forEach((position, j) => {
         const arrow = context.elementFactory.createArrow({
@@ -46,7 +52,7 @@ export class DefaultNodeGenerator extends BaseNodeGenerator {
           endX: targets[j], endY: y + height, childRectId: info.rectId, parentRectId: rectId,
           strokeColor: context.config.arrowColor,
         });
-        if (context.partitionCounts && info.inputArrowCount > positions.length) {
+        if (info.inputArrowCount > positions.length) {
           arrow.customData = { partitionSeries: rectId + '/' + info.rectId,
             partitionIndex: j < 2 ? j : info.inputArrowCount - positions.length + j,
             partitionTotal: info.inputArrowCount };
@@ -55,9 +61,11 @@ export class DefaultNodeGenerator extends BaseNodeGenerator {
         this.bindArrowToElements(context, arrow.id, [info.rectId, rectId]);
       });
     });
-    const count = context.partitionCounts?.get(node)?.value;
+    const count = context.partitionCounts?.get(node)?.value ??
+      (usesChildPartitionFallback(node) ? childCount : undefined);
     const output = context.arrowCalculator.calculateOutputArrowPositions(count ?? 1, x, width);
     return { x, y, width, height, rectId, inputArrowCount: output.fullCount,
-      inputArrowPositions: output.positions, outputColumns: [], outputSortOrder: [], streamCountKnown: count !== undefined };
+      inputArrowPositions: output.positions, outputColumns: [], outputSortOrder: [],
+      emitsNoStreams: count === 0, streamCountKnown: count !== undefined };
   }
 }
