@@ -113,7 +113,7 @@ describe('audited public local operator counts', () => {
     ['ErrorThrowingExec\n  NumbersExec', 1],
     ['RemoteScanExec: tasks=2, partition_chunks=[broken]', undefined],
     ['SamplerExec: partitions=invalid\n  UnknownSourceExec', undefined],
-    ['MysteryExec\n  NumbersExec', undefined],
+    ['MysteryExec\n  NumbersExec', 1],
   ])('%s has capacity %s', (text, expected) => {
     const root = new ExecutionPlanParser().parse(text as string).root!;
     expect(partitionCounts(root).get(root)?.value).toBe(expected);

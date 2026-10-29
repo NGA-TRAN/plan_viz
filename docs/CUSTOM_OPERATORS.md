@@ -7,6 +7,25 @@ and library; registering a renderer requires the library API.
 
 Unregistered operators can reuse the file-source, aggregate, repartition, or hash-join renderer when their properties and number of children match that renderer's contract. Their original names remain on the diagram. Exact registrations, including `customGenerators`, take precedence. Ambiguous operators get a neutral box with property summaries and their input connections.
 
+Single-node and distributed plans use the same partition-count analysis. For a
+custom operator without a known execution contract, valid `output_partitioning`,
+`output_partitions`, `partitions`, or `partitioning` metadata determines its output
+count first. A printed `input_partitions` count constrains its unary child and is
+also the output fallback when no output count is printed. Input and output counts
+can differ when the operator explicitly says so.
+
+Without that metadata, a custom operator inherits its child's output partition
+count; for multiple children, it assumes equal output counts and uses that shared
+count. For example, two children with four partitions each produce four output
+partitions at the custom operator. Different or unknown child counts leave the
+fallback unresolved. An unfamiliar unary operator normally has the same input
+and output count.
+Consumer input metadata can supply missing counts through custom unary chains.
+Counts remain unknown if neither metadata nor children establish them, and a
+total input count is never split speculatively between multiple unknown children.
+This fallback assumes partition preservation, not column or ordering preservation.
+Known operators such as repartition, aggregate, and coalesce retain their own rules.
+
 Inline wrappers share a composite box with the inner operator:
 
 ```text

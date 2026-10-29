@@ -1,4 +1,5 @@
 import { UpstreamNodeGenerator } from './generators/upstream-node.generator';
+import { partitionCounts } from '../analysis/partition-analysis';
 import {
   ExcalidrawData,
   ExcalidrawElement,
@@ -132,7 +133,9 @@ export class ExcalidrawGenerator {
   ): ExcalidrawData {
     const elements: ExcalidrawElement[] = [];
     this.records = new Map();
-    this.partitionAnnotations = annotations;
+    // Both single-node and distributed rendering need logical stream counts.
+    // Only caller-supplied annotations add the distributed partition badges.
+    this.partitionAnnotations = annotations ?? (root ? partitionCounts(root) : undefined);
     this.needsAdaptiveLayout = false;
 
     if (root) {

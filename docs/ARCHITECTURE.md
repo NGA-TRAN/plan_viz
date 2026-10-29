@@ -64,12 +64,16 @@ The modules in `src/analysis/` establish execution facts before layout:
 |---|---|
 | `operator-contracts.ts` | Infer source, aggregate, repartition, and hash-join families from properties and arity, independent of vendor names |
 | `task-specializer.ts` | Select DistributedLeaf variants and active DistributedUnion branches using the effective task context |
-| `partition-analysis.ts` | Compute logical output capacity, evidence, assigned streams, and padding; refine unknown counts from consumer metadata through known preserving operators |
+| `partition-analysis.ts` | Compute logical output capacity, evidence, assigned streams, and padding; infer custom counts from metadata or children and refine unary chains from consumer metadata |
 | `distributed-analysis.ts` | Validate the stage graph, resolve network producer/consumer pairs and stream multiplicity, and group equivalent task plans |
 
 Counts describe advertised logical capacity, including empty partitions. They are
-independent of the number of arrows drawn. A consumer hint cannot overwrite a
-known local count, and an unknown unary contract stops backward inference.
+independent of the number of arrows drawn. Explicit local metadata and known
+operator contracts take precedence over consumer hints and custom fallbacks.
+Custom unary operators default to preserving the child's count; custom operators
+with multiple inputs use the shared child count when all counts are known and equal.
+Consumer hints propagate through custom unary chains without being divided
+between multiple unknown inputs.
 
 Network analysis supports gather, balanced grouped gather, broadcast, direct
 shuffle, and two-phase shuffle. Effective UNION child contexts determine routing.
@@ -90,7 +94,7 @@ input connections. `UpstreamNodeGenerator` shares that visual style while using
 audited public operator count contracts.
 
 Each strategy receives a `GenerationContext` containing element factories,
-layout/property helpers, configuration, optional partition counts, and a
+layout/property helpers, configuration, partition counts for both plan types, and a
 recursive child-generation callback. Its `NodeInfo` carries geometry, connection
 positions, logical stream count, columns, and sort information.
 

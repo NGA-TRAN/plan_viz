@@ -3,6 +3,41 @@ import { inferOperatorFamily } from './operator-contracts';
 import { ExecutionPlanNode } from '../types/execution-plan.types';
 import { PartitionCount, PlanNode } from '../types/plan-document.types';
 
+const preservingOperators = new Set([
+  'ProjectionExec', 'FilterExec', 'CoalesceBatchesExec', 'BufferExec', 'CooperativeExec',
+  'SamplerExec', 'CacheExec', 'DistributedExec', 'StatefulPassThroughExec', 'CustomPassThroughExec',
+  'CustomConfigExtensionRequiredExec', 'ErrorThrowingExec',
+  'LocalLimitExec', 'WindowAggExec', 'BoundedWindowAggExec', 'UnnestExec',
+]);
+
+// These operators have their own contracts, even when a particular plan omits
+// the metadata needed to resolve them. Do not assume they preserve their inputs.
+const contractOperators = new Set([
+  'DataSourceExec', 'RepartitionExec', 'AggregateExec', 'SortExec', 'BroadcastExec',
+  'CoalescePartitionsExec', 'SortPreservingMergeExec', 'GlobalLimitExec',
+  'HashJoinExec', 'NestedLoopJoinExec', 'CrossJoinExec', 'SortMergeJoin', 'SortMergeJoinExec',
+  'SymmetricHashJoinExec', 'PiecewiseMergeJoinExec', 'UnionExec', 'InterleaveExec',
+  'NumbersExec', 'PlaceholderRowExec', 'EmptyExec', 'DistributedAnalyzeExec', 'AnalyzeExec',
+  'URLEmitterExec', 'RemoteScanExec', 'RowGeneratorExec', 'PartitionIsolatorExec', 'DistributedUnionExec',
+  'NetworkCoalesceExec', 'NetworkShuffleExec', 'NetworkBroadcastExec',
+  'DataSinkExec', 'FileSinkExec', 'RecursiveQueryExec', 'ScalarSubqueryExec',
+]);
+
+function countValue(text?: string): number | undefined {
+  if (text === undefined || !/^\d+$/.test(text)) return undefined;
+  const value = Number(text);
+  return Number.isSafeInteger(value) ? value : undefined;
+}
+
+function partitioningCount(text?: string): number | undefined {
+  return text && isBalanced(text) ? countValue(text.match(/(?:,|\()\s*(\d+)\)$/)?.[1]) : undefined;
+}
+
+/** Whether a generic box can inherit its children's rendered stream counts. */
+export function usesChildPartitionFallback(node: ExecutionPlanNode): boolean {
+  return !contractOperators.has(inferOperatorFamily(node) ?? node.operator);
+}
+
 /** Counts describe logical capacity, never the number of arrows visible on canvas. */
 export function partitionCounts(root: ExecutionPlanNode, outputCapacity?: number): Map<ExecutionPlanNode, PartitionCount> {
   const result = new Map<ExecutionPlanNode, PartitionCount>();
@@ -10,29 +45,31 @@ export function partitionCounts(root: ExecutionPlanNode, outputCapacity?: number
   const visit = (node: ExecutionPlanNode, capacity?: number): PartitionCount => {
     const p = node.properties ?? {};
     const family = inferOperatorFamily(node) ?? node.operator;
+    const custom = !preservingOperators.has(node.operator) && !contractOperators.has(family);
     let value = result.get(node)?.value;
     let evidence = result.get(node)?.evidence ?? 'unknown operator contract';
-    const explicit = p.output_partitioning?.match(/(?:,|\()\s*(\d+)\)$/)?.[1] ?? p.output_partitions ??
-      (node.operator === 'NetworkBroadcastExec' ? p.partitions_per_consumer : undefined) ??
-      (node.operator === 'SamplerExec' ? p.partitions : undefined);
-    if (explicit !== undefined && /^\d+$/.test(explicit)) {
-      value = Number(explicit); evidence = 'explicit output partitioning';
+    const input = countValue(p.input_partitions);
+    const explicit = partitioningCount(p.output_partitioning) ?? countValue(p.output_partitions) ??
+      (node.operator === 'NetworkBroadcastExec' ? countValue(p.partitions_per_consumer) : undefined) ??
+      (custom || node.operator === 'SamplerExec' ? countValue(p.partitions) : undefined) ??
+      (custom ? partitioningCount(p.partitioning) : undefined);
+    if (explicit !== undefined) {
+      value = explicit; evidence = 'explicit output partitioning';
+    } else if (custom && input !== undefined && node.children.length > 0) {
+      value = input; evidence = 'custom operator input partition count';
     }
-    // A parent's printed input count constrains this output even for an unfamiliar
-    // operator. Only known partition-preserving contracts propagate it to children.
+    // Consumer metadata fills unresolved counts. Preserve counts already derived
+    // from local metadata or children: an unfamiliar parent may change partitions.
     if (value === undefined && Number.isSafeInteger(capacity) && capacity! >= 0) {
       value = capacity; evidence = 'consumer input partition contract';
     }
     const preserving = node.children.length === 1 && (
-      ['ProjectionExec', 'FilterExec', 'CoalesceBatchesExec', 'BufferExec', 'CooperativeExec',
-        'SamplerExec', 'CacheExec', 'DistributedExec', 'StatefulPassThroughExec', 'CustomPassThroughExec',
-        'CustomConfigExtensionRequiredExec', 'ErrorThrowingExec',
-        'LocalLimitExec', 'WindowAggExec', 'BoundedWindowAggExec', 'UnnestExec'].includes(node.operator) ||
+      preservingOperators.has(node.operator) || custom ||
       (node.operator === 'SortExec' && p.preserve_partitioning === '[true]') ||
       (family === 'AggregateExec' && /^(Partial|PartialReduce|FinalPartitioned|SinglePartitioned)$/.test(p.mode ?? '') && !!p.gby && !!p.aggr)
     );
-    const inputCapacity = ['RepartitionExec', 'BroadcastExec'].includes(family) && node.children.length === 1 && /^\d+$/.test(p.input_partitions ?? '') ?
-      Number(p.input_partitions) : preserving ? value : undefined;
+    // A total input count only constrains an individual child for unary nodes.
+    const inputCapacity = node.children.length === 1 && input !== undefined ? input : preserving ? value : undefined;
     const children = node.children.map((child) => visit(child, refine ? inputCapacity : undefined));
     const known = (v: number | undefined, why: string): void => {
       if (value === undefined) {
@@ -44,6 +81,11 @@ export function partitionCounts(root: ExecutionPlanNode, outputCapacity?: number
       known(input === undefined ? undefined : input * Number(p.consumer_tasks), 'broadcast copies per consumer task');
     }
     if (['NumbersExec', 'PlaceholderRowExec', 'EmptyExec', 'DistributedAnalyzeExec'].includes(node.operator)) known(1, 'single partition operator');
+    if (node.operator === 'StreamingTableExec' && p.partition_sizes) {
+      const sizes = p.partition_sizes;
+      known(isBalanced(sizes) && /^\[.*\]$/s.test(sizes) ?
+        splitTopLevel(listContent(sizes)).length : countValue(sizes), 'streaming table partition sizes');
+    }
     if (node.operator === 'URLEmitterExec') {
       known(Number(p.partitions ?? Object.values(p).join(' ').match(/\bpartitions=(\d+)/)?.[1]), 'printed URL emitter partitions');
     }
@@ -84,7 +126,10 @@ export function partitionCounts(root: ExecutionPlanNode, outputCapacity?: number
     if (node.operator === 'NestedLoopJoinExec' && children.length === 2 && p.join_type) known(children[1].value, 'nested-loop probe partitions');
     if (node.operator === 'CrossJoinExec') known(children[1]?.value, 'cross join probe partitions');
     if (node.operator === 'InterleaveExec') known(children.length && children.every((c) => c.value === children[0].value) ? children[0].value : undefined, 'equal interleaved partitions');
-    if (preserving) {
+    if (custom && children.length > 0) {
+      known(children.every((child) => child.value === children[0].value) ?
+        children[0].value : undefined, 'custom operator child partition fallback');
+    } else if (preserving) {
       known(children[0].value, 'partition-preserving operator');
     }
     if (!Number.isSafeInteger(value) || value! < 0) value = undefined;

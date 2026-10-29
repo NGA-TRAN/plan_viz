@@ -116,8 +116,15 @@ describe('distributed conversion', () => {
   test('quoted stage text does not change document kind', () => {
     expect(parser.parse('FilterExec: predicate=name = \'[Stage 1] => NetworkShuffleExec\'\n  EmptyExec').kind).toBe('single');
   });
-  test('unknown operators retain unknown counts and a visible diagnostic', () => {
-    const result = new ConverterService().convertDetailed(fixture('gather_four_tasks').replace(/MeadowScanExec:[^\n]+/, 'MysteryExec\n  │   UnknownSourceExec'));
+  test('a consumer count propagates through a custom unary operator', () => {
+    const result = new ConverterService().convertDetailed(fixture('gather_four_tasks')
+      .replace(/MeadowScanExec:[^\n]+/, 'MysteryExec\n  │   UnknownSourceExec'));
+    expect(result.diagnostics).toEqual([]);
+    expect(result.scene.elements.some((e) => e.type === 'text' && e.text.includes('output partitions = unknown'))).toBe(false);
+  });
+  test('unknown branches retain diagnostics when a total count cannot determine each input count', () => {
+    const result = new ConverterService().convertDetailed(fixture('gather_four_tasks')
+      .replace(/MeadowScanExec:[^\n]+/, 'MysteryExec\n  │   UnknownSourceExec\n  │   AnotherUnknownSourceExec'));
     expect(result.diagnostics.some((d) => d.code === 'unknown-count')).toBe(true);
     expect(result.scene.elements.some((e) => e.type === 'text' && e.text.includes('output partitions = unknown'))).toBe(true);
   });
