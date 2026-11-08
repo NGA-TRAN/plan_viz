@@ -19,7 +19,8 @@ export class SortNodeGenerator extends BaseNodeGenerator {
     context: GenerationContext
   ): NodeInfo {
     const nodeWidth = NODE_DIMENSIONS.DATASOURCE_WIDTH;
-    const nodeHeight = NODE_DIMENSIONS.DEFAULT_HEIGHT;
+    let nodeHeight: number = NODE_DIMENSIONS.DEFAULT_HEIGHT;
+    const limitText = context.propertyParser.extractLimit(node.properties);
 
     // Create rectangle
     const rectId = context.idGenerator.generateId();
@@ -85,7 +86,6 @@ export class SortNodeGenerator extends BaseNodeGenerator {
       }
 
       // Add limit information if present
-      const limitText = context.propertyParser.extractLimit(node.properties);
       if (limitText) {
         parts.push(limitText);
       }
@@ -106,21 +106,13 @@ export class SortNodeGenerator extends BaseNodeGenerator {
     // Create detail text at bottom center
     if (detailText) {
       const lineCount = detailText.split(' \n').length;
-      let detailHeight: number;
-      let detailTextY: number;
-
-      // Only adjust positioning when limit is present, not just for multiple lines
-      const limitText = context.propertyParser.extractLimit(node.properties);
-      const hasLimit = !!limitText;
-      if (hasLimit && lineCount > 1) {
-        // Multiple lines with limit - need to fit within rectangle
-        detailHeight = 35;
-        // Position at y + 80 - 35 - 5 = y + 40 to fit within rectangle
-        detailTextY = y + nodeHeight - detailHeight - 5;
-      } else {
-        // Single line or multiple lines without limit - use original positioning
-        detailHeight = 35; // Original was always 35
-        detailTextY = y + nodeHeight - 35; // Original positioning: y + 80 - 35 = y + 45
+      const detailHeight = Math.max(35, lineCount * TEXT_HEIGHTS.DETAILS_LINE);
+      // Retain the existing positions for ordinary and limit-bearing details.
+      const detailTextY = y + nodeHeight - 35 - (limitText && lineCount > 1 ? 5 : 0);
+      if (!context.deferTextLayout && detailTextY + detailHeight > y + nodeHeight) {
+        // Keep the approved detail position and grow the box with bottom padding.
+        nodeHeight = Math.ceil((detailTextY - y + detailHeight + 5) / 10) * 10;
+        rect.height = nodeHeight;
       }
 
       const detailTextElement = context.elementFactory.createText({

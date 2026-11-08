@@ -136,7 +136,8 @@ partition or routing contracts.
 
 - Unit tests cover parsing, count inference, routing, geometry, and bindings.
 - `tests/integration.test.ts` compares normalized scenes with expected files for
-  both `tests/*.sql` and `tests/distributed/*.sql`, and checks fixture pairing.
+  `tests/*.sql`, `tests/distributed/*.sql` and each `tests/upstream/<review-date>`
+  directory, and checks fixture pairing.
 - `scripts/verify-distributed.cjs` checks CLI behavior and actual Excalidraw
   worker/operator/network-input dragging through Playwright.
 - Corpus tooling validates geometry and label exports for stored external plans;

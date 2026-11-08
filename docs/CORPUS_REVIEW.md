@@ -22,7 +22,21 @@ strings, and Markdown code blocks. It records excluded sections, unsupported ske
 conversion failures and missing runtime outputs explicitly. Each rendered entry links
 to its original plan text, editable Excalidraw and PNG. PNG exports check that every
 expected label was drawn; large previews are scaled to browser-safe dimensions.
+Geometry checks use the greater of stored text height and rendered multiline
+height, so an understated text box cannot hide a label crossing a node border.
 Source revisions/hashes and the local converter revision/changes are recorded.
+Annotated `TaskCountAnnotation` planner sketches are explicitly unsupported,
+including sketches that happen to use parseable operator names. Stage-header-only
+assertions are excluded as fragments. These classifications do not enable either
+dialect in the production parser.
+
+For boxed plans followed by the known `Task N -> URL` / Parquet-file routing log
+and result-table format, the review tool extracts the plan. The manifest records
+`originalInput`, the extracted `input`, and the retained line range within the
+candidate section. Original source hashes and section locations remain available.
+Unknown trailers and malformed complete plans still reach the converter and are
+reported as failures; this is not a general-purpose log sanitizer.
+
 `--connector` accepts any directory of saved connector plans.
 Use `--fixtures tests/distributed` to include the public distributed fixtures, and
 `--runtime /path/to/captured/snapshots` for additional locally captured plans.

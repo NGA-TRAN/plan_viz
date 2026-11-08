@@ -31,6 +31,8 @@ export interface GenerationContext {
   geometryUtils: GeometryUtils;
   /** Audited logical partition counts, when available. */
   partitionCounts?: ReadonlyMap<ExecutionPlanNode, PartitionCount>;
+  /** Caller fits text with adaptive layout after adding partition badges. */
+  deferTextLayout?: boolean;
   /** Configuration */
   config: ResolvedExcalidrawConfig;
   /** Elements array to add generated elements to */
