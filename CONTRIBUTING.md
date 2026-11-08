@@ -5,6 +5,11 @@ Use feature branches from `master` and Conventional Commits. See
 [operator workflow](docs/operators/WORKFLOW.md) before changing rendering or
 execution contracts.
 
+[AGENTS.md](AGENTS.md) records the project's development principles and
+test-driven workflow. Use [upstream maintenance](docs/UPSTREAM_MAINTENANCE.md)
+and its [review log](docs/UPSTREAM_REVIEW_LOG.md) to keep DataFusion compatibility
+current.
+
 ## Setup
 
 Use Node.js 20 or newer.
@@ -57,6 +62,11 @@ Review the drawing itself before accepting a changed expected file. Integration
 tests normalize generated identifiers, compare scenes, check text bindings, and
 require a matching expected file for each fixture in both directories.
 
+For proposed user-visible changes, present current/proposed visualizations and
+obtain user approval before integrating the change or adopting expected scenes,
+following [the visualization policy](AGENTS.md#visualization-stability-and-user-approval).
+Preserve the current default unless the approved proposal explicitly changes it.
+
 For distributed parser, count, and routing work:
 
 ```sh
@@ -107,14 +117,17 @@ Merging a feature PR does not publish a package.
 
 For a release:
 
-1. Prepare a release branch from updated `master`. Move the appropriate Unreleased
+1. Review relevant upstream changes since the last completed
+   [compatibility review](docs/UPSTREAM_MAINTENANCE.md), and record findings and
+   pending work in the [review log](docs/UPSTREAM_REVIEW_LOG.md).
+2. Prepare a release branch from updated `master`. Move the appropriate Unreleased
    changelog entries into a dated version section and update both `package.json`
    and `package-lock.json` (for example, `npm version patch --no-git-tag-version`).
-2. Run the checks above, review the package contents, and merge the release PR.
-3. Fetch the merged release commit and create its matching tag. Push that exact
+3. Run the checks above, review the package contents, and merge the release PR.
+4. Fetch the merged release commit and create its matching tag. Push that exact
    tag, for example `git tag vX.Y.Z <release-commit>` followed by
    `git push origin vX.Y.Z`.
-4. Check the publish workflow result. It verifies that the tag version matches
+5. Check the publish workflow result. It verifies that the tag version matches
    `package.json`, runs tests/build, and publishes to npm.
 
 The current workflow grants `id-token: write` and uses npm trusted publishing;
