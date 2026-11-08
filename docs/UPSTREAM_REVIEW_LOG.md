@@ -10,8 +10,8 @@ behavior. Add the newest review first.
 | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Maintenance workflow     | Merged through [PR #77](https://github.com/NGA-TRAN/plan_viz/pull/77), 2026-11-08                           |
 | Latest review            | [2026-11-08 initial compatibility triage](upstream-reviews/2026-11-08.md), complete within its stated scope |
-| Follow-up implementation | [F4/F5 validated, including the approved TopK correction](upstream-reviews/2026-11-08-follow-up.md); publication authorized |
-| Next work                | Publish the implementation PR, then strengthen task, Interleave ordering and arrow-binding tests; F1–F3 remain separate             |
+| Follow-up implementation | [F4/F5 validated, including the approved TopK correction](upstream-reviews/2026-11-08-follow-up.md); merged through [PR #79](https://github.com/NGA-TRAN/plan_viz/pull/79) as `5f595c4` |
+| Next work                | Three coverage improvements complete and validated for a separate PR; resume F1–F3 feature design next |
 | Next comparison baseline | DataFusion 55.2.0; Distributed `64a0a13d59d27f5facb05838d47adb2afe8a843d`                                   |
 | Audited support          | Existing catalog and Distributed `b32ee66e5f12227a5fe8e8444a022991da0758ea` pin retained                    |
 | Suggested cadence        | Monthly during active development, plus release/upgrade triggers; frequency still open                      |
@@ -26,7 +26,10 @@ tests. All 338 current-corpus/fixture scenes exported; representative visual
 inspection found an existing TopK label overflow. The user approved its visual
 correction, which is implemented and validated. The user subsequently authorized
 committing, pushing and opening its implementation PR, followed by three coverage
-improvements on a separate branch.
+improvements on a separate branch. The user merged PR #79 as `5f595c4` after
+CI passed. The coverage follow-up passes 933 tests locally with five additional
+expected drawings. The user approved local review and authorized its separate
+commit, push and PR.
 Distributed rendering and the audited support pin remain unchanged.
 All nine upstream-review inputs also have matching expected drawings checked by
 the shared integration runner, alongside the semantic assertions (F5-V2).

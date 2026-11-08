@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add source-derived compatibility regressions for fetched distribution operators, sorted shuffles, empty task inputs, and task-specific scan/file counts, without changing default rendering.
 - Compare all nine upstream-review inputs against matching expected Excalidraw drawings, with automatic discovery and input/output pairing checks alongside the semantic assertions.
+- Strengthen regression coverage for distributed task assignments, Interleave ordering and arrow bindings, including five representative plans with matching expected Excalidraw drawings.
 
 ## [0.1.27] - 2026-10-28
 
