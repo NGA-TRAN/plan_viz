@@ -40,6 +40,11 @@ function validateScene(scene) {
   const errors = [];
   const byId = new Map(scene.elements.map(e => [e.id, e]));
   const panels = [];
+  // Stored text height can understate what the canvas actually draws.
+  const textHeight = text => {
+    const rendered = text.text.split('\n').length * text.fontSize * text.lineHeight;
+    return Number.isFinite(rendered) ? Math.max(text.height, rendered) : text.height;
+  };
   for (const e of scene.elements) {
     if (![e.x, e.y, e.width, e.height].every(Number.isFinite) ||
       e.width < 0 || e.height < 0 || (e.type !== 'arrow' && (!e.width || !e.height))) errors.push('invalid geometry: ' + e.type);
@@ -49,9 +54,9 @@ function validateScene(scene) {
     if (e.containerId) {
       const container = byId.get(e.containerId);
       if (!container?.boundElements?.some(b => b.type === 'text' && b.id === e.id)) errors.push('missing reciprocal text binding');
-      if (container?.type === 'rectangle') panels.push(container);
+      if (container?.type === 'rectangle' && !panels.includes(container)) panels.push(container);
       if (container && (e.x < container.x - 1 || e.y < container.y - 1 ||
-          e.x + e.width > container.x + container.width + 1 || e.y + e.height > container.y + container.height + 1)) {
+          e.x + e.width > container.x + container.width + 1 || e.y + textHeight(e) > container.y + container.height + 1)) {
         errors.push('bound label outside container: ' + e.text);
       }
     }
@@ -64,10 +69,10 @@ function validateScene(scene) {
   for (const text of scene.elements.filter(e => e.type === 'text' && !e.containerId)) {
     for (const box of panels) {
       const overlapX = Math.min(text.x + text.width, box.x + box.width) - Math.max(text.x, box.x);
-      const overlapY = Math.min(text.y + text.height, box.y + box.height) - Math.max(text.y, box.y);
+      const overlapY = Math.min(text.y + textHeight(text), box.y + box.height) - Math.max(text.y, box.y);
       const owned = text.groupIds.some(group => box.groupIds.includes(group));
       const contained = text.x >= box.x - 1 && text.y >= box.y - 1 &&
-        text.x + text.width <= box.x + box.width + 1 && text.y + text.height <= box.y + box.height + 1;
+        text.x + text.width <= box.x + box.width + 1 && text.y + textHeight(text) <= box.y + box.height + 1;
       if (overlapX > 1 && overlapY > 1 && !(owned && contained)) errors.push('label crosses operator panel: ' + text.text);
     }
   }

@@ -52,9 +52,17 @@ function normalizeExcalidraw(data: ExcalidrawData): ExcalidrawData {
 }
 
 /**
- * Gets all single-node and distributed SQL fixtures
+ * Gets all single-node, distributed, and dated upstream SQL fixtures
  */
-const fixtureDirectories = [__dirname, path.join(__dirname, 'distributed')];
+const upstreamDirectory = path.join(__dirname, 'upstream');
+const fixtureDirectories = [
+  __dirname,
+  path.join(__dirname, 'distributed'),
+  ...fs.readdirSync(upstreamDirectory, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => path.join(upstreamDirectory, entry.name))
+    .sort(),
+];
 
 function getSqlFiles(): string[] {
   return fixtureDirectories.flatMap((directory) =>

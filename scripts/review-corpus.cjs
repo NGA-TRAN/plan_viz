@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 // Source repositories are read only; artifacts go into --output.
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto'), cp = require('node:child_process');
-const { ConverterService } = require('../dist');
-const { planSections } = require('../dist/parsers/plan-document.parser');
 const { validateScene } = require('./audit-corpus.cjs');
 function dedent(text) {
   const lines = text.replace(/^\n|\n\s*$/g, '').split('\n');
@@ -30,7 +28,7 @@ function rustStrings(text) {
   return result;
 }
 function candidates(file, text) {
-  if (/\.(snap|sql)$/.test(file)) return planSections(text);
+  if (/\.(snap|sql)$/.test(file)) return require('../dist/parsers/plan-document.parser').planSections(text);
   if (file.endsWith('.rs')) return rustStrings(text);
   if (/\.(md|rst)$/.test(file)) return [...text.matchAll(/\x60{3}[^\n]*\n([\s\S]*?)\x60{3}/g)].map(m =>
     ({ title: 'line ' + text.slice(0, m.index).split('\n').length, text: dedent(m[1]) }));
@@ -40,6 +38,45 @@ function physical(text) {
   if (/^\s*[A-Za-z_]\w*Exec::/.test(text)) return false;
   return /^(?:┌─+[ ]*(?:Distributed\w*Exec|Stage)|[A-Za-z_]\w*Exec\b|SortMergeJoin\b|\[Stage \d+\]\s*=>)/.test(text.trim()) ||
     /^\s*\|\s*(?:physical_plan|Plan with (?:Full )?Metrics)\s*\|/m.test(text);
+}
+// Only recognize the stored task/file routing format, not arbitrary text after a plan.
+function routingTrailer(lines) {
+  const task = /^Task \d+ -> https?:\/\/\S+$/;
+  const border = /^\+(?:-+\+)+$/;
+  let i = 0;
+  while (task.test(lines[i] || '')) {
+    i++;
+    const firstFile = i;
+    while (/^ {2}\S+\.parquet$/.test(lines[i] || '')) i++;
+    if (i === firstFile) return false;
+  }
+  const table = lines.slice(i);
+  return i > 0 && table.length >= 3 && border.test(table[0]) && border.test(table[table.length - 1]) &&
+    table.some(line => /^\|.*\|$/.test(line)) && table.every(line => border.test(line) || /^\|.*\|$/.test(line));
+}
+function classifyCandidate(file, text) {
+  if (!physical(text)) return { status: 'excluded', inputKind: 'non-plan', reason: 'Not a physical plan', text };
+  const lines = text.trimEnd().split(/\r?\n/), nonempty = lines.filter(line => line.trim());
+  if (nonempty.every(line => /^\s*┌─+\s*Stage \d+\s+─+\s*tasks=\d+,\s*partitions=\d+\b/.test(line))) {
+    return { status: 'excluded', inputKind: 'stage-header-fragment', text,
+      reason: 'Stage-header assertion only; no head plan or stage bodies.' };
+  }
+  if (nonempty.every(line => /^\s*[A-Za-z_]\w*Exec(?:\((?:Hash|RoundRobinBatch)\))?: task_count=TaskCountAnnotation: /.test(line))) {
+    return { status: 'unsupported', inputKind: 'planner-debug', text,
+      reason: 'Annotated planner debug dialect; task-count annotations are not runtime plan metadata.' };
+  }
+  if (/\.(md|rst)$/.test(file) && /[┌▲]/.test(text) && !/┌─+ DistributedExec/.test(text)) {
+    return { status: 'unsupported', inputKind: 'illustration', text,
+      reason: 'Illustrative diagram, not a complete indented physical plan.' };
+  }
+  const candidate = { status: 'candidate', inputKind: 'physical-plan', text };
+  const start = lines.findIndex(line => /^Task \d+ -> https?:\/\/\S+$/.test(line));
+  if (/^\s*┌─+ DistributedExec\b/.test(text) && start > 0 && routingTrailer(lines.slice(start))) {
+    const prefix = lines.slice(0, start).join('\n').trimEnd();
+    if (/└─+$/.test(prefix)) return { ...candidate, text: prefix,
+      extraction: { kind: 'routing-log-trailer', startLine: 1, endLine: prefix.split('\n').length } };
+  }
+  return candidate;
 }
 function walk(root) {
   return fs.readdirSync(root, { withFileTypes: true }).flatMap(e => {
@@ -107,6 +144,7 @@ async function exportScenes(out, manifest) {
   } finally { await browser.close(); }
 }
 async function main() {
+  const { ConverterService } = require('../dist');
   const args = process.argv.slice(2), value = key => args[args.indexOf(key) + 1];
   if (!args.includes('--output')) throw new Error('Usage: node scripts/review-corpus.cjs --upstream <checkout> --connector <snapshots> --output <directory> [--render]');
   const out = path.resolve(value('--output')); fs.mkdirSync(out, { recursive: true });
@@ -124,20 +162,21 @@ async function main() {
       const sections = candidates(file, raw);
       for (const [index, section] of sections.entries()) {
         const id = name + '/' + relative + '#' + (index + 1);
+        const { text, ...classification } = classifyCandidate(file, section.text);
         const item = { id, source: name, file: relative, section: section.title, sourceHash: crypto.createHash('sha256').update(raw).digest('hex'),
-          status: 'excluded', reason: 'Not a physical plan' };
+          ...classification };
         manifest.cases.push(item);
-        if (!physical(section.text)) continue;
-        delete item.reason;
-        if (/\.(md|rst)$/.test(file) && /[┌▲]/.test(section.text) && !/┌─+ DistributedExec/.test(section.text)) {
-          item.status = 'unsupported'; item.reason = 'Illustrative diagram, not a complete indented physical plan.';
-          continue;
-        }
+        if (item.inputKind === 'non-plan') continue;
         const base = name + '/' + relative + '.section-' + (index + 1);
         fs.mkdirSync(path.dirname(path.join(out, base)), { recursive: true });
-        item.input = base + '.txt'; fs.writeFileSync(path.join(out, item.input), section.text);
+        item.input = base + '.txt'; fs.writeFileSync(path.join(out, item.input), text);
+        if (item.extraction) {
+          item.originalInput = base + '.original.txt';
+          fs.writeFileSync(path.join(out, item.originalInput), section.text);
+        }
+        if (item.status !== 'candidate') continue;
         try {
-          const result = new ConverterService().convertDetailed(section.text);
+          const result = new ConverterService().convertDetailed(text);
           item.kind = result.document.kind; item.diagnostics = result.diagnostics;
           item.scene = base + '.excalidraw';
           const sceneText = JSON.stringify(result.scene, null, 2);
@@ -168,4 +207,4 @@ async function main() {
   console.log(JSON.stringify(manifest.totals, null, 2));
 }
 if (require.main === module) main().catch(error => { console.error(error); process.exitCode = 1; });
-module.exports = { candidates, physical, dedent, rustStrings, exportScenes, writeGallery };
+module.exports = { candidates, physical, classifyCandidate, dedent, rustStrings, exportScenes, writeGallery };

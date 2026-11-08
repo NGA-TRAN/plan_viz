@@ -73,6 +73,7 @@ import { LayoutRecord, layoutAdaptiveTree, wrapLabel, textWidth } from './utils/
 export class ExcalidrawGenerator {
   private records = new Map<ExecutionPlanNode, LayoutRecord>();
   private needsAdaptiveLayout = false;
+  private deferTextLayout = false;
   private readonly config: ResolvedExcalidrawConfig;
   private readonly idGenerator: IdGenerator;
   private readonly textMeasurement: TextMeasurement;
@@ -137,6 +138,7 @@ export class ExcalidrawGenerator {
     // Only caller-supplied annotations add the distributed partition badges.
     this.partitionAnnotations = annotations ?? (root ? partitionCounts(root) : undefined);
     this.needsAdaptiveLayout = false;
+    this.deferTextLayout = annotations !== undefined;
 
     if (root) {
       // Root node is the first line of physical_plan - it should not have output arrows
@@ -232,6 +234,7 @@ export class ExcalidrawGenerator {
   ): GenerationContext {
     return {
       partitionCounts: counts,
+      deferTextLayout: this.deferTextLayout,
       elementFactory: this.elementFactory,
       propertyParser: this.propertyParser,
       arrowCalculator: this.arrowCalculator,

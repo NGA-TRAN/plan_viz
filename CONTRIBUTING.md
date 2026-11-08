@@ -46,6 +46,10 @@ input where relevant.
 Single-tree fixtures live in `tests/*.sql` with matching
 `tests/expected/*.excalidraw`. Distributed fixtures live in
 `tests/distributed/*.sql` with matching `tests/distributed/expected/*.excalidraw`.
+Source-derived review fixtures live in `tests/upstream/<review-date>/*.sql` with
+matching `expected/*.excalidraw` files in that review directory. The integration
+suite discovers these review directories automatically. Additional constructed
+inputs can keep their separately tested baselines under `expected/derived/`.
 The files contain saved EXPLAIN text; tests do not execute SQL. Keep representative
 indentation and replace private names with invented names while preserving plan
 structure, task counts, and empty partition slots.
@@ -60,7 +64,7 @@ npx jest --runInBand --coverage=false tests/integration.test.ts -t gather_four_t
 
 Review the drawing itself before accepting a changed expected file. Integration
 tests normalize generated identifiers, compare scenes, check text bindings, and
-require a matching expected file for each fixture in both directories.
+require a matching expected drawing for every input in these directories.
 
 For proposed user-visible changes, present current/proposed visualizations and
 obtain user approval before integrating the change or adopting expected scenes,

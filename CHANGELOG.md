@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Classify annotated upstream planner sketches and stage-header assertions separately from complete plans in corpus reviews. Extract known task/file routing trailers while preserving original evidence and real conversion failures.
+- Fit three-line SortExec/TopK details inside their node boxes while preserving distributed layout. Detect multiline text overflow in corpus checks using rendered line height.
+
+### Added
+- Add source-derived compatibility regressions for fetched distribution operators, sorted shuffles, empty task inputs, and task-specific scan/file counts, without changing default rendering.
+- Compare all nine upstream-review inputs against matching expected Excalidraw drawings, with automatic discovery and input/output pairing checks alongside the semantic assertions.
+
 ## [0.1.27] - 2026-10-28
 
 ### Fixed
