@@ -2,6 +2,7 @@
 
 ```text
 plan_viz/
+├── AGENTS.md               # Development principles, TDD, and workflow entry points
 ├── src/
 │   ├── analysis/           # Operator contracts, task specialization, counts, routing
 │   ├── types/              # ExecutionPlanNode, PlanDocument, diagnostics, scene types
@@ -32,6 +33,7 @@ plan_viz/
 │   ├── API.md / CLI.md     # Public interfaces and options
 │   ├── DISTRIBUTED_PLANS.md / CUSTOM_OPERATORS.md
 │   ├── CORPUS_REVIEW.md     # Saved-plan inventory and gallery workflow
+│   ├── UPSTREAM_MAINTENANCE.md / UPSTREAM_REVIEW_LOG.md
 │   ├── assets/             # README illustrations and their text/scene sources
 │   └── operators/          # Operator specs and pinned distributed inventory
 ├── .github/workflows/      # CI and tag-triggered npm publishing

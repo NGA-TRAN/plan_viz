@@ -28,6 +28,11 @@ initialize it separately. Do not use it for one-operator additions.
 Default is **one operator at a time**. Parallel implementation is optional and
 only safe when the operators do not share files (see below).
 
+Include current/proposed rendered previews for user-visible changes and follow
+[the visualization approval policy](../../AGENTS.md#visualization-stability-and-user-approval)
+before integrating them. Spec approval covers the visual design only when the
+user has reviewed and approved those previews.
+
 ## File ownership (what makes review and tests isolatable)
 
 Each operator owns these files. No other operator should touch them:
@@ -84,11 +89,15 @@ Full build, `npm run test:coverage`, and `npm run lint` are the PR gate. See [CO
 ## Implementation checklist (agent)
 
 1. Read `docs/operators/<operator>.md` and `_TEMPLATE.md`.
-2. Copy the gold-standard generator named in the spec.
-3. Register the operator in `excalidraw.generator.ts`.
-4. Write unit tests with `NodeBuilder` + `TestHelpers`.
-5. Add `tests/<prefix>_*.sql` and generate the matching `.excalidraw`.
-6. Run the isolated verify commands until they pass.
+2. Add a focused behavior/contract test with `NodeBuilder` + `TestHelpers` where
+   appropriate, and confirm that it fails for the intended missing behavior.
+3. Implement the smallest change using the established generator pattern, and
+   register the operator through the current registry.
+4. Get the test passing, then refactor shared behavior without changing its
+   meaning. Follow the [TDD principles](../../AGENTS.md#test-driven-development).
+5. Add `tests/<prefix>_*.sql`, generate its matching `.excalidraw`, and inspect the
+   drawing before accepting it as expected output.
+6. Run the isolated verify commands and relevant contribution gates.
 7. Flip the spec status to `Implemented` and update the catalog.
 
 Parser changes belong in the spec when the printed format requires them,
@@ -103,10 +112,10 @@ fixture names.
 
 1. Record printed metadata and execution semantics: effective task context,
    logical partitions, network producer/receiver pairs, and padding.
-2. Update the relevant `src/analysis/` contract and parser only as needed. Keep
-   unknown counts explicit when the text lacks evidence.
-3. Add semantic regressions in `src/parsers/__tests__/` and any drawing/binding
-   tests in `src/generators/__tests__/`.
+2. Add a focused semantic regression in `src/parsers/__tests__/` and confirm the
+   intended failure; add drawing/binding regressions where relevant.
+3. Update the relevant `src/analysis/` contract and parser until the tests pass.
+   Keep unknown counts explicit when the text lacks evidence, then refactor.
 4. Add `tests/distributed/<scenario>.sql` and its matching
    `tests/distributed/expected/<scenario>.excalidraw`. Preserve source indentation
    and counts when sanitizing names.

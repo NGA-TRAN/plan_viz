@@ -181,6 +181,7 @@ Its supported features depend on the library version deployed there.
 | [Custom operators](docs/CUSTOM_OPERATORS.md) | Automatic inference, wrappers, and custom renderers |
 | [Operator catalog](docs/operators/README.md) | Supported operators and execution contracts |
 | [Corpus review](docs/CORPUS_REVIEW.md) | Inventory and render collections of saved plans |
+| [Upstream maintenance](docs/UPSTREAM_MAINTENANCE.md) / [Review log](docs/UPSTREAM_REVIEW_LOG.md) | Track DataFusion changes and validated compatibility |
 | [Architecture](docs/ARCHITECTURE.md) / [Project structure](docs/PROJECT_STRUCTURE.md) | Internals and source layout |
 
 More examples: [single-node fixtures](tests/) and [distributed fixtures](tests/distributed/),
