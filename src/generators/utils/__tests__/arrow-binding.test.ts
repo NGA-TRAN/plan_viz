@@ -81,4 +81,47 @@ describe('arrow-binding', () => {
       y: 35,
     });
   });
+
+  it.each([0, 1e-7])('keeps coincident endpoints finite within tolerance %s', (offset) => {
+    const element = box('coincident', -40, 50, 100, 80);
+    const binding = bindingAt(element, -15, 130, -15 + offset, 130 + offset);
+    expect(binding).toEqual({
+      elementId: 'coincident', focus: 0, gap: 1, fixedPoint: [0.25, 0.9999], mode: 'inside',
+    });
+  });
+
+  it.each([
+    ['descending diagonal', 60, 130, 160, 210, [0.9999, 0.9999]],
+    ['ascending diagonal', 60, 50, 160, -30, [0.9999, 0.0001]],
+  ] as const)('keeps a corner attachment stable parallel to the %s', (_name, x, y, adjacentX, adjacentY, point) => {
+    const element = box('parallel', -40, 50, 100, 80);
+    const binding = bindingAt(element, x, y, adjacentX, adjacentY);
+    expect(binding.elementId).toBe(element.id);
+    expect(binding.fixedPoint).toEqual(point);
+    // The diagonal passes through the box center, so it has no lateral focus.
+    expect(binding.focus).toBeCloseTo(0);
+    expect(binding.gap).toBe(1);
+    expect(binding.mode).toBe('inside');
+  });
+
+  it.each([
+    ['left', -43, 70, -140, 70, 3, [0.0001, 0.25]],
+    ['right', 63, 110, 160, 110, 3, [0.9999, 0.75]],
+    ['top', -15, 46, -15, -50, 4, [0.25, 0.0001]],
+    ['bottom', 35, 134, 35, 230, 4, [0.75, 0.9999]],
+    ['outside corner', 63, 134, 160, 230, 5, [0.9999, 0.9999]],
+  ] as const)('bounds the %s attachment and preserves its actual gap', (_name, x, y, adjacentX, adjacentY, gap, point) => {
+    const element = box('offset', -40, 50, 100, 80);
+    const binding = bindingAt(element, x, y, adjacentX, adjacentY);
+    expect(binding.elementId).toBe(element.id);
+    expect(binding.fixedPoint).toEqual(point);
+    expect(binding.gap).toBe(gap);
+    expect(Number.isFinite(binding.focus)).toBe(true);
+    expect(Math.abs(binding.focus)).toBeLessThanOrEqual(1);
+    expect(binding.mode).toBe('inside');
+  });
+
+  it.each(['start', 'end'] as const)('uses the arrow origin for an empty %s endpoint', (end) => {
+    expect(arrowEndpoint({ x: -10, y: 20, points: [] }, end)).toEqual({ x: -10, y: 20 });
+  });
 });
