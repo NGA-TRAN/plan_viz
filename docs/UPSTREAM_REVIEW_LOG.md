@@ -6,29 +6,52 @@ behavior. Add the newest review first.
 
 ## Current status
 
-| Item                                    | Status                                                                                 |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| Maintenance workflow                    | Established 2026-11-08                                                                 |
-| Last completed periodic upstream review | Not yet recorded                                                                       |
-| Next review                             | First full comparison against the existing documented baselines                        |
-| Suggested cadence                       | Monthly during active development, plus release/upgrade triggers; frequency still open |
-| Scheduled automation                    | None                                                                                   |
+| Item                     | Status                                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Maintenance workflow     | Merged through [PR #77](https://github.com/NGA-TRAN/plan_viz/pull/77), 2026-11-08                           |
+| Latest review            | [2026-11-08 initial compatibility triage](upstream-reviews/2026-11-08.md), complete within its stated scope |
+| Follow-up implementation | Pending; no converter or visualization changes made                                                         |
+| Next work                | Carry F1–F3 into shared/Pierre/Wenqi design; keep independent maintenance items separate                    |
+| Next comparison baseline | DataFusion 55.2.0; Distributed `64a0a13d59d27f5facb05838d47adb2afe8a843d`                                   |
+| Audited support          | Existing catalog and Distributed `b32ee66e5f12227a5fe8e8444a022991da0758ea` pin retained                    |
+| Suggested cadence        | Monthly during active development, plus release/upgrade triggers; frequency still open                      |
+| Scheduled automation     | None                                                                                                        |
 
-## Existing baselines to use for the first review
+## 2026-11-08 — first compatibility triage
 
-| Area                        | Existing evidence                                                                                                                                             | Limit                                                                  |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| DataFusion operator catalog | [Catalog](operators/README.md) documents physical operators against **55.1.0**, September 2026                                                                | A documented catalog baseline, not proof of coverage of later versions |
-| DataFusion Distributed      | [Audited revision](operators/distributed-datafusion.md): `b32ee66e5f12227a5fe8e8444a022991da0758ea`; [inventory](operators/distributed-datafusion-audit.json) | Contracts are audited at that revision; later changes need comparison  |
+**Trigger:** user-requested first upstream review accompanying the documentation
+push/PR/merge sequence. Documentation PR #77 passed CI and merged as `0e866f8`.
 
-The workflow setup and feature-specific research on 2026-11-08 do not constitute
-a complete comparison with current upstream. No “up to date” claim is made.
+**Review status:** initial triage complete; follow-up implementation and broader
+semantic/visual validation remain open. This is not a blanket claim of support
+for every current upstream feature.
 
-Recommended sequence: commit the maintenance/development documentation, perform
-this first review, then return to the feature requests with any relevant
-compatibility gaps identified. Select upgrades from the findings rather than
-assuming a blanket upgrade is required. Proposed visual changes require previews
-and user approval under [AGENTS.md](../AGENTS.md#visualization-stability-and-user-approval).
+**Comparison:** DataFusion 55.1.0 → 55.2.0 (8 commits, 26 files), and Distributed
+`b32ee66...` → `64a0a13...` (53 commits). Distributed's latest published release
+is still 4.0.0; the inspected newer changes are on main. DataFusion main was
+screened only for selected recent subjects, not exhaustively audited.
+
+**Findings and follow-up:** see the
+[detailed source-backed report](upstream-reviews/2026-11-08.md) and its
+[F1–F6 acceptance criteria](upstream-reviews/2026-11-08.md#follow-up-work-and-acceptance-criteria).
+The strongest implications concern metric export scope, stage/task metadata,
+and version-specific structural rules. No broad visualization upgrade was
+established as a prerequisite to feature design.
+
+**Validation:** pinned 20-operator inventory passed; the new source inventory
+has the same operator/source pairs. Current-source corpus conversion generated
+344 scenes with geometry/binding checks; 16 rejected candidates were classified
+as debug sketches, mixed output or a header-only fragment. Targeted probes
+checked fetch labels, Iceberg partition/file distinctions and the missing
+structured stage-metric field. Native engine execution and whole-corpus visual
+review were not performed. Full evidence and limitations are in the report.
+
+**Visual impact:** none. Future user-visible proposals still require
+[current/proposed previews and user approval](../AGENTS.md#visualization-stability-and-user-approval).
+
+**Next trigger:** use these findings in the feature designs; revisit upstream
+on the next release, relevant format change, or agreed periodic review. Keep the
+last inspected source range separate from the audited support pin.
 
 ## Review entry template
 
