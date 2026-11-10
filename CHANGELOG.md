@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.28] - 2026-11-09
+
 ### Fixed
 - Classify annotated upstream planner sketches and stage-header assertions separately from complete plans in corpus reviews. Extract known task/file routing trailers while preserving original evidence and real conversion failures.
 - Fit three-line SortExec/TopK details inside their node boxes while preserving distributed layout. Detect multiline text overflow in corpus checks using rendered line height.
