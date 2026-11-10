@@ -9,13 +9,41 @@ behavior. Add the newest review first.
 | Item                     | Status                                                                                                      |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Maintenance workflow     | Merged through [PR #77](https://github.com/NGA-TRAN/plan_viz/pull/77), 2026-11-08                           |
-| Latest review            | [2026-11-08 initial compatibility triage](upstream-reviews/2026-11-08.md), complete within its stated scope |
+| Latest review            | [2026-11-09 release compatibility check](upstream-reviews/2026-11-09.md), complete within its stated incremental scope |
 | Follow-up implementation | [F4/F5 validated, including the approved TopK correction](upstream-reviews/2026-11-08-follow-up.md); merged through [PR #79](https://github.com/NGA-TRAN/plan_viz/pull/79) as `5f595c4` |
-| Next work                | Three coverage improvements complete and validated for a separate PR; resume F1–F3 feature design next |
-| Next comparison baseline | DataFusion 55.2.0; Distributed `64a0a13d59d27f5facb05838d47adb2afe8a843d`                                   |
+| Next work                | Release 0.1.28 locally reviewed and authorized for delivery; coverage PR #80 merged. F1–F3 feature designs and concrete visual previews remain separate work. |
+| Next comparison baseline | DataFusion stable 55.2.0, main `14b3edd9a350b983fae6d2f194df1a3ae343ba15`; Distributed main `70869b0cda5d4cb322edb4dffc6f229e38ecb62d` |
 | Audited support          | Existing catalog and Distributed `b32ee66e5f12227a5fe8e8444a022991da0758ea` pin retained                    |
 | Suggested cadence        | Monthly during active development, plus release/upgrade triggers; frequency still open                      |
 | Scheduled automation     | None                                                                                                        |
+
+## 2026-11-09 — patch-release compatibility check
+
+**Trigger:** prepare a stable 0.1.28 checkpoint before implementing the optional
+structural and metric features. [PR #80](https://github.com/NGA-TRAN/plan_viz/pull/80)
+merged on November 8 as `b805c7d`; its merged-master CI passed. This release
+preparation passed local review; the user authorized continuing through the
+release PR, checks, merge and publication sequence.
+
+**Comparison:** DataFusion's stable tag remains 55.2.0. Its main advanced by
+7 commits / 35 files from `32dd1d2...` to `14b3edd...`. Distributed main advanced
+by 2 commits / 9 files from `64a0a13...` to `70869b...`; its published release
+remains v4.0.0. The audited support pin is unchanged.
+
+**Outcome:** no blocking converter incompatibility found in the inspected
+increment. Five changed upstream printed-plan examples converted with correct
+empty-group/partition counts and expected aggregate/shuffle structure. Preserve
+version-specific locality and memory qualifications for future F2/F3 work;
+R1–R3 in the [detailed review](upstream-reviews/2026-11-09.md) record follow-ups.
+
+**Validation:** clean build, lint and 71 suites / 933 tests passed, with every
+coverage threshold exceeded. Local package inspection and packed CLI checks
+passed. No new renderer behavior, expected scenes or upstream native execution.
+Publication is tracked separately by the release PR, version tag and npm workflow;
+the validation here records the local preparation checkpoint.
+
+**Next trigger:** next release, relevant format change or agreed review, starting
+from the exact main revisions above and stable DataFusion 55.2.0.
 
 ## 2026-11-08 — first compatibility triage
 
