@@ -133,6 +133,11 @@ For a release:
    `git push origin vX.Y.Z`.
 5. Check the publish workflow result. It verifies that the tag version matches
    `package.json`, runs tests/build, and publishes to npm.
+6. Create a GitHub Release for that existing tag using the version's reviewed
+   changelog notes, and mark it as the latest stable release. For example:
+   `gh release create vX.Y.Z --verify-tag --latest --title vX.Y.Z --notes-file <release-notes-file>`.
+   Publishing to npm and pushing a tag do not create this entry automatically.
+   Verify both npm's latest package version and GitHub's latest Release entry.
 
 The current workflow grants `id-token: write` and uses npm trusted publishing;
 it does not configure an `NPM_TOKEN` secret. The npm package's trusted publisher
