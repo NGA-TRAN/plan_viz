@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Read whitespace-separated bracketed properties and bracketed integer partition counts, preventing false gather conflicts when a custom operator declares fewer output partitions than its child.
+
 ## [0.1.29] - 2026-11-11
 
 ### Added

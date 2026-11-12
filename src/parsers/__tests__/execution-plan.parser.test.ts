@@ -80,6 +80,27 @@ describe('ExecutionPlanParser', () => {
       expect(result.root?.properties?.limit).toBe('100');
     });
 
+    it('separates whitespace-delimited bracketed properties without changing their contents', () => {
+      const result = parser.parse('ArchiveSinkExec: object_store_url=[s3://example/] ' +
+        'sink_folder=["sample partitions=[9]/"] partitions=[1], metrics=[elapsed_compute=10ms]');
+      expect(result.root?.properties).toEqual({
+        object_store_url: '[s3://example/]',
+        sink_folder: '["sample partitions=[9]/"]',
+        partitions: '[1]',
+        metrics: '[elapsed_compute=10ms]',
+      });
+    });
+
+    it.each([
+      'value@0 = 1 AND enabled=true',
+      '[a] + [b] partitions=[1]',
+      '[a] = [b] AND enabled=true',
+      '[unterminated partitions=[1]',
+    ])('preserves property-like text inside an expression: %s', (expression) => {
+      expect(parser.parse('FilterExec: predicate=' + expression).root?.properties)
+        .toEqual({ predicate: expression });
+    });
+
     it('should handle empty input', () => {
       const result = parser.parse('');
 

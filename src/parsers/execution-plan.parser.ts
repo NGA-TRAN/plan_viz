@@ -1,4 +1,4 @@
-import { topLevelPositions } from './plan-text';
+import { isBalanced, topLevelPositions } from './plan-text';
 import { preprocessExecutionPlanLines } from './execution-plan-lines';
 import {
   ExecutionPlanNode,
@@ -318,8 +318,17 @@ export class ExecutionPlanParser {
       (index === 0 || /[\s,]/.test(text[index - 1])) &&
       !!text.slice(index).match(/^([A-Za-z_][\w.-]*)\s*=(?!=)/)
     );
-    // A new property must follow a top-level comma, not whitespace inside a value.
-    const boundaries = starts.filter((index) => index === 0 || text.slice(0, index).trimEnd().endsWith(','));
+    const boundaries: number[] = [];
+    for (const index of starts) {
+      const previous = boundaries.at(-1);
+      const value = previous === undefined ? '' : text.slice(previous, index)
+        .replace(/^[A-Za-z_][\w.-]*\s*=\s*/, '').trim();
+      // Some displays separate bracketed fields with whitespace. Require one
+      // complete bracketed value so equality expressions remain intact.
+      const bracketed = value.startsWith('[') && value.endsWith(']') &&
+        isBalanced(value) && topLevelPositions(value).length === 1;
+      if (index === 0 || text.slice(0, index).trimEnd().endsWith(',') || bracketed) boundaries.push(index);
+    }
     return boundaries.map((index, position) => {
       const match = text.slice(index).match(/^([A-Za-z_][\w.-]*)\s*=(?!=)/)!;
       const end = boundaries[position + 1] ?? text.length;
