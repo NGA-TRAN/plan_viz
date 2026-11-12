@@ -41,6 +41,12 @@ Follow the existing TypeScript style and keep changes focused. Jest enforces
 regressions for changed behavior, including count/routing evidence and malformed
 input where relevant.
 
+CLI behavior is checked both through the compiled command and through direct
+in-process tests. Only the latter contribute to Jest's source coverage; browser
+and packed-consumer checks are separate evidence. See the
+[coverage review](docs/COVERAGE_REVIEW.md) for remaining fallback gaps and the
+custom-renderer follow-up found during review.
+
 ## Fixtures and visual review
 
 Single-tree fixtures live in `tests/*.sql` with matching

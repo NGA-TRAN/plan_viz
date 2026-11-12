@@ -2,6 +2,7 @@ import { ExcalidrawGenerator } from '../../excalidraw.generator';
 import { TestHelpers } from '../utils/test-helpers';
 import { NodeBuilder } from '../builders/node.builder';
 import { ExcalidrawArrow } from '../../../types/excalidraw.types';
+import { assertTextBindings } from '../utils/text-binding-assertions';
 
 describe('ExcalidrawGenerator - ScalarSubqueryExec', () => {
   let generator: ExcalidrawGenerator;
@@ -96,5 +97,34 @@ describe('ExcalidrawGenerator - ScalarSubqueryExec', () => {
     expect(fromMain.length).toBe(2);
     const dx = fromMain.map((arrow) => arrow.points[1][0] - arrow.points[0][0]);
     expect(dx[0]).toBeCloseTo(dx[1], 5);
+  });
+
+  it('keeps partitioned scalar inputs attached within both edges of the parent', () => {
+    const inputs = ['main', 'left_scalar', 'right_scalar'].map((name) =>
+      NodeBuilder.createDataSourceExec({
+        file_groups: `2 groups: [[${name}_a.parquet], [${name}_b.parquet]]`,
+        projection: '[id]',
+      })
+    );
+    const result = generator.generate(NodeBuilder.createNodeWithChildren('ScalarSubqueryExec', inputs));
+    const title = TestHelpers.findElementByText(result.elements, 'ScalarSubqueryExec')!;
+    const parent = result.elements.find((element) => element.id === title.containerId)!;
+    const children = TestHelpers.getTextElements(result.elements)
+      .filter((text) => text.text === 'DataSourceExec')
+      .map((text) => text.containerId);
+    const connections = result.elements.filter((element): element is ExcalidrawArrow =>
+      element.type === 'arrow' && element.endBinding?.elementId === parent.id
+    );
+    expect(connections).toHaveLength(6);
+    for (const child of children) {
+      const bundle = connections.filter((arrow) => arrow.startBinding?.elementId === child);
+      expect(bundle).toHaveLength(2);
+      expect(bundle[0].points[1][0]).toBeCloseTo(bundle[1].points[1][0], 5);
+    }
+    const endpoints = connections.map((arrow) => arrow.x + arrow.points[arrow.points.length - 1][0]);
+    expect(Math.min(...endpoints)).toBeCloseTo(parent.x, 5);
+    expect(Math.max(...endpoints)).toBeCloseTo(parent.x + parent.width, 5);
+    expect(TestHelpers.findElementByText(result.elements, 'subqueries=2')).toBeDefined();
+    assertTextBindings(result.elements);
   });
 });

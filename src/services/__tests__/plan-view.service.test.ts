@@ -1,10 +1,13 @@
 import { webcrypto } from 'node:crypto';
-import { analyzePlan, convertPlanView, inspectPlan, getPlanViewCapabilities, PlanViewOptions, convertPlanToExcalidraw } from '../../index';
+import { analyzePlan, convertPlanView, inspectPlan, getPlanViewCapabilities, PlanViewOptions, PlanViewError, convertPlanToExcalidraw } from '../../index';
 import { LeafNodeGenerator } from '../../generators/generators/leaf-node.generator';
 import { METRIC_PROFILE, OPERATOR_PROFILE } from '../../analysis/metrics/catalog';
 
 beforeAll(() => {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+});
+test('callers can recognize validation errors with the public error class', async () => {
+  await expect(convertPlanView('EmptyExec', { input: { section: 0 } })).rejects.toBeInstanceOf(PlanViewError);
 });
 test.each([
   [null, 'INVALID_OPTIONS'], [{ input: null }, 'INVALID_OPTIONS'], [{ input: { section: 0 } }, 'INVALID_SECTION'],
