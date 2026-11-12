@@ -31,9 +31,11 @@ function metricOptions(options: ViewCliOptions): MetricViewOptions {
     return { display, metric: options.metric, cohort: options.metricCohort };
   }
   if (display !== 'heatmap') invalid('Metric display must be off, labels or heatmap.');
-  const palette = options.palette ?? 'orange';
-  if (palette !== 'orange' && palette !== 'blue' && palette !== 'purple') invalid('Palette must be orange, blue or purple.');
-  return { display, metric: options.metric, cohort: options.metricCohort, palette };
+  const capabilities = getPlanViewCapabilities();
+  const requested = options.palette ?? capabilities.defaultHeatmapPalette;
+  const palette = capabilities.palettes.find((candidate) => candidate.id === requested);
+  if (!palette) invalid('Palette must be one of: ' + capabilities.palettes.map((candidate) => candidate.id).join(', ') + '.');
+  return { display, metric: options.metric, cohort: options.metricCohort, palette: palette.id };
 }
 
 /** Returns before reading stdin in capabilities mode. All other modes share the library core. */

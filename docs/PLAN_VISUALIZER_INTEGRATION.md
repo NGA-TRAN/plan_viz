@@ -86,7 +86,7 @@ without exposed shapes.
 | --- | --- |
 | Display: Current plan / Labels only / Labels + heatmap | `capabilities.displays`; submit `metrics.display: 'off'`, `'labels'` or `'heatmap'` |
 | Metric | Filter `inspection.metrics` by `placement === 'operator'` and `present`; consult `availableDisplays` and `reasons` |
-| Palette: Orange / Blue / Purple | `capabilities.palettes`; submit `metrics.palette` only for heatmap; default Orange |
+| Palette: Orange / Blue / Purple / Spectrum | `capabilities.palettes`; submit `metrics.palette` only for heatmap; default Orange |
 | Comparison group | Selected metric's `cohorts`; submit `metrics.cohort` when more than one group exists |
 | Structural explanations | `structure: 'off'` or `'explain'`, independently of metrics |
 | Producer assumptions | `capabilities.profiles`; explicit `interpretation.metricProfile`, `operatorProfile`, `exportProfile` |
@@ -96,11 +96,23 @@ omit palette. Store remembered control preferences separately from the request.
 Query-summary fields belong in a query-details panel, never the operator-metric
 dropdown, even when their availability includes numeric data.
 
-Use the returned ranking colors and legend stops. Orange uses white for exact
-zero, with its existing gradient for positive values. Palette metadata exposes
-`zero`, `low` and `high`; a rounded intensity of `0` does not prove a zero value.
-Ranking and normalized values use exact decimal strings; avoid converting them
-to JavaScript numbers for comparisons or sorting.
+Use the returned ranking colors and legend metadata. Every palette uses white
+for exact zero; Orange, Blue and Purple retain their existing positive-value
+gradients. Spectrum progresses from blue through cyan, green, yellow and orange
+to red, with a separate zero swatch. Palette metadata retains `zero`, `low` and
+`high` and adds optional `positiveStops` anchors for Spectrum. Its positive colors
+interpolate between adjacent anchors, not just its endpoints. A rounded intensity
+of `0` does not prove a zero value. Ranking and normalized values use exact decimal
+strings; avoid converting them to JavaScript numbers for comparisons or sorting.
+All palettes keep the same linear numeric scale; Spectrum does not introduce
+logarithmic scaling.
+
+For Spectrum, render `legend.zeroColor` as a separate zero swatch, then render
+the six positive anchors in `legend.stops`. With `zeroColor` present, the stop at
+position 0 represents the lowest positive color. An all-zero Spectrum cohort
+has no positive stops; show only its white zero swatch. Other palettes keep their
+existing five-stop legends. Build the palette dropdown from capabilities rather
+than a hard-coded list.
 
 Without a producer profile, only reported scalar `elapsed_compute` durations
 receive numeric comparison. Count/byte fields and distributed task-map ownership
@@ -141,11 +153,13 @@ do not disguise conversion failures as missing metrics.
 
 - Opening an existing plan starts in Current plan with the same settings and
   drawing. Existing custom renderers and representative-worker choices survive.
-- Off, labels and heatmap requests obey the field rules; all three palettes work.
+- Off, labels and heatmap requests obey the field rules; all four palettes work.
 - Switching metrics/palettes/cohorts updates the drawing and legend together;
   changing palette does not change ranking or source identities.
 - Missing, zero, all-zero, raw and conflicting metrics produce the documented
-  states. Very small positive values do not receive the zero-only Orange fill.
+  states. Very small positive values remain tinted in every palette; only exact
+  zero receives white. Spectrum's legend distinguishes zero from its low positive
+  anchor and shows only the zero swatch for an all-zero cohort.
 - Counts/bytes require an explicit profile; distributed task maps also require
   the exporter contract. Hidden tasks remain in comparisons; source scalars are
   not duplicated as per-task measurements.

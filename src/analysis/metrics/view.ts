@@ -7,8 +7,14 @@ function paletteColor(id: PaletteId, intensity: number, isZero: boolean): string
   const palette = palettes.find((p) => p.id === id)!;
   // Decide zero from the exact value: a small positive ratio may round to zero.
   if (isZero) return palette.zero;
+  const stops = palette.positiveStops ?? [{ position: 0, color: palette.low }, { position: 1, color: palette.high }];
+  const upper = stops.findIndex((stop) => stop.position >= intensity);
+  if (upper === 0) return stops[0].color;
+  const low = stops[upper - 1];
+  const high = stops[upper];
+  const fraction = (intensity - low.position) / (high.position - low.position);
   const channel = (color: string, start: number): number => parseInt(color.slice(start, start + 2), 16);
-  return '#' + [1, 3, 5].map((start) => Math.round(channel(palette.low, start) + intensity * (channel(palette.high, start) - channel(palette.low, start))).toString(16).padStart(2, '0')).join('');
+  return '#' + [1, 3, 5].map((start) => Math.round(channel(low.color, start) + fraction * (channel(high.color, start) - channel(low.color, start))).toString(16).padStart(2, '0')).join('');
 }
 
 export function metricView(inspection: ReadyPlanInspection, options?: MetricViewOptions): MetricViewReport {
@@ -47,8 +53,11 @@ export function metricView(inspection: ReadyPlanInspection, options?: MetricView
       return { observationIds: group.map((o) => o.id), owner: group[0].owner, raw: group.map((o) => o.raw), value, rank: rank || i + 1, intensity,
         color: palette && cohort.id === selectedCohort ? paletteColor(palette, intensity, compareDecimal(value.decimal, '0') === 0) : null };
     });
+    const definition = palettes.find((p) => p.id === palette);
+    const stops = definition?.positiveStops ? (allZero ? [] : definition.positiveStops.map((stop) => ({ ...stop }))) :
+      palette ? [0, .25, .5, .75, 1].map((position) => ({ position, color: paletteColor(palette, position, allZero || position === 0) })) : [];
     return { cohort, ranking, legend: { scale: 'linear' as const, minimum: '0' as const, maximum, allZero, palette,
-      stops: palette ? [0, .25, .5, .75, 1].map((position) => ({ position, color: paletteColor(palette, position, allZero || position === 0) })) : [] },
+      ...(definition?.positiveStops ? { zeroColor: definition.zero } : {}), stops },
     coverage: { observed: ranking.length, expected: null, complete: null }, subtotal: null };
   });
   return { display: options.display, metric: options.metric, palette, selectedCohort,

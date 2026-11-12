@@ -1,5 +1,5 @@
 import { PlanViewOptions } from '../types/plan-view.types';
-import { profiles } from '../analysis/metrics/catalog';
+import { palettes, profiles } from '../analysis/metrics/catalog';
 import { PlanViewError } from './errors';
 
 function object(value: unknown): boolean {
@@ -28,7 +28,7 @@ export function validateOptions(options: PlanViewOptions): void {
       if (typeof metrics.metric !== 'string' || !metrics.metric.trim()) fail('A metric name is required.');
       if (metrics.cohort !== undefined && (typeof metrics.cohort !== 'string' || !metrics.cohort)) fail('Cohort must be a nonempty ID.');
       if (metrics.display === 'labels' && metrics.palette !== undefined) fail('Palette applies only to heatmap mode.');
-      if (metrics.display === 'heatmap' && metrics.palette !== undefined && !['orange', 'blue', 'purple'].includes(metrics.palette)) fail('Unknown palette.');
+      if (metrics.display === 'heatmap' && metrics.palette !== undefined && !palettes.some((p) => p.id === metrics.palette)) fail('Unknown palette.');
     }
   }
   for (const [key, component] of [['operatorProfile', 'operator'], ['metricProfile', 'metric'], ['exportProfile', 'exporter']] as const) {

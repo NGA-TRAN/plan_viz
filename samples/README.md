@@ -22,7 +22,7 @@ single-partition.
 Suggested things to inspect:
 
 - `elapsed_compute`: the join reports 45 ms, the order scan 18 ms, and the
-  projection exactly 0 ns. In the Orange palette, that projection is white.
+  projection exactly 0 ns. In every heatmap palette, that projection is white.
 - `output_rows`: 24,000 scanned orders become 18,000 after filtering and 15,000
   after joining; 30 partial aggregate rows become 20 final groups and ten results.
 - `build_mem_used`: 128 KB on the join. `peak_mem_used`: reported values on the
@@ -93,6 +93,8 @@ node dist/cli.js -i samples/distributed-metrics.sql \
 
 Omit the metric flags for Current plan. To try structural explanations, add
 `--structure explain --operator-profile datafusion-physical-7865139`.
+Use `--palette spectrum` to compare the same values with the blue-to-red palette;
+zero remains white and the numeric scale remains linear.
 See [PLAN_VIEWS.md](../docs/PLAN_VIEWS.md) for the full API/CLI contract.
 
 The npm package includes this guide and both `.sql` files under `samples/`.

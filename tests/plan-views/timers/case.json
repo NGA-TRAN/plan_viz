@@ -5,6 +5,7 @@
     "orange": {"metrics": {"display": "heatmap", "metric": "elapsed_compute", "palette": "orange"}},
     "blue": {"metrics": {"display": "heatmap", "metric": "elapsed_compute", "palette": "blue"}},
     "purple": {"metrics": {"display": "heatmap", "metric": "elapsed_compute", "palette": "purple"}},
+    "spectrum": {"metrics": {"display": "heatmap", "metric": "elapsed_compute", "palette": "spectrum"}},
     "rows": {"metrics": {"display": "heatmap", "metric": "output_rows"}, "interpretation": {"metricProfile": "datafusion-7865139"}},
     "missing": {"metrics": {"display": "heatmap", "metric": "peak_mem_used"}},
     "combined": {"metrics": {"display": "heatmap", "metric": "elapsed_compute"}, "structure": "explain", "interpretation": {"operatorProfile": "datafusion-physical-7865139"}}

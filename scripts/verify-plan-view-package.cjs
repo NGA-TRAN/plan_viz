@@ -32,6 +32,12 @@ function run(command, args, cwd = root) {
   assert(example, 'Missing integration example');
   fs.writeFileSync(path.join(consumer, 'consumer.ts'), example[1] + `
 if (false) {
+  void convertPlanView('EmptyExec', { metrics: { display: 'heatmap', metric: 'elapsed_compute', palette: 'spectrum' } });
+  const spectrum = getPlanViewCapabilities().palettes.find(palette => palette.id === 'spectrum');
+  const stop = spectrum?.positiveStops?.[0];
+  const position: number | undefined = stop?.position;
+  const color: string | undefined = stop?.color;
+  void [position, color];
   // @ts-expect-error Off requests must not carry a selected metric.
   void convertPlanView('EmptyExec', { metrics: { display: 'off', metric: 'output_rows' } });
   // @ts-expect-error Labels requests must not carry a palette.
@@ -57,7 +63,14 @@ if (false) {
       assert.equal(missing.metrics.status, 'not-reported');
       const inspected = await api.inspectPlan(input);
       assert.equal(inspected.status, 'ready');
-      assert.deepEqual(api.getPlanViewCapabilities().palettes.map(p => p.id), ['orange', 'blue', 'purple']);
+      const palettes = api.getPlanViewCapabilities().palettes;
+      assert.deepEqual(palettes.map(p => p.id), ['orange', 'blue', 'purple', 'spectrum']);
+      assert(palettes.every(p => p.zero === '#ffffff'));
+      assert.deepEqual(palettes.find(p => p.id === 'spectrum').positiveStops, [
+        { position: 0, color: '#8db8f2' }, { position: .2, color: '#64cdd0' },
+        { position: .4, color: '#7fd18c' }, { position: .6, color: '#ead568' },
+        { position: .8, color: '#f5b65f' }, { position: 1, color: '#ed8075' },
+      ]);
       const packageRoot = path.dirname(require.resolve('plan-viz/package.json'));
       for (const kind of ['single-node', 'distributed']) {
         const sample = fs.readFileSync(path.join(packageRoot, 'samples', kind + '-metrics.sql'), 'utf8');
@@ -77,6 +90,22 @@ if (false) {
             assert(ranking.some(entry => entry.value.decimal === '0' && entry.color === '#ffffff'));
           }
         }
+        for (const palette of ['blue', 'purple', 'spectrum']) {
+          const view = await api.convertPlanView(sample, { interpretation, distributed: { workerDisplay: 'all' },
+            metrics: { display: 'heatmap', metric: 'elapsed_compute', palette } });
+          assert.equal(view.metrics.status, 'ready');
+          const ranking = view.metrics.cohorts.find(cohort => cohort.cohort.id === view.metrics.selectedCohort).ranking;
+          assert(ranking.some(entry => entry.value.decimal === '0'));
+          for (const entry of ranking) {
+            assert.equal(entry.color === '#ffffff', entry.value.decimal === '0');
+            const ref = view.renderIndex.find(ref => ref.status === 'visible' && ref.sourceId === entry.owner.sourceId &&
+              (entry.owner.kind === 'instance' ? ref.instanceId === entry.owner.instanceId : ref.instanceId === null));
+            assert(ref, kind + ': missing visible metric owner');
+            const body = view.scene.elements.find(element => ref.elementIds.includes(element.id));
+            assert.equal(body.backgroundColor, entry.color, kind + ': operator body must match its ranked color');
+          }
+          if (palette === 'spectrum') assert.equal(ranking[0].color, '#ed8075');
+        }
         const withoutProfile = await api.analyzePlan(sample, { metrics: { display: 'heatmap', metric: 'output_rows' } });
         assert.equal(withoutProfile.metrics.status, 'incomparable');
       }
@@ -89,23 +118,33 @@ if (false) {
     assert.equal((await analyzePlan('EmptyExec')).metrics.status, 'off');
     assert((await convertPlanView('EmptyExec')).scene.elements.length > 0);
     assert.equal(getPlanViewCapabilities().schemaVersion, 1);
+    const spectrum = await convertPlanView('EmptyExec, metrics=[elapsed_compute=1ms]', {
+      metrics: { display: 'heatmap', metric: 'elapsed_compute', palette: 'spectrum' },
+    });
+    assert.equal(spectrum.metrics.cohorts[0].ranking[0].color, '#ed8075');
   `], consumer);
   const capabilities = JSON.parse(run(process.execPath, [path.join(installed, 'dist/cli.js'), '--capabilities'], consumer));
   assert.equal(capabilities.schemaVersion, 1);
-  assert.equal(capabilities.palettes.find(p => p.id === 'orange').zero, '#ffffff');
+  assert(capabilities.palettes.every(p => p.zero === '#ffffff'));
   for (const kind of ['single-node', 'distributed']) {
     const output = path.join(consumer, kind + '.excalidraw');
     run(process.execPath, [path.join(installed, 'dist/cli.js'), '-i',
       path.join(installed, 'samples', kind + '-metrics.sql'), '--metric-display', 'heatmap',
-      '--metric', 'output_rows', '--metric-profile', 'datafusion-7865139',
+      '--metric', 'output_rows', '--palette', 'spectrum', '--metric-profile', 'datafusion-7865139',
       '--export-profile', 'distributed-b32ee66', '-o', output], consumer);
-    assert(JSON.parse(fs.readFileSync(output, 'utf8')).elements.length > 0);
+    const scene = JSON.parse(fs.readFileSync(output, 'utf8'));
+    const hottest = scene.elements.find(element => element.type === 'text' && element.text.startsWith('DataSourceExec'));
+    assert(hottest?.containerId, kind + ': missing source operator label');
+    assert(scene.elements.some(element => element.backgroundColor === '#ed8075' &&
+      scene.elements.some(label => label.type === 'text' && label.text.startsWith('DataSourceExec') && label.containerId === element.id)),
+    kind + ': Spectrum CLI did not color the hottest source operator');
   }
   await require('esbuild').build({ stdin: { contents: 'import * as api from "plan-viz"; globalThis.planViz = api;',
     resolveDir: consumer }, bundle: true, write: false, platform: 'browser', format: 'iife', logLevel: 'silent' });
   const report = { directory, packageVersion: archive.version, fileCount: files.length,
     packagedDocs: true, packagedSamples: true, sampleDefaultParity: true, sampleMetricProfiles: true,
-    guideTypecheck: true, runtimeApi: true, esmImport: true, cli: true, sampleCli: true, browserBundle: true };
+    guideTypecheck: true, runtimeApi: true, esmImport: true, cli: true, sampleCli: true, spectrum: true,
+    whiteZeroPalettes: true, operatorFills: true, browserBundle: true };
   fs.writeFileSync(path.join(directory, 'report.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report, null, 2));
 })().catch(error => { console.error('Package check failed; artifacts: ' + directory, error); process.exitCode = 1; });
