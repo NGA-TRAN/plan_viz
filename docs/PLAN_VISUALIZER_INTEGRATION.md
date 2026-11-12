@@ -1,16 +1,16 @@
 # Integrating optional plan views into plan_visualizer
 
-This guide covers the new metric and structural APIs in the next release after
-0.1.28. They are currently unreleased. Use the version that contains these entries
-in [CHANGELOG.md](../CHANGELOG.md); do not assume an installed 0.1.28 has them.
+This guide covers the metric and structural APIs added in plan-viz 0.1.29.
+See [CHANGELOG.md](../CHANGELOG.md) for release details; version 0.1.28 does not
+contain these APIs.
 The package includes this guide, [PLAN_VIEWS.md](PLAN_VIEWS.md), the changelog,
 [single-node and distributed samples](../samples/README.md), and public TypeScript
 declarations. Import runtime functions and types from `plan-viz`.
 
 ## Upgrade and preserve the current view
 
-1. After publication, install the chosen version explicitly with
-   `npm install --save-exact plan-viz@<released-version>` and update the app lockfile.
+1. Install this release explicitly with
+   `npm install --save-exact plan-viz@0.1.29` and update the app lockfile.
 2. Read the installed package's `docs/PLAN_VIEWS.md` and `dist/index.d.ts`, following
    its re-exported declarations. Check `getPlanViewCapabilities().schemaVersion`
    and the exported functions. This API uses schema version `1`.

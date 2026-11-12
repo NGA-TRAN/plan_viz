@@ -27,10 +27,9 @@ structural explanations can be enabled independently.
 | Inspection and analysis APIs | Discover available metrics and physical-plan variants; generate structured JSON reports |
 | Editable diagrams | Excalidraw scenes with grouped labels, operators, workers and bound connections |
 
-**Unreleased:** metric labels, heatmaps, structural explanations and the new
-inspection/analysis APIs are available in the working tree for the next release.
-They are not part of published version 0.1.28. Existing default conversion remains
-available through the current CLI and synchronous library API.
+**Available since 0.1.29:** metric labels, heatmaps, structural explanations and
+the inspection/analysis APIs. Existing default conversion remains available
+through the CLI and synchronous library API.
 
 Missing measurements remain **Not reported**; they never become zero. Orange
 heatmaps use white for measured zero. Numeric interpretation of some metrics
@@ -231,9 +230,9 @@ npx plan-viz -i plan.txt -o output.excalidraw
 The plan format is detected automatically. For snapshot files with multiple sections,
 add `--section 2` (1-based). See [all CLI options](docs/CLI.md).
 
-### Optional views — unreleased
+### Optional views
 
-The following commands use the new CLI options. To try them in a local checkout,
+The following commands require plan-viz 0.1.29 or later. In a local checkout,
 run `npm run build` and use `node dist/cli.js` in place of `npx plan-viz`.
 
 ```sh
@@ -299,7 +298,7 @@ The new features are delivered through the CLI/API. Interactive metric, display
 and palette dropdowns are implemented by the viewer app. The
 [plan_visualizer integration guide](docs/PLAN_VISUALIZER_INTEGRATION.md) provides
 the upgrade steps and app acceptance checks. Both it and the plan-view API guide
-are included in the package prepared for the next release.
+are included in the npm package, together with the reusable metric samples.
 
 ## Documentation
 
