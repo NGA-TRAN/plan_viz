@@ -12,6 +12,33 @@ const counts = (text: string, capacity?: number): Array<number | undefined> => {
 };
 
 describe('partition counts inferred from consumers', () => {
+  test('bracketed output metadata overrides child fallback without changing the child count', () => {
+    expect(counts('ArchiveSinkExec: partitions=[1]\n' +
+      '  RepartitionExec: partitioning=RoundRobinBatch(3)\n    EmptyExec')).toEqual([1, 3, 1]);
+    expect(counts('FeedSourceExec: output_partitions=[0]')).toEqual([0]);
+  });
+  test.each(['[]', '[1, 2]', '[unknown]', '[-1]', '[1.5]', '[9007199254740992]', '[[1]]', '[1'])(
+    'does not invent a count from invalid bracketed metadata %s', (value) => {
+      expect(counts('FeedSourceExec: partitions=' + value)).toEqual([undefined]);
+    });
+  test('a gather respects bracketed sink output metadata with whitespace-delimited properties', () => {
+    const text = '┌───── DistributedExec\n│ [Stage 1] => NetworkCoalesceExec: output_partitions=1, input_tasks=1\n└─────\n' +
+      '┌───── Stage 1 ── tasks=1, partitions=1\n' +
+      '│ ArchiveSinkExec: object_store_url=[s3://example/] sink_folder=[sample/] partitions=[1]\n' +
+      '│   RepartitionExec: partitioning=RoundRobinBatch(3)\n│     EmptyExec\n└─────';
+    const document = new PlanDocumentParser().parse(text);
+    if (document.kind === 'single') throw new Error('Expected distributed plan');
+    const result = analyzeDistributed(document);
+    const producer = result.tasks.find((task) => task.stage === '1')!;
+    expect(producer.counts.get(producer.root)?.value).toBe(1);
+    expect(producer.counts.get(producer.root.children[0])?.value).toBe(3);
+    expect(result.connections[0].pairs).toEqual([{ from: 0, to: 0, streams: 1 }]);
+    expect(result.diagnostics).toEqual([]);
+    expect(new ConverterService().convert(text).elements.length).toBeGreaterThan(0);
+    const conflict = new PlanDocumentParser().parse(text.replace('partitions=[1]', 'partitions=[2]'));
+    if (conflict.kind === 'single') throw new Error('Expected distributed plan');
+    expect(() => analyzeDistributed(conflict)).toThrow('Gather partition conflict');
+  });
   test('repartition input metadata crosses cooperative and preserving wrappers', () => {
     expect(counts('RepartitionExec: partitioning=RoundRobinBatch(8), input_partitions=1\n' +
       '  CooperativeExec\n    FilterExec: predicate=value@0 > 0\n      SequenceSourceExec: t0:[0-6), t1:[6-11)'))

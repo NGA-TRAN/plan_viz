@@ -24,8 +24,10 @@ const contractOperators = new Set([
 ]);
 
 function countValue(text?: string): number | undefined {
-  if (text === undefined || !/^\d+$/.test(text)) return undefined;
-  const value = Number(text);
+  if (text === undefined) return undefined;
+  const scalar = listContent(text).trim();
+  if (!/^\d+$/.test(scalar)) return undefined;
+  const value = Number(scalar);
   return Number.isSafeInteger(value) ? value : undefined;
 }
 

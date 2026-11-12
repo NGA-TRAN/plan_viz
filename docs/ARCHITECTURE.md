@@ -49,6 +49,8 @@ physical EXPLAIN table rows. Supported row labels are `physical_plan`,
 operator names, nested/quoted property values, and inline wrappers. The default
 indentation is two spaces. The lower-level parser handles one tree; distributed
 input goes through `PlanDocumentParser` and `DistributedPlanParser`.
+Properties may also be separated by whitespace after a complete bracketed value;
+whitespace inside an unbracketed expression does not delimit properties.
 
 `DistributedPlanParser` reads boxed stages, task counts, source variants, UNION
 assignments, and network stage references. `PlanNode` extends the ordinary node
@@ -72,6 +74,8 @@ independent of the number of arrows drawn. Explicit local metadata and known
 operator contracts take precedence over consumer hints and custom fallbacks.
 Custom unary operators default to preserving the child's count; custom operators
 with multiple inputs use the shared child count when all counts are known and equal.
+Generic partition-count fields accept both bare and bracketed scalars (`1` or `[1]`),
+while lists and malformed values do not establish a count.
 Consumer hints propagate through custom unary chains without being divided
 between multiple unknown inputs.
 
