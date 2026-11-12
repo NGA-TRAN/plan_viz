@@ -1,6 +1,8 @@
 import { ExcalidrawGenerator } from '../../excalidraw.generator';
 import { TestHelpers } from '../utils/test-helpers';
 import { NodeBuilder } from '../builders/node.builder';
+import { LeafNodeGenerator } from '../../generators/leaf-node.generator';
+import { assertTextBindings } from '../utils/text-binding-assertions';
 
 describe('ExcalidrawGenerator - AnalyzeExec', () => {
   let generator: ExcalidrawGenerator;
@@ -46,5 +48,21 @@ describe('ExcalidrawGenerator - AnalyzeExec', () => {
     const result = generator.generate(node);
     // 2 file-group arrows, 2 into Analyze, 2 into Projection
     TestHelpers.assertHasArrows(result, 6);
+  });
+
+  it('does not invent an input stream for a registered source that emits none', () => {
+    const source = NodeBuilder.createSimpleNode('IdleSourceExec');
+    const node = NodeBuilder.createNodeWithChildren('AnalyzeExec', [source]);
+    const custom = TestHelpers.createGenerator({ customGenerators: [{
+      operator: source.operator,
+      generator: new LeafNodeGenerator({ details: () => [], outputArrows: () => 0 }),
+    }] });
+    const result = custom.generate(node);
+
+    TestHelpers.assertHasOperator(result, 'AnalyzeExec');
+    TestHelpers.assertHasOperator(result, source.operator);
+    TestHelpers.assertHasArrows(result, 0);
+    expect(TestHelpers.getTextElements(result.elements).some((text) => text.text.startsWith('verbose='))).toBe(false);
+    assertTextBindings(result.elements);
   });
 });

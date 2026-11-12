@@ -1,10 +1,13 @@
 import { webcrypto } from 'node:crypto';
-import { analyzePlan, convertPlanView, inspectPlan, getPlanViewCapabilities, PlanViewOptions, convertPlanToExcalidraw } from '../../index';
+import { analyzePlan, convertPlanView, inspectPlan, getPlanViewCapabilities, PlanViewOptions, PlanViewError, convertPlanToExcalidraw } from '../../index';
 import { LeafNodeGenerator } from '../../generators/generators/leaf-node.generator';
 import { METRIC_PROFILE, OPERATOR_PROFILE } from '../../analysis/metrics/catalog';
 
 beforeAll(() => {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+});
+test('callers can recognize validation errors with the public error class', async () => {
+  await expect(convertPlanView('EmptyExec', { input: { section: 0 } })).rejects.toBeInstanceOf(PlanViewError);
 });
 test.each([
   [null, 'INVALID_OPTIONS'], [{ input: null }, 'INVALID_OPTIONS'], [{ input: { section: 0 } }, 'INVALID_SECTION'],
@@ -27,11 +30,21 @@ test.each([
 });
 test('catalog is detached from caller mutation and reports all approved choices', () => {
   const first = getPlanViewCapabilities();
-  expect(first.palettes.map((p) => p.id)).toEqual(['orange', 'blue', 'purple']);
+  expect(first.palettes.map((p) => p.id)).toEqual(['orange', 'blue', 'purple', 'spectrum']);
   expect(first.palettes[0]).toMatchObject({ zero: '#ffffff', low: '#fff8ed', high: '#ffc078' });
+  expect(first.palettes.every((p) => p.zero === '#ffffff')).toBe(true);
+  const spectrum = first.palettes.find((p) => p.id === 'spectrum');
+  expect(spectrum).toMatchObject({ low: '#8db8f2', high: '#ed8075', positiveStops: [
+    { position: 0, color: '#8db8f2' }, { position: .2, color: '#64cdd0' },
+    { position: .4, color: '#7fd18c' }, { position: .6, color: '#ead568' },
+    { position: .8, color: '#f5b65f' }, { position: 1, color: '#ed8075' },
+  ] });
   expect(first.metrics.filter((m) => m.placement === 'operator')).toHaveLength(10);
   first.palettes[0].low = '#000000';
   expect(getPlanViewCapabilities().palettes[0].low).toBe('#fff8ed');
+  if (!spectrum?.positiveStops) throw new Error('Expected Spectrum color stops');
+  spectrum.positiveStops[0].color = '#000000';
+  expect(getPlanViewCapabilities().palettes.find((p) => p.id === 'spectrum')?.positiveStops?.[0].color).toBe('#8db8f2');
 });
 test('selection-required and malformed selected input are explicit errors', async () => {
   const multiple = '## A\nEmptyExec\n## B\nEmptyExec';
@@ -72,14 +85,14 @@ test.each(['', 'metrics=[]', 'metrics=[elapsed_compute=]', 'metrics=[elapsed_com
   expect(['not-reported', 'incomparable']).toContain(result.metrics.status);
   expect(result.metrics.cohorts).toHaveLength(0);
 });
-test('incompatible cohorts need selection, and changing palette never changes source identities', async () => {
+test.each(['purple', 'spectrum'] as const)('%s requires a comparison cohort and preserves source identities', async (palette) => {
   const text = 'ProjectionExec: expr=[x@0 as x], metrics=[output_rows=2]\n  EmptyExec, metrics=[output_rows{partition=0}=3]';
   const base = { interpretation: { metricProfile: METRIC_PROFILE } };
-  const options = { ...base, metrics: { display: 'heatmap' as const, metric: 'output_rows' } };
+  const options = { ...base, metrics: { display: 'heatmap' as const, metric: 'output_rows', palette } };
   const result = await convertPlanView(text, options);
   expect(result.metrics.status).toBe('cohort-required');
   expect(result.metrics.cohorts.every((c) => c.ranking.every((r) => r.color === null))).toBe(true);
-  const selected = await convertPlanView(text, { ...base, metrics: { ...options.metrics, cohort: result.metrics.cohorts[0].cohort.id, palette: 'purple' } });
+  const selected = await convertPlanView(text, { ...base, metrics: { ...options.metrics, cohort: result.metrics.cohorts[0].cohort.id } });
   expect(selected.metrics.status).toBe('ready');
   expect(selected.inspection.index).toEqual(result.inspection.index);
 });

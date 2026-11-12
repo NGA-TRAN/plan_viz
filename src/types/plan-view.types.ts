@@ -3,7 +3,7 @@ import type { ParserConfig } from './execution-plan.types';
 import type { PlanDocument } from './plan-document.types';
 import type { ExcalidrawData } from './excalidraw.types';
 
-export type PaletteId = 'orange' | 'blue' | 'purple';
+export type PaletteId = 'orange' | 'blue' | 'purple' | 'spectrum';
 export type MetricDisplay = 'off' | 'labels' | 'heatmap';
 export type StructureDisplay = 'off' | 'explain';
 export type Knowledge<T> =
@@ -205,7 +205,10 @@ export interface MetricCohortReport {
   cohort: CohortDescriptor;
   ranking: readonly RankedMetricValue[];
   legend: { scale: 'linear'; minimum: '0'; maximum: NormalizedValue; allZero: boolean;
-    palette: PaletteId | null; stops: readonly { position: number; color: string }[] };
+    palette: PaletteId | null;
+    /** When present, exact zero has a separate swatch and stops describe positive values only. */
+    zeroColor?: string;
+    stops: readonly { position: number; color: string }[] };
   coverage: { observed: number; expected: number | null; complete: boolean | null };
   subtotal: { value: NormalizedValue; evidenceIds: readonly string[] } | null;
 }
@@ -262,8 +265,9 @@ export interface PlanViewCapabilities {
   schemaVersion: 1;
   displays: readonly { id: MetricDisplay; label: string }[];
   defaultDisplay: 'off';
-  /** Exact zero uses `zero`; positive values interpolate between `low` and `high`. */
-  palettes: readonly { id: PaletteId; label: string; zero: string; low: string; high: string }[];
+  /** Exact zero uses `zero`; positive values interpolate through positiveStops, or low/high when absent. */
+  palettes: readonly { id: PaletteId; label: string; zero: string; low: string; high: string;
+    positiveStops?: readonly { position: number; color: string }[] }[];
   defaultHeatmapPalette: 'orange';
   metrics: readonly { name: string; label: string; kind: 'time' | 'bytes' | 'count'; placement: 'operator' | 'query-summary' }[];
   profiles: readonly { id: string; component: 'operator' | 'metric' | 'exporter';

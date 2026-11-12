@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add the optional Spectrum heatmap palette with six positive-color anchors, a separate white zero swatch, and discoverable gradient metadata for API consumers.
+
+### Changed
+- Use white for exact-zero Blue and Purple heatmap values and legends while preserving their positive gradients, the default Orange palette, and linear scaling.
+
 ### Fixed
 - Read whitespace-separated bracketed properties and bracketed integer partition counts, preventing false gather conflicts when a custom operator declares fewer output partitions than its child.
 

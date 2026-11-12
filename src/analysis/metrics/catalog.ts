@@ -17,10 +17,14 @@ export const definitions: PlanViewCapabilities['metrics'] = [
   { name: 'query_cpu_time', label: 'Query CPU time', kind: 'time', placement: 'query-summary' },
   { name: 'query_cpu_sample_count', label: 'Query CPU samples', kind: 'count', placement: 'query-summary' },
 ];
+const spectrumStops = ['#8db8f2', '#64cdd0', '#7fd18c', '#ead568', '#f5b65f', '#ed8075']
+  .map((color, index, colors) => ({ position: index / (colors.length - 1), color }));
 export const palettes: PlanViewCapabilities['palettes'] = [
   { id: 'orange', label: 'Orange', zero: '#ffffff', low: '#fff8ed', high: '#ffc078' },
-  { id: 'blue', label: 'Blue', zero: '#edf6ff', low: '#edf6ff', high: '#91caff' },
-  { id: 'purple', label: 'Purple', zero: '#f7f0ff', low: '#f7f0ff', high: '#c4a1f2' },
+  { id: 'blue', label: 'Blue', zero: '#ffffff', low: '#edf6ff', high: '#91caff' },
+  { id: 'purple', label: 'Purple', zero: '#ffffff', low: '#f7f0ff', high: '#c4a1f2' },
+  { id: 'spectrum', label: 'Spectrum', zero: '#ffffff', low: spectrumStops[0].color,
+    high: spectrumStops[spectrumStops.length - 1].color, positiveStops: spectrumStops },
 ];
 const datafusionSource = { repository: 'https://github.com/DataDog/datafusion', revision: '78651394b6804e2fe9ea99925395ef9d3616aba5' };
 export const profiles: PlanViewCapabilities['profiles'] = [

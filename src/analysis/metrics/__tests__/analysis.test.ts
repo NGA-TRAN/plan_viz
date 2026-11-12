@@ -40,12 +40,60 @@ test('orange uses white only for exact zero rows, including when positive ratios
 });
 test.each([
   ['blue', '#edf6ff'], ['purple', '#f7f0ff'],
-] as const)('%s keeps its existing zero fill', async (palette, color) => {
+] as const)('%s uses white for zero while retaining its positive floor', async (palette, low) => {
+  const result = await analyzePlan('UnionExec\n  EmptyExec, metrics=[elapsed_compute=0ns]\n' +
+    '  EmptyExec, metrics=[elapsed_compute=1ns]\n  EmptyExec, metrics=[elapsed_compute=100s]', {
+    metrics: { display: 'heatmap', metric: 'elapsed_compute', palette },
+  });
+  const { ranking, legend } = result.metrics.cohorts[0];
+  expect(ranking[1]).toMatchObject({ intensity: 0, color: low });
+  expect(ranking[2].color).toBe('#ffffff');
+  expect(legend.stops[0].color).toBe('#ffffff');
+});
+test.each(['orange', 'blue', 'purple', 'spectrum'] as const)('%s reports all-zero values without a positive-colored legend', async (palette) => {
   const result = await analyzePlan('EmptyExec, metrics=[elapsed_compute=0ns]', {
     metrics: { display: 'heatmap', metric: 'elapsed_compute', palette },
   });
-  expect(result.metrics.cohorts[0].ranking[0].color).toBe(color);
-  expect(result.metrics.cohorts[0].legend.stops.every((s) => s.color === color)).toBe(true);
+  const { ranking, legend } = result.metrics.cohorts[0];
+  expect(ranking[0].color).toBe('#ffffff');
+  expect(legend.allZero).toBe(true);
+  expect(legend.stops.every((s) => s.color === '#ffffff')).toBe(true);
+  if (palette === 'spectrum') {
+    expect(legend.zeroColor).toBe('#ffffff');
+    expect(legend.stops).toEqual([]);
+  }
+});
+test('Spectrum interpolates each positive segment and separates exact zero from the positive floor', async () => {
+  const values = [0, 10, 20, 37, 40, 57, 60, 77, 80, 97, 100];
+  const text = 'UnionExec\n' + values.map((value) => '  EmptyExec, metrics=[elapsed_compute=' + value + 'ms]').join('\n');
+  const result = await analyzePlan(text, { metrics: { display: 'heatmap', metric: 'elapsed_compute', palette: 'spectrum' } });
+  const { ranking, legend } = result.metrics.cohorts[0];
+  expect(ranking.map((r) => r.color)).toEqual([
+    '#ed8075', '#ee8872', '#f5b65f', '#f3bb60', '#ead568', '#dad46d',
+    '#7fd18c', '#7bd096', '#64cdd0', '#79c3e1', '#ffffff',
+  ]);
+  expect(legend).toMatchObject({ scale: 'linear', zeroColor: '#ffffff', stops: [
+    { position: 0, color: '#8db8f2' }, { position: .2, color: '#64cdd0' },
+    { position: .4, color: '#7fd18c' }, { position: .6, color: '#ead568' },
+    { position: .8, color: '#f5b65f' }, { position: 1, color: '#ed8075' },
+  ] });
+  const orange = await analyzePlan(text, heatmap);
+  expect(ranking.map(({ color: _color, ...value }) => value))
+    .toEqual(orange.metrics.cohorts[0].ranking.map(({ color: _color, ...value }) => value));
+  legend.stops[0].color = '#000000';
+  const repeated = await analyzePlan(text, { metrics: { display: 'heatmap', metric: 'elapsed_compute', palette: 'spectrum' } });
+  expect(repeated.metrics.cohorts[0].legend.stops[0].color).toBe('#8db8f2');
+});
+test('Spectrum never turns a rounded-small positive value white or gives missing metrics a color', async () => {
+  const result = await analyzePlan('UnionExec\n  EmptyExec, metrics=[elapsed_compute=0ns]\n' +
+    '  EmptyExec, metrics=[elapsed_compute=1ns]\n  EmptyExec, metrics=[elapsed_compute=100s]\n  EmptyExec', {
+    metrics: { display: 'heatmap', metric: 'elapsed_compute', palette: 'spectrum' },
+  });
+  const { ranking } = result.metrics.cohorts[0];
+  expect(ranking).toHaveLength(3);
+  expect(ranking[1]).toMatchObject({ intensity: 0, color: '#8db8f2' });
+  expect(ranking[2].color).toBe('#ffffff');
+  expect(result.metrics.notReportedSourceIds).toHaveLength(2);
 });
 test('preserves duplicates and never ranks contradictory values', async () => {
   const result = await analyzePlan('EmptyExec, metrics=[elapsed_compute=1ms, elapsed_compute=2ms]', heatmap);

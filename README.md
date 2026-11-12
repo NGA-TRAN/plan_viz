@@ -22,7 +22,7 @@ structural explanations can be enabled independently.
 | --- | --- |
 | Current plan | Single-node, distributed and custom-operator visualization with the existing default drawing |
 | Metric labels | Reported compute time, rows, batches, bytes and supported memory/spill metrics |
-| Heatmaps | Orange, Blue or Purple coloring of comparable measurements, with rankings and a legend |
+| Heatmaps | Orange, Blue, Purple or Spectrum coloring of comparable measurements, with rankings and a legend |
 | Structural explanations | Evidence-backed explanations of waiting, retained state, aggregation and data layout |
 | Inspection and analysis APIs | Discover available metrics and physical-plan variants; generate structured JSON reports |
 | Editable diagrams | Excalidraw scenes with grouped labels, operators, workers and bound connections |
@@ -31,8 +31,8 @@ structural explanations can be enabled independently.
 the inspection/analysis APIs. Existing default conversion remains available
 through the CLI and synchronous library API.
 
-Missing measurements remain **Not reported**; they never become zero. Orange
-heatmaps use white for measured zero. Numeric interpretation of some metrics
+Missing measurements remain **Not reported**; they never become zero. All
+heatmap palettes use white for measured zero. Numeric interpretation of some metrics
 requires an explicitly selected producer profile. See the
 [plan-view API and CLI guide](docs/PLAN_VIEWS.md) for supported fields and assumptions.
 
@@ -134,9 +134,11 @@ output streams and coalesces them into one.
 ## Explore execution metrics
 
 Choose **Current plan**, **Labels only** or **Labels + heatmap**. Select the metric
-you want to inspect and, for heatmaps, choose **Orange / Blue / Purple**. Orange
-is the default palette. Larger comparable values receive stronger color; the
-report includes rankings and a legend for the selected comparison group.
+you want to inspect and, for heatmaps, choose **Orange / Blue / Purple / Spectrum**.
+Orange is the default palette. Spectrum runs from blue through cyan, green,
+yellow and orange to red as comparable values increase. All palettes use white
+for exact zero. The report includes rankings and a linear legend for the selected
+comparison group.
 
 This synthetic example reports 2 ms at the source, 1 ms at the projection and
 0 ns at the filter. The zero-valued filter is white. These are reported operator

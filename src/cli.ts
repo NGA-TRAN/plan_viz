@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ConverterService } from './services/converter.service';
 import { hasViewOptions, runPlanViewCli, ViewCliOptions } from './plan-view-cli';
+import { getPlanViewCapabilities } from './analysis/metrics/catalog';
 
 interface CliOptions extends ViewCliOptions {
   input?: string;
@@ -23,6 +24,7 @@ const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 const version = packageJson.version;
 
 const program = new Command();
+const capabilities = getPlanViewCapabilities();
 
 program
   .name('plan-viz')
@@ -36,7 +38,8 @@ program
   .option('--all-workers', 'Draw every distributed task')
   .option('--metric-display <mode>', 'Metric display: off, labels or heatmap (default: off)')
   .option('--metric <name>', 'Exact metric name for labels or heatmap')
-  .option('--palette <name>', 'Heatmap palette: orange, blue or purple (default: orange)')
+  .option('--palette <name>', 'Heatmap palette: ' + capabilities.palettes.map((palette) => palette.id).join(', ') +
+    ' (default: ' + capabilities.defaultHeatmapPalette + ')')
   .option('--metric-cohort <id>', 'Comparison cohort ID from inspection')
   .option('--structure <mode>', 'Structural explanations: off or explain (default: off)')
   .option('--variant <id>', 'Physical variant ID from inspection')

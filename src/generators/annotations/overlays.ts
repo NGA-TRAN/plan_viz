@@ -88,7 +88,25 @@ export function annotate(scene: ExcalidrawData, result: PlanAnalysisResult, rend
       (raw ? '\n\nRaw observations\n' + raw : '') + '\n\nCoverage: reported observations only; completeness is not established. No query totals or exclusive work inferred.');
     if (metrics.palette && selected) {
       const y = panelY;
-      selected.legend.stops.forEach((stop, i) => add(composition.rectangle(panelX + i * 124, y, 124, 22, stop.color)));
+      if (selected.legend.zeroColor !== undefined) {
+        const swatch = (x: number, width: number, color: string, label: string): void => {
+          const shape = composition.rectangle(x, y, width, 22, color);
+          const text = composition.text(label, x + 2, y + 25, width - 4, 12);
+          text.textAlign = 'center';
+          for (const element of [shape, text]) {
+            element.groupIds = ['plan-view-metric-legend'];
+            add(element);
+          }
+        };
+        swatch(panelX, 70, selected.legend.zeroColor, '0');
+        // Separate exact zero from the positive scale, including its lowest tint.
+        selected.legend.stops.forEach((stop, i, stops) => {
+          const width = (panelWidth - 80) / stops.length;
+          swatch(panelX + 80 + i * width, width, stop.color, stop.position === 0 ? '>0' : Math.round(stop.position * 100) + '%');
+        });
+      } else {
+        selected.legend.stops.forEach((stop, i) => add(composition.rectangle(panelX + i * 124, y, 124, 22, stop.color)));
+      }
       panelY += 50;
     }
     const query = result.inspection.observations.filter((o) => metrics.queryObservationIds.includes(o.id));

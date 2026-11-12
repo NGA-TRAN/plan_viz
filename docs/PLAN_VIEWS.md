@@ -47,7 +47,7 @@ The separate viewer app can implement these controls using the API:
 | --- | --- |
 | Current plan / Labels only / Labels + heatmap | `metrics.display`: `off`, `labels`, `heatmap` |
 | Metric dropdown | `inspection.metrics`; use `present`, `availableDisplays`, `reasons` |
-| Orange / Blue / Purple | `metrics.palette`; heatmap only, default `orange` |
+| Orange / Blue / Purple / Spectrum | `metrics.palette`; heatmap only, default `orange` |
 | Comparison group | `metrics.cohort`, when the report is `cohort-required` |
 | Structural explanations | `structure`: `off` or `explain`, independently of metrics |
 | Input section / physical variant | `input.section` (1-based), `input.variant` (catalog ID) |
@@ -107,16 +107,33 @@ Normalized values are decimal **strings** in `ns`, `byte` or `count`. Ranking
 uses exact arithmetic; only color interpolation uses an approximate ratio.
 Rounded producer tokens remain identified as rounded. The linear domain includes
 all comparable observations before hiding tasks or limiting the displayed ranking.
-Orange uses **white (`#ffffff`) for exact zero**, including zero rows. Positive
-values retain the light-to-dark orange gradient, even when a very small positive
-ratio rounds to zero. Blue and Purple use their existing lightest fills for zero.
-An all-zero cohort uses its zero fill for every legend stop. Missing values keep
-their original fill and are labeled `Not reported`, rather than `0`.
+All palettes use **white (`#ffffff`) for exact zero**, including zero rows.
+Orange, Blue and Purple retain their existing gradients for positive values,
+even when a very small positive ratio rounds to zero. Spectrum uses six positive
+color anchors: blue, cyan, green, yellow, orange and red, with a separate white
+zero swatch. An all-zero cohort uses white throughout its legend; Spectrum shows
+only the zero swatch because no positive range exists. Missing values keep their
+original fill and are labeled `Not reported`, rather than `0`.
 Different comparison cohorts require a choice before coloring.
 
-Each palette in capabilities exposes `zero`, `low` and `high`: use `zero` for
-exact zero and interpolate positive values between `low` and `high`. The report's
-ranking colors and legend stops already apply this rule for the viewer app.
+Each palette in capabilities exposes `zero`, `low` and `high`. Spectrum also
+provides `positiveStops`, an ordered array of `{ position, color }` anchors at
+0, 0.2, 0.4, 0.6, 0.8 and 1. These describe the positive-value gradient; the
+anchor at position 0 is blue, not the white fill reserved for exact zero.
+Interpolation is linear in RGB between adjacent anchors. Palettes without
+`positiveStops` interpolate between `low` and `high`.
+
+Use the report's ranking colors and legend metadata in the viewer app rather
+than rebuilding Spectrum from its endpoints. Spectrum's legend provides optional
+`zeroColor` for its separate zero swatch and six positive anchors in `stops`.
+When `zeroColor` is present, a stop at position 0 represents the low positive
+color, not exact zero. For an all-zero Spectrum cohort, `stops` is empty and
+`zeroColor` remains white. Other palettes retain their existing five-stop legend
+format, with white at position 0.
+
+Spectrum changes the hues, not the linear numeric scale: values far below the
+maximum can still receive very similar colors. Logarithmic scaling is not
+currently supported.
 
 Scalars copied by task specialization remain one source observation. They never
 color every task box. Task-map entries without an applicable exporter remain raw.
@@ -220,6 +237,7 @@ npm run build
 npx jest --runInBand --coverage=false plan-view
 node scripts/check-plan-views.cjs path/to/private/plans report.json
 node scripts/verify-plan-views.cjs
+node scripts/verify-plan-views.cjs tmp/plan-views-spectrum spectrum
 ```
 
 The local check discovers every `*.sql` recursively on each invocation, compares
