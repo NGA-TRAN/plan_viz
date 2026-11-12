@@ -1,7 +1,7 @@
 # Optional metrics and structural explanations
 
-These APIs are available in the working tree for the next release. Existing
-synchronous conversion and the default CLI drawing stay unchanged. Both new
+These APIs are available in plan-viz 0.1.29 and later. Existing synchronous
+conversion and the default CLI drawing stay unchanged. Both new
 display modes default off; existing raw metric text remains part of the ordinary
 drawing.
 

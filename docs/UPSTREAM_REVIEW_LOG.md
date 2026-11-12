@@ -11,7 +11,7 @@ behavior. Add the newest review first.
 | Maintenance workflow     | Merged through [PR #77](https://github.com/NGA-TRAN/plan_viz/pull/77), 2026-11-08                           |
 | Latest review            | [2026-11-11 release compatibility check](upstream-reviews/2026-11-11.md), complete within its stated incremental scope |
 | Follow-up implementation | [F4/F5 validated, including the approved TopK correction](upstream-reviews/2026-11-08-follow-up.md); merged through [PR #79](https://github.com/NGA-TRAN/plan_viz/pull/79) as `5f595c4` |
-| Next work                | Deliver the approved optional metrics/structural views and reusable samples through feature/release PRs and package verification. New upstream semantic/profile upgrades remain separate R1–R6 follow-ups. |
+| Next work                | Optional metrics/structural views and reusable samples merged through [PR #83](https://github.com/NGA-TRAN/plan_viz/pull/83). Use the packaged integration guide for viewer adoption; newer upstream semantic/profile upgrades remain separate R1–R6 follow-ups. |
 | Next comparison baseline | DataFusion stable 55.2.0, main `51960dbad4586e41fc8995c816e6158cc77351e8`; Distributed stable v4.0.0, main `cb6c9c437d5886cce2dde545e4216dec220b75eb` |
 | Audited support          | Existing catalog and Distributed `b32ee66e5f12227a5fe8e8444a022991da0758ea` pin retained                    |
 | Suggested cadence        | Monthly during active development, plus release/upgrade triggers; frequency still open                      |

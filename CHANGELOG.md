@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.29] - 2026-11-11
+
 ### Added
 - Add optional CLI/API metric labels and Orange/Blue/Purple heatmaps with exact numeric ranking, explicit missing values, qualified producer profiles, task ownership, and separate query details.
 - Use white for exact-zero Orange heatmap values and matching legend stops, preserving the positive-value gradient.
