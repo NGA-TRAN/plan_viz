@@ -95,6 +95,9 @@ jobs:
           fi
           echo "Build successful: dist directory exists"
 
+      - name: Verify packed consumer APIs and samples
+        run: node scripts/verify-plan-view-package.cjs
+
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest

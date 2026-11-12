@@ -9,13 +9,43 @@ behavior. Add the newest review first.
 | Item                     | Status                                                                                                      |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Maintenance workflow     | Merged through [PR #77](https://github.com/NGA-TRAN/plan_viz/pull/77), 2026-11-08                           |
-| Latest review            | [2026-11-09 release compatibility check](upstream-reviews/2026-11-09.md), complete within its stated incremental scope |
+| Latest review            | [2026-11-11 release compatibility check](upstream-reviews/2026-11-11.md), complete within its stated incremental scope |
 | Follow-up implementation | [F4/F5 validated, including the approved TopK correction](upstream-reviews/2026-11-08-follow-up.md); merged through [PR #79](https://github.com/NGA-TRAN/plan_viz/pull/79) as `5f595c4` |
-| Next work                | Release 0.1.28 locally reviewed and authorized for delivery; coverage PR #80 merged. F1–F3 feature designs and concrete visual previews remain separate work. |
-| Next comparison baseline | DataFusion stable 55.2.0, main `14b3edd9a350b983fae6d2f194df1a3ae343ba15`; Distributed main `70869b0cda5d4cb322edb4dffc6f229e38ecb62d` |
+| Next work                | Deliver the approved optional metrics/structural views and reusable samples through feature/release PRs and package verification. New upstream semantic/profile upgrades remain separate R1–R6 follow-ups. |
+| Next comparison baseline | DataFusion stable 55.2.0, main `51960dbad4586e41fc8995c816e6158cc77351e8`; Distributed stable v4.0.0, main `cb6c9c437d5886cce2dde545e4216dec220b75eb` |
 | Audited support          | Existing catalog and Distributed `b32ee66e5f12227a5fe8e8444a022991da0758ea` pin retained                    |
 | Suggested cadence        | Monthly during active development, plus release/upgrade triggers; frequency still open                      |
 | Scheduled automation     | None                                                                                                        |
+
+## 2026-11-11 — optional-view release compatibility check
+
+**Trigger:** the user authorized full validation, commit/push, feature PR, merge
+and release of the approved optional metrics/structural views and sample inputs.
+
+**Comparison:** DataFusion stable remains 55.2.0; main advanced 26 commits /
+126 paths from `14b3edd...` to `51960db...`. Distributed stable remains v4.0.0;
+main advanced five commits from `70869b0...` to `cb6c9c4...`. Its large crate move
+required paginated per-commit inspection beyond the 300-file comparison cap.
+The [detailed source-backed review](upstream-reviews/2026-11-11.md) records
+exact ranges, dispositions and R4–R6 acceptance criteria.
+
+**Outcome:** no blocker identified at the retained support/profile baselines.
+New main semantics include exact reverse Parquet scans and incremental
+aggregation on grouped, potentially unsorted input. They do not advance the
+release's producer assumptions or justify new ordering/memory claims. Distributed
+changes reorganize crates/tests and refactor dynamic-stage preparation; no changed
+supported display, routing or metric-export contract was identified.
+
+**Validation:** the pinned 20-operator inventory passes. All 11 new reverse-scan
+physical-plan expectations pass conversion, property/node retention,
+geometry/binding checks and exact legacy/optional-off scene equality. These are
+saved-text probes; native upstream execution and visual acceptance of their
+scenes were not performed. Full release/package/CI/publication checks are tracked
+separately. No rendering changes or new expected scenes are adopted by this review.
+
+**Next trigger:** next release, relevant format/semantic change, or agreed review,
+starting from the exact main revisions above. Keep the Distributed `b32ee66...`
+audit and recorded metric/operator profiles unchanged until a scoped upgrade.
 
 ## 2026-11-09 — patch-release compatibility check
 

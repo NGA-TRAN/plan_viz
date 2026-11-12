@@ -1,0 +1,7 @@
+{
+  "views": {
+    "default": {},
+    "conflicting": {"metrics": {"display": "heatmap", "metric": "elapsed_compute"}},
+    "raw": {"metrics": {"display": "labels", "metric": "custom_units"}}
+  }
+}

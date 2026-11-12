@@ -5,9 +5,13 @@ plan_viz/
 ├── AGENTS.md               # Development principles, TDD, and workflow entry points
 ├── src/
 │   ├── analysis/           # Operator contracts, task specialization, counts, routing
+│   │   ├── metrics/        # Qualified definitions, values, ownership and ranking
+│   │   └── structure/      # Conditional physical-plan explanations
+│   ├── inspection/        # Input capture, source maps, identity and evidence
 │   ├── types/              # ExecutionPlanNode, PlanDocument, diagnostics, scene types
 │   ├── parsers/            # Snapshot sections, single trees, boxed stages, recordings
 │   ├── generators/
+│   │   ├── annotations/    # Optional overlays after the existing layout
 │   │   ├── generators/     # Registered/inferred operator strategies
 │   │   ├── utils/          # Layout, geometry, bindings, omissions, scene composition
 │   │   ├── factories/      # Excalidraw element creation
@@ -17,8 +21,9 @@ plan_viz/
 │   │   ├── constants.ts
 │   │   ├── excalidraw.generator.ts              # Single operator-tree renderer
 │   │   └── distributed-excalidraw.generator.ts  # Task/stage scene composition
-│   ├── services/           # ConverterService and detailed conversion result
+│   ├── services/           # Legacy converter and optional async plan-view API
 │   ├── cli.ts
+│   ├── plan-view-cli.ts    # Optional CLI modes sharing the public service
 │   └── index.ts            # Public library exports
 ├── tests/
 │   ├── *.sql               # Single-plan EXPLAIN fixtures, sometimes including SQL
@@ -27,10 +32,14 @@ plan_viz/
 │   │   ├── *.sql           # Distributed/recorded fixtures
 │   │   └── expected/       # One matching scene per distributed fixture
 │   ├── integration.test.ts # Both fixture directories and pairing/binding checks
+│   ├── plan-views/         # Synthetic inputs, option manifests and expected scenes
 │   └── usage-example.ts
+├── samples/                # Packaged synthetic single-node/distributed metric plans
 ├── scripts/                # Operator checks, upstream audit, corpus review, browser checks
 ├── docs/
 │   ├── API.md / CLI.md     # Public interfaces and options
+│   ├── PLAN_VIEWS.md       # Optional view API, reports and viewer-app handoff
+│   ├── PLAN_VISUALIZER_INTEGRATION.md # Packaged application upgrade guide
 │   ├── DISTRIBUTED_PLANS.md / CUSTOM_OPERATORS.md
 │   ├── CORPUS_REVIEW.md     # Saved-plan inventory and gallery workflow
 │   ├── UPSTREAM_MAINTENANCE.md / UPSTREAM_REVIEW_LOG.md
@@ -65,7 +74,11 @@ normalize generated identifiers before comparison.
 | `review-corpus.cjs` | Mixed corpus inventory, conversion, gallery, and optional PNG export |
 | `corpus-contact-sheets.cjs` | Thumbnail overview of an exported gallery |
 | `verify-distributed.cjs` | CLI and real Excalidraw editing/binding checks |
+| `check-plan-views.cjs` | Discover local SQL examples and exercise default/metric views |
+| `verify-plan-views.cjs` | Browser/API parity and annotation dragging in Excalidraw |
+| `verify-plan-view-package.cjs` | Packed API/types, sample inputs, CLI and browser bundle checks |
 
-The npm package includes compiled production code, README, LICENSE, and package
-metadata. Source fixtures, expected drawings, browser tooling, and local research
-are repository/development artifacts.
+The npm package includes compiled production code, README, LICENSE, CHANGELOG,
+the plan-view and app integration guides, `samples/`, and package metadata.
+Test fixtures, expected drawings, browser tooling, and local research are
+repository/development artifacts.

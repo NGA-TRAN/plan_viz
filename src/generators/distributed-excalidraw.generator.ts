@@ -9,11 +9,15 @@ import { taskGroups } from '../analysis/distributed-analysis';
 import { moveScene, sceneBounds, SceneComposition } from './utils/scene-composition';
 
 export interface DistributedRenderConfig { workerDisplay?: 'representative' | 'all' }
-interface WorkerScene { task: TaskPlan; elements: ExcalidrawElement[]; inputs: Map<string, ExcalidrawRectangle>; width: number; height: number; omitted: number }
+interface WorkerScene {
+  task: TaskPlan; elements: ExcalidrawElement[]; shapes: Map<ExecutionPlanNode, ExcalidrawElement>;
+  inputs: Map<string, ExcalidrawRectangle>; width: number; height: number; omitted: number;
+}
 interface StageScene { id: string; workers: WorkerScene[]; tasks: number; width: number; height: number }
 export class DistributedExcalidrawGenerator {
   constructor(private readonly config: ExcalidrawConfig = {}, private readonly distributed: DistributedRenderConfig = {}) {}
-  generate(document: Extract<PlanDocument, { stages: unknown }>, analysis: DistributedAnalysis): ExcalidrawData {
+  generate(document: Extract<PlanDocument, { stages: unknown }>, analysis: DistributedAnalysis,
+    observe?: (node: ExecutionPlanNode, shape: ExcalidrawElement, task: TaskPlan) => void): ExcalidrawData {
     const composition = new SceneComposition();
     const elements: ExcalidrawElement[] = [];
     const network = new LeafNodeGenerator({
@@ -46,7 +50,7 @@ export class DistributedExcalidrawGenerator {
           }
           const bounds = sceneBounds(scene.elements);
           moveScene(scene.elements, -bounds.x, -bounds.y);
-          workers.push({ task, elements: scene.elements, inputs, width: bounds.width + 64, height: bounds.height + 84,
+          workers.push({ task, elements: scene.elements, shapes, inputs, width: bounds.width + 64, height: bounds.height + 84,
             omitted: index === 0 ? group.length - selected.length : 0 });
         });
       }
@@ -94,6 +98,7 @@ export class DistributedExcalidrawGenerator {
         panels.set(stage.id + '/' + worker.task.task, panel);
         for (const [boundary, shape] of worker.inputs) inputs.set(stage.id + '/' + worker.task.task + '/' + boundary, shape);
         moveScene(worker.elements, x + 32, y + 44, stage.id + '-' + worker.task.task + '-', group);
+        if (observe) for (const [node, shape] of worker.shapes) observe(node, shape, worker.task);
         const label = composition.text(document.kind === 'recorded' ? 'Recorded operator tree' : stage.id === 'head' ? 'Coordinator task' :
           'Task t' + worker.task.task, x + 16, panel.y + panel.height - 30, panel.width - 32, 17, '#1971c2');
         label.groupIds = [group];

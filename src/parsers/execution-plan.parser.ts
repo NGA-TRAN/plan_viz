@@ -1,4 +1,5 @@
 import { topLevelPositions } from './plan-text';
+import { preprocessExecutionPlanLines } from './execution-plan-lines';
 import {
   ExecutionPlanNode,
   OperatorWrapper,
@@ -49,7 +50,7 @@ export class ExecutionPlanParser {
     )) {
       throw new Error('Distributed plans are not supported; provide a single-node physical plan.');
     }
-    const lines = this.preprocessLines(planToParse);
+    const lines = preprocessExecutionPlanLines(planToParse).map((line) => line.text);
     const root = this.buildTree(lines);
     const rejectDistributed = (node: ExecutionPlanNode): void => {
       if (/^(?:Distributed\w*Exec|Network\w*Exec)\b/.test(node.operator)) {
@@ -143,55 +144,6 @@ export class ExecutionPlanParser {
     }
 
     return foundPhysicalPlan && physicalPlanLine ? physicalPlanLine : null;
-  }
-
-  /**
-   * Preprocesses lines by trimming and filtering empty lines
-   */
-  private preprocessLines(planText: string): string[] {
-    return planText
-      .split('\n')
-      .map((line) => {
-        // Handle table format with pipe characters: extract the operator column
-        // Example: "|               |         AggregateExec: ... |" -> "         AggregateExec: ..."
-        // Important: preserve leading spaces in the operator column as they indicate indentation level
-        let processed = line.trimEnd();
-        // Copied plan-column output can retain its trailing table border.
-        if (!processed.trimStart().startsWith('|')) processed = processed.replace(/\s+\|$/, '').trimEnd();
-
-        // If line contains pipe characters, extract the operator column (preserving leading spaces)
-        if (processed.trimStart().startsWith('|')) {
-          const parts = processed.split('|').map((p) => p.trimEnd());
-          // Find the last non-empty part that contains an operator (not just whitespace)
-          // Usually this is the second-to-last part (before the trailing pipe)
-          for (let i = parts.length - 1; i >= 0; i--) {
-            const part = parts[i];
-            // Skip empty parts and parts that are just whitespace
-            if (part.trim().length > 0) {
-              processed = part;
-              break;
-            }
-          }
-        } else {
-          // No pipes, just trim end (preserve leading spaces for indentation)
-          processed = processed.trimEnd();
-        }
-
-        return processed;
-      })
-      .filter((line) => {
-        const trimmed = line.trim();
-        // Filter out empty lines
-        if (trimmed.length === 0) {
-          return false;
-        }
-        // Filter out lines that are just a single special character (like backtick, pipe, etc.)
-        // Valid operators should be at least 3 characters (e.g., "Exec" suffix)
-        if (trimmed.length <= 2 && /^[^a-zA-Z0-9]+$/.test(trimmed)) {
-          return false;
-        }
-        return true;
-      });
   }
 
   /**

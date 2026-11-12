@@ -1,0 +1,11 @@
+{
+  "views": {
+    "default": {},
+    "unknown-scope": {"metrics": {"display": "heatmap", "metric": "elapsed_compute"}},
+    "orange": {"metrics": {"display": "heatmap", "metric": "elapsed_compute"}, "interpretation": {"metricProfile": "datafusion-7865139", "exportProfile": "distributed-b32ee66"}},
+    "blue": {"metrics": {"display": "heatmap", "metric": "elapsed_compute", "palette": "blue"}, "interpretation": {"metricProfile": "datafusion-7865139", "exportProfile": "distributed-b32ee66"}},
+    "purple": {"metrics": {"display": "heatmap", "metric": "elapsed_compute", "palette": "purple"}, "interpretation": {"metricProfile": "datafusion-7865139", "exportProfile": "distributed-b32ee66"}},
+    "all-tasks": {"metrics": {"display": "heatmap", "metric": "elapsed_compute"}, "interpretation": {"metricProfile": "datafusion-7865139", "exportProfile": "distributed-b32ee66"}, "distributed": {"workerDisplay": "all"}},
+    "scalar": {"metrics": {"display": "heatmap", "metric": "output_rows"}, "interpretation": {"metricProfile": "datafusion-7865139", "exportProfile": "distributed-b32ee66"}}
+  }
+}

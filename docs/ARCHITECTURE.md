@@ -134,6 +134,14 @@ partition or routing contracts.
 
 ## Tests and build boundaries
 
+Optional plan views use `src/inspection/` for lossless capture and source/instance
+identity, `src/analysis/metrics/` and `src/analysis/structure/` for evidence and
+qualified interpretations, and `src/generators/annotations/` for post-layout
+annotations. `plan-view.service.ts` coordinates the async public API. Metadata
+stays outside legacy node properties and task-grouping signatures. The old
+converter path stays independent; optional collectors do not consume scene IDs.
+See [the API and CLI guide](PLAN_VIEWS.md) for the public contract and limitations.
+
 - Unit tests cover parsing, count inference, routing, geometry, and bindings.
 - `tests/integration.test.ts` compares normalized scenes with expected files for
   `tests/*.sql`, `tests/distributed/*.sql` and each `tests/upstream/<review-date>`
@@ -145,8 +153,9 @@ partition or routing contracts.
 - Jest enforces 80% global coverage for statements, branches, functions, and lines.
 - `tsconfig.build.json` excludes tests and test helpers from `dist/`. Browser
   export/editing dependencies are development-only; Commander is the runtime
-  dependency. The npm package includes `dist`, README, and LICENSE alongside
-  package metadata.
+dependency. The npm package includes `dist`, README, LICENSE, CHANGELOG, the
+plan-view and app integration guides, and the reusable `samples/` inputs alongside
+package metadata.
 
 Large plans can expand into many task trees and network pairs. Representative
 views reduce visible elements, but parsing and analysis still process task

@@ -4,8 +4,9 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ConverterService } from './services/converter.service';
+import { hasViewOptions, runPlanViewCli, ViewCliOptions } from './plan-view-cli';
 
-interface CliOptions {
+interface CliOptions extends ViewCliOptions {
   input?: string;
   section?: number;
   allWorkers?: boolean;
@@ -33,6 +34,19 @@ program
   .option('-o, --output <file>', 'Output file for Excalidraw JSON')
   .option('--section <number>', 'Select a 1-based plan section', Number)
   .option('--all-workers', 'Draw every distributed task')
+  .option('--metric-display <mode>', 'Metric display: off, labels or heatmap (default: off)')
+  .option('--metric <name>', 'Exact metric name for labels or heatmap')
+  .option('--palette <name>', 'Heatmap palette: orange, blue or purple (default: orange)')
+  .option('--metric-cohort <id>', 'Comparison cohort ID from inspection')
+  .option('--structure <mode>', 'Structural explanations: off or explain (default: off)')
+  .option('--variant <id>', 'Physical variant ID from inspection')
+  .option('--operator-profile <id>', 'Explicitly assumed operator implementation profile')
+  .option('--metric-profile <id>', 'Explicitly assumed metric definition and unit profile')
+  .option('--export-profile <id>', 'Explicitly assumed exporter/task ownership profile')
+  .option('--capabilities', 'Print API capabilities as JSON without reading a plan')
+  .option('--inspect', 'Print captured input and metric availability as JSON')
+  .option('--analyze', 'Print selected analysis as JSON without a scene')
+  .option('--report <file>', 'Write scene analysis and render references to a JSON sidecar')
   .option(
     '--node-width <number>',
     'Width of each node box',
@@ -57,8 +71,18 @@ program
     (value: string) => parseInt(value, 10),
     50
   )
-  .action((options: CliOptions) => {
+  .action(async (options: CliOptions) => {
     try {
+      const config = {
+        input: { section: options.section },
+        distributed: { workerDisplay: options.allWorkers ? 'all' as const : 'representative' as const },
+        generator: { nodeWidth: options.nodeWidth, nodeHeight: options.nodeHeight,
+          verticalSpacing: options.verticalSpacing, horizontalSpacing: options.horizontalSpacing },
+      };
+      if (hasViewOptions(program)) {
+        await runPlanViewCli(program, options, config);
+        return;
+      }
       let planText: string;
 
       // Read input
@@ -76,17 +100,6 @@ program
       }
 
       // Convert
-      const config = {
-        input: { section: options.section },
-        distributed: { workerDisplay: options.allWorkers ? 'all' as const : 'representative' as const },
-        generator: {
-          nodeWidth: options.nodeWidth,
-          nodeHeight: options.nodeHeight,
-          verticalSpacing: options.verticalSpacing,
-          horizontalSpacing: options.horizontalSpacing,
-        },
-      };
-
       const result = new ConverterService(config).convertDetailed(planText);
       for (const diagnostic of result.diagnostics) console.error(diagnostic.code + ': ' + diagnostic.message);
       const excalidrawData = result.scene;
@@ -111,4 +124,4 @@ program
     }
   });
 
-program.parse(process.argv);
+void program.parseAsync(process.argv);

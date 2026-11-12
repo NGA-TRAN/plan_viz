@@ -1,14 +1,14 @@
 import { DistributedAnalysis, NetworkConnection, PlanDocument, PlanNode, TaskPlan } from '../types/plan-document.types';
 import { partitionCounts } from './partition-analysis';
-import { specializeTask } from './task-specializer';
+import { specializeTask, SpecializationObserver } from './task-specializer';
 
-export function analyzeDistributed(document: Extract<PlanDocument, { stages: unknown }>): DistributedAnalysis {
+export function analyzeDistributed(document: Extract<PlanDocument, { stages: unknown }>, observe?: SpecializationObserver): DistributedAnalysis {
   const diagnostics = [...document.diagnostics];
   const tasks: TaskPlan[] = [];
   for (const stage of document.stages) {
     for (let task = 0; task < stage.tasks; task++) {
       // A worker recording cannot establish its stage-local task context.
-      const root = document.kind === 'recorded' ? stage.root : specializeTask(stage.root, { index: task, count: stage.tasks });
+      const root = document.kind === 'recorded' ? stage.root : specializeTask(stage.root, { index: task, count: stage.tasks }, observe);
       tasks.push({ stage: stage.id, task, root, counts: partitionCounts(root) });
     }
   }
