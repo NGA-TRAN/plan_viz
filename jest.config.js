@@ -8,6 +8,7 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/**/*.test.ts',
     '!src/**/*.spec.ts',
+    '!src/**/__tests__/**',
     '!src/cli.ts',
   ],
   coverageThreshold: {

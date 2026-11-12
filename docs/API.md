@@ -4,6 +4,13 @@ Single-node and distributed plans use the same `plan-viz` package and entry poin
 See [installation and basic usage](../README.md#installation), [CLI options](CLI.md),
 and [custom renderers](CUSTOM_OPERATORS.md#registering-a-renderer).
 
+For synchronous capability discovery with `getPlanViewCapabilities` and the async
+`inspectPlan`, `analyzePlan` and `convertPlanView` interfaces, see
+[optional plan views](PLAN_VIEWS.md). Existing
+synchronous APIs below keep their default rendering and return shapes.
+The [plan_visualizer integration guide](PLAN_VISUALIZER_INTEGRATION.md) provides
+the application upgrade sequence, typed examples and acceptance checks.
+
 ## `convertPlanToExcalidraw(plan: string, config?: ConverterConfig): ExcalidrawData`
 
 Converts a single or distributed physical plan into Excalidraw-compatible JSON. This convenience function returns the scene; use `ConverterService.convertDetailed()` to inspect the selected document and diagnostics.

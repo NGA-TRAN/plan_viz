@@ -43,6 +43,10 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
+    "docs/PLAN_VIEWS.md",
+    "docs/PLAN_VISUALIZER_INTEGRATION.md",
+    "samples",
     "LICENSE"
   ],
   "exports": {

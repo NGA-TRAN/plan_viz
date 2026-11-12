@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add optional CLI/API metric labels and Orange/Blue/Purple heatmaps with exact numeric ranking, explicit missing values, qualified producer profiles, task ownership, and separate query details.
+- Use white for exact-zero Orange heatmap values and matching legend stops, preserving the positive-value gradient.
+- Add physical-plan structural explanations for waiting, retained state, decomposition and layout, with evidence and explicit unknowns.
+- Add input/variant inspection, JSON analysis reports and final render references while preserving the existing default drawing and synchronous conversion APIs.
+- Exercise the existing SQL corpus through the optional API; add synthetic optional-view fixtures, local example discovery and Excalidraw editing checks.
+- Include the plan-view API guide, plan_visualizer integration instructions and changelog in the npm package.
+- Use neutral custom-operator examples and interpret declared query metrics independently of vendor-specific wrapper names.
+- Package reusable synthetic single-node and distributed metric samples with app guidance, task-map measurements, and zero versus missing values.
+- Verify packed APIs, declarations, sample conversions and browser bundling in CI before publishing.
+
+### Fixed
+- Rank equivalent duplicate metric values once while retaining their evidence and precision qualifications.
+- Preserve operator source spans and metric ownership when copied plan text contains punctuation removed by the legacy parser.
+
 ## [0.1.28] - 2026-11-09
 
 ### Fixed

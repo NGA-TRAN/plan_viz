@@ -1,0 +1,7 @@
+{
+  "views": {
+    "default": {},
+    "structure": {"structure": "explain", "interpretation": {"operatorProfile": "datafusion-physical-7865139"}},
+    "missing": {"metrics": {"display": "heatmap", "metric": "elapsed_compute"}}
+  }
+}

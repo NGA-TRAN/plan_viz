@@ -4,6 +4,10 @@ Install `plan-viz` using the [shared installation instructions](../README.md#ins
 The same command accepts single-node and distributed physical plans, including
 structurally inferred operators.
 
+For optional metric labels/heatmaps, structural explanations, inspection and JSON
+reports, see [the plan-view CLI guide](PLAN_VIEWS.md#cli). Existing commands below
+keep their current drawing unless a new display mode is explicitly enabled.
+
 ## Input and output
 
 ```sh

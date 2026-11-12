@@ -54,6 +54,20 @@ The files contain saved EXPLAIN text; tests do not execute SQL. Keep representat
 indentation and replace private names with invented names while preserving plan
 structure, task counts, and empty partition slots.
 
+Optional views use `tests/plan-views/<case>/input.sql`, a `case.json` map of view
+names to API options, and `expected/<view>.excalidraw`. Every case includes a
+default scene. These fixtures compare every serialized field and binding;
+separate tests compare the new off mode exactly against the legacy API across
+the existing SQL corpus. See [PLAN_VIEWS.md](docs/PLAN_VIEWS.md) for private-example
+discovery and the optional-view browser checks.
+
+Before delivering optional-view API changes, run
+`node scripts/verify-plan-view-package.cjs` after building. It packs a local
+archive, verifies the included app guides, typechecks the guide's example against
+installed declarations, and checks CommonJS/ESM APIs, both packaged sample plans,
+CLI conversion and browser bundling.
+It reuses the installed runtime dependency and does not publish or fetch packages.
+
 Generate one expected drawing after building:
 
 ```sh
@@ -116,7 +130,8 @@ docs: explain distributed stream bundles and task slots
 
 [ci-cd.yml](.github/workflows/ci-cd.yml) runs on pull requests targeting `master`,
 pushes to `master`, and `v*` tags. It runs lint, coverage tests on Node 20, 22, and
-latest, then a production build. Only a pushed version tag triggers publishing.
+latest, then a production build and packed-consumer API/sample checks. Only a
+pushed version tag triggers publishing.
 Merging a feature PR does not publish a package.
 
 For a release:
