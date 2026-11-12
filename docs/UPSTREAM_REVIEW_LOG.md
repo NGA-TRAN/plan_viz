@@ -9,13 +9,43 @@ behavior. Add the newest review first.
 | Item                     | Status                                                                                                      |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Maintenance workflow     | Merged through [PR #77](https://github.com/NGA-TRAN/plan_viz/pull/77), 2026-11-08                           |
-| Latest review            | [2026-11-11 release compatibility check](upstream-reviews/2026-11-11.md), complete within its stated incremental scope |
+| Latest review            | [2026-11-12 release compatibility check](upstream-reviews/2026-11-12.md), complete within its stated incremental scope |
 | Follow-up implementation | [F4/F5 validated, including the approved TopK correction](upstream-reviews/2026-11-08-follow-up.md); merged through [PR #79](https://github.com/NGA-TRAN/plan_viz/pull/79) as `5f595c4` |
-| Next work                | Optional metrics/structural views and reusable samples merged through [PR #83](https://github.com/NGA-TRAN/plan_viz/pull/83). Use the packaged integration guide for viewer adoption; newer upstream semantic/profile upgrades remain separate R1–R6 follow-ups. |
-| Next comparison baseline | DataFusion stable 55.2.0, main `51960dbad4586e41fc8995c816e6158cc77351e8`; Distributed stable v4.0.0, main `cb6c9c437d5886cce2dde545e4216dec220b75eb` |
+| Next work                | Optional metrics/structural views and reusable samples merged through [PR #83](https://github.com/NGA-TRAN/plan_viz/pull/83). Use the packaged integration guide for viewer adoption; newer upstream semantic/profile upgrades remain separate R1–R7 follow-ups. |
+| Next comparison baseline | DataFusion stable 55.2.0, main `60e3d5c40487f600f6a7aa0a9f0b042d63930b8f`; Distributed stable v4.0.0, main `a976e71dbc25c1278ea7553917b409e03bf001cf` |
 | Audited support          | Existing catalog and Distributed `b32ee66e5f12227a5fe8e8444a022991da0758ea` pin retained                    |
 | Suggested cadence        | Monthly during active development, plus release/upgrade triggers; frequency still open                      |
 | Scheduled automation     | None                                                                                                        |
+
+## 2026-11-12 — palette-release compatibility check
+
+**Trigger:** preparation of 0.1.30 after the approved palette changes, under the
+user-authorized release process.
+
+**Comparison:** DataFusion stable remains 55.2.0; main advanced 10 commits /
+28 paths from `51960db...` to `60e3d5c...`. Distributed stable remains v4.0.0;
+main advanced two commits / four paths from `cb6c9c4...` to `a976e71...`.
+Both comparisons include complete file lists and patches without pagination.
+The [detailed source-backed review](upstream-reviews/2026-11-12.md) records
+exact revisions and dispositions.
+
+**Outcome:** no blocker identified at the retained support/profile baselines.
+New main behavior concerns partition-scoped constants/orderings, constant
+metadata across network boundaries, unbounded null-aware join rejection and
+sort memory handling. These do not advance the release's producer assumptions.
+R7 records acceptance criteria for a future constant/order profile upgrade;
+R1–R6 remain open.
+
+**Validation:** the pinned 20-operator inventory and all 10 new complete upstream
+aggregate/window saved-plan probes pass, including operator/property retention,
+geometry/binding checks and exact legacy/optional-off scene equality. Native
+upstream execution and visual acceptance of these scenes were not performed.
+Package validation and publication are separate release gates. No upstream
+profile, rendering change or expected scene is adopted by this review.
+
+**Next trigger:** next release, relevant format/semantic change, or agreed review,
+starting from the exact main revisions above. Keep the Distributed `b32ee66...`
+audit and recorded profiles unchanged until a scoped upgrade.
 
 ## 2026-11-11 — optional-view release compatibility check
 
